@@ -8,5 +8,6 @@
       "id": "machine_max:builtin",
       "type": "hard"
     }
-  ]
+  ],
+  "enable_auto_pack": true
 }

@@ -1,0 +1,269 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "machine_max:textures/icon/santana/santana_door.png",
+  "vehicle_durability_rate": 0.03,
+  "vehicle_damage_rate": 0.1,
+  "vehicle_damage_rate_destroyed": 0,
+  "variants": {
+    "left_front": {
+      "model": "machine_max:santana.geo",
+      "textures": "machine_max:textures/part/santana/santana.png",
+      "tags": [
+        "machine_max:type/land",
+        "machine_max:category/structural",
+        "machine_max:door",
+        "machine_max:direction/left",
+        "machine_max:position/front",
+        "machine_max:series/santana"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "start_bone": "AllLeftFrontDoor",
+          "end_bones": [],
+          "durability": 30,
+          "mass": 24,
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "LeftFrontDoorCollision": {
+              "type": "box",
+              "material": "machine_max:structural_steel"
+            }
+          },
+          "connectors": {
+            "connector.machine_max.axis": {
+              "locator": "door_lf_hinge",
+              "definition": "machine_max:fixed_down"
+            }
+          },
+          "hydrodynamics": {
+            "": {
+              "front_drag": [
+                0,
+                0
+              ],
+              "back_drag": [
+                0,
+                1
+              ],
+              "left_drag": [
+                0,
+                1
+              ],
+              "right_drag": [
+                0,
+                1
+              ],
+              "up_drag": [
+                0,
+                1
+              ],
+              "down_drag": [
+                0,
+                1
+              ]
+            }
+          }
+        }
+      }
+    },
+    "right_front": {
+      "model": "machine_max:santana.geo",
+      "textures": "machine_max:textures/part/santana/santana.png",
+      "tags": [
+        "machine_max:type/land",
+        "machine_max:category/structural",
+        "machine_max:door",
+        "machine_max:direction/right",
+        "machine_max:position/front",
+        "machine_max:series/santana"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "start_bone": "AllRightFrontDoor",
+          "end_bones": [],
+          "durability": 30,
+          "mass": 24,
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "RightFrontDoorCollison": {
+              "type": "box",
+              "material": "machine_max:structural_steel"
+            }
+          },
+          "connectors": {
+            "connector.machine_max.axis": {
+              "locator": "door_rf_hinge",
+              "definition": "machine_max:fixed_down"
+            }
+          },
+          "hydrodynamics": {
+            "": {
+              "front_drag": [
+                0,
+                0
+              ],
+              "back_drag": [
+                0,
+                1
+              ],
+              "left_drag": [
+                0,
+                1
+              ],
+              "right_drag": [
+                0,
+                1
+              ],
+              "up_drag": [
+                0,
+                1
+              ],
+              "down_drag": [
+                0,
+                1
+              ]
+            }
+          }
+        }
+      }
+    },
+    "left_back": {
+      "model": "machine_max:santana.geo",
+      "textures": "machine_max:textures/part/santana/santana.png",
+      "tags": [
+        "machine_max:type/land",
+        "machine_max:category/structural",
+        "machine_max:door",
+        "machine_max:direction/left",
+        "machine_max:position/back",
+        "machine_max:series/santana"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "start_bone": "AllLeftBackDoor",
+          "end_bones": [],
+          "durability": 30,
+          "mass": 21,
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "LeftBackDoorCollision": {
+              "type": "box",
+              "material": "machine_max:structural_steel"
+            }
+          },
+          "connectors": {
+            "connector.machine_max.axis": {
+              "locator": "door_lb_hinge",
+              "definition": "machine_max:fixed_down"
+            }
+          },
+          "hydrodynamics": {
+            "": {
+              "front_drag": [
+                0,
+                0
+              ],
+              "back_drag": [
+                0,
+                1
+              ],
+              "left_drag": [
+                0,
+                1
+              ],
+              "right_drag": [
+                0,
+                1
+              ],
+              "up_drag": [
+                0,
+                1
+              ],
+              "down_drag": [
+                0,
+                1
+              ]
+            }
+          }
+        }
+      }
+    },
+    "right_back": {
+      "model": "machine_max:santana.geo",
+      "textures": "machine_max:textures/part/santana/santana.png",
+      "tags": [
+        "machine_max:type/land",
+        "machine_max:category/structural",
+        "machine_max:door",
+        "machine_max:direction/right",
+        "machine_max:position/back",
+        "machine_max:series/santana"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "start_bone": "AllRightBackDoor",
+          "end_bones": [],
+          "durability": 30,
+          "mass": 21,
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "RightBackDoorCollision": {
+              "type": "box",
+              "material": "machine_max:structural_steel"
+            }
+          },
+          "connectors": {
+            "connector.machine_max.axis": {
+              "locator": "door_rb_hinge",
+              "definition": "machine_max:fixed_down"
+            }
+          },
+          "hydrodynamics": {
+            "": {
+              "front_drag": [
+                0,
+                0
+              ],
+              "back_drag": [
+                0,
+                1
+              ],
+              "left_drag": [
+                0,
+                1
+              ],
+              "right_drag": [
+                0,
+                1
+              ],
+              "up_drag": [
+                0,
+                1
+              ],
+              "down_drag": [
+                0,
+                1
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

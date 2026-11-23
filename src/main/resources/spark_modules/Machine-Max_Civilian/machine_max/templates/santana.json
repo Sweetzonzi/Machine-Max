@@ -1,0 +1,998 @@
+{
+  "connections": [
+    {
+      "partUuidS": "d64cab87-d864-4e5c-a7f0-b0b79ad3edea",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          -0.016694427,
+          1.2981892E-4,
+          -4.5108795E-4
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "bd9e623d-15ca-44dd-86dd-e68de05b5e02",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.hull_left_front_wheel",
+      "posRotA": {
+        "position": [
+          -1.1210356,
+          -0.30006564,
+          -2.002135
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "4f550c6a-a98d-4800-b92d-04a33e50c7b8",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          -0.016694427,
+          1.2981892E-4,
+          -4.5108795E-4
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "bd9e623d-15ca-44dd-86dd-e68de05b5e02",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.hull_left_back_wheel",
+      "posRotA": {
+        "position": [
+          -1.1210356,
+          -0.30006564,
+          2.07599
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "8ef11453-0f51-40c3-8c40-ba44f1bc06f7",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          0.016693115,
+          1.2981892E-4,
+          -4.5108795E-4
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "bd9e623d-15ca-44dd-86dd-e68de05b5e02",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.hull_right_back_wheel",
+      "posRotA": {
+        "position": [
+          1.1210356,
+          -0.30006564,
+          2.07599
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "f614cc5c-cbcd-44bc-bf20-a4bcc9d0bffc",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          0.016693115,
+          1.2981892E-4,
+          -4.5108795E-4
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "bd9e623d-15ca-44dd-86dd-e68de05b5e02",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.hull_right_front_wheel",
+      "posRotA": {
+        "position": [
+          1.1210356,
+          -0.30006564,
+          -2.002135
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "e112ca3d-89d8-4b30-8fd3-00b0828c3dda",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.axis",
+      "posRotS": {
+        "position": [
+          1.70299E-8,
+          -0.0024003983,
+          -0.5504124
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "bd9e623d-15ca-44dd-86dd-e68de05b5e02",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.trunk_door_axis",
+      "posRotA": {
+        "position": [
+          0.0,
+          0.72257125,
+          2.4766238
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "768a9803-c330-4901-85e7-fec5a12dbcbd",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.axis",
+      "posRotS": {
+        "position": [
+          0.0,
+          0.15834928,
+          0.9633472
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "bd9e623d-15ca-44dd-86dd-e68de05b5e02",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.hood_axis",
+      "posRotA": {
+        "position": [
+          0.0,
+          0.7063968,
+          -1.3970637
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "828a1f05-e5de-48fc-953d-ad18dc0f66e7",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.axis",
+      "posRotS": {
+        "position": [
+          0.0020167828,
+          -0.15314257,
+          -0.76796806
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "bd9e623d-15ca-44dd-86dd-e68de05b5e02",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_front_door_axis",
+      "posRotA": {
+        "position": [
+          -1.2211375,
+          0.53121126,
+          -1.24059
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "5000314e-776f-4585-a864-2eed40a95ed6",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.axis",
+      "posRotS": {
+        "position": [
+          -0.1020664,
+          -0.1293968,
+          -0.6808851
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "bd9e623d-15ca-44dd-86dd-e68de05b5e02",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_back_door_axis",
+      "posRotA": {
+        "position": [
+          -1.2658376,
+          0.5000318,
+          0.4776506
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "990cdb6e-7fc3-4320-9b64-c7145e32effc",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.axis",
+      "posRotS": {
+        "position": [
+          -0.0020167828,
+          -0.15314293,
+          -0.76796806
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "bd9e623d-15ca-44dd-86dd-e68de05b5e02",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_front_door_axis",
+      "posRotA": {
+        "position": [
+          1.2211375,
+          0.53121126,
+          -1.24059
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "c25165c1-7edb-4b02-b0e5-eba08ef5a5fe",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.axis",
+      "posRotS": {
+        "position": [
+          0.102066636,
+          -0.12939632,
+          -0.6808851
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "bd9e623d-15ca-44dd-86dd-e68de05b5e02",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_back_door_axis",
+      "posRotA": {
+        "position": [
+          1.2658376,
+          0.5000318,
+          0.4776506
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    }
+  ],
+  "meta": {
+    "author": "Dev",
+    "created_at": "2026-11-23T21:13:27.795916300+08:00"
+  },
+  "parts": {
+    "bd9e623d-15ca-44dd-86dd-e68de05b5e02": {
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "pos_rot_vel_vel": {
+            "position": [
+              -0.19888306,
+              -0.2999649,
+              -0.004348755
+            ],
+            "rotation": [
+              -2.9253247E-6,
+              0.7014389,
+              2.7304054E-6,
+              0.7127296
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.hull_right_back_wheel": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hood_axis": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.trunk_door_axis": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.right_back_door_axis": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_left_back_wheel": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_left_front_wheel": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.left_front_door_axis": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.left_back_door_axis": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.hull_right_front_wheel": {
+              "integrity_ratio": 1.0
+            },
+            "connector.machine_max.right_front_door_axis": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "subsystem_data": {
+            "subsystem.machine_max.left_front_wheel": {
+              "active": 1,
+              "destroyed": 0,
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.left_back_wheel": {
+              "active": 1,
+              "destroyed": 0,
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.trunk": {
+              "active": 1,
+              "destroyed": 0,
+              "Items": [],
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.left_back_seat": {
+              "active": 1,
+              "destroyed": 0,
+              "control_group_set": {
+                "base_group": {
+                  "name": "base"
+                }
+              },
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.engine": {
+              "active": 1,
+              "destroyed": 0,
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.car_controller": {
+              "active": 1,
+              "destroyed": 0,
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.copilot_seat": {
+              "active": 1,
+              "destroyed": 0,
+              "control_group_set": {
+                "base_group": {
+                  "view_targets": {
+                    "crew_any_aim": [
+                      "global"
+                    ]
+                  },
+                  "name": "controlGroup.machine_max.base",
+                  "main_weapon_targets": {
+                    "crew_any_secondary_fire": [
+                      "global"
+                    ],
+                    "crew_any_fire": [
+                      "global"
+                    ]
+                  },
+                  "secondary_weapon_targets": {
+                    "crew_any_secondary_fire": [
+                      "global"
+                    ]
+                  }
+                }
+              },
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.transmission": {
+              "active": 1,
+              "destroyed": 0,
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.glove_box": {
+              "active": 1,
+              "destroyed": 0,
+              "Items": [],
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.right_back_seat": {
+              "active": 1,
+              "destroyed": 0,
+              "control_group_set": {
+                "base_group": {
+                  "name": "base"
+                }
+              },
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.gearbox": {
+              "active": 1,
+              "destroyed": 0,
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.driver_seat": {
+              "active": 1,
+              "destroyed": 0,
+              "control_group_set": {
+                "base_group": {
+                  "name": "controlGroup.machine_max.base",
+                  "regular_targets": {
+                    "crew_driver_regular": [
+                      "global"
+                    ]
+                  },
+                  "move_targets": {
+                    "crew_driver_move": [
+                      "global"
+                    ]
+                  },
+                  "control_mode": "ground"
+                },
+                "groups": [
+                  {
+                    "view_targets": {
+                      "crew_any_aim": [
+                        "global"
+                      ]
+                    },
+                    "name": "controlGroup.machine_max.weapon_control",
+                    "priorities": {
+                      "crew_any_secondary_fire": 1,
+                      "crew_any_fire": 1,
+                      "crew_any_aim": 1
+                    },
+                    "main_weapon_targets": {
+                      "crew_any_secondary_fire": [
+                        "global"
+                      ],
+                      "crew_any_fire": [
+                        "global"
+                      ]
+                    },
+                    "secondary_weapon_targets": {
+                      "crew_any_secondary_fire": [
+                        "global"
+                      ]
+                    }
+                  }
+                ]
+              },
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.right_front_wheel": {
+              "active": 1,
+              "destroyed": 0,
+              "durability_ratio": 1.0
+            },
+            "subsystem.machine_max.right_back_wheel": {
+              "active": 1,
+              "destroyed": 0,
+              "durability_ratio": 1.0
+            }
+          },
+          "id": 51
+        }
+      },
+      "material_assembling_progress": 2147483647,
+      "variant": "default",
+      "registry_key": "machine_max:santana_hull",
+      "name": "machine_max.santana_hull",
+      "uuid": "bd9e623d-15ca-44dd-86dd-e68de05b5e02"
+    },
+    "d64cab87-d864-4e5c-a7f0-b0b79ad3edea": {
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "pos_rot_vel_vel": {
+            "position": [
+              -2.2179565,
+              -0.45023346,
+              1.0678864
+            ],
+            "rotation": [
+              -0.020358866,
+              0.7011469,
+              0.02004348,
+              0.71244425
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 53
+        }
+      },
+      "material_assembling_progress": 2147483647,
+      "variant": "left",
+      "registry_key": "machine_max:santana_wheel",
+      "name": "machine_max.santana_wheel",
+      "uuid": "d64cab87-d864-4e5c-a7f0-b0b79ad3edea"
+    },
+    "4f550c6a-a98d-4800-b92d-04a33e50c7b8": {
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "pos_rot_vel_vel": {
+            "position": [
+              1.8596497,
+              -0.45022583,
+              1.1329956
+            ],
+            "rotation": [
+              0.01677756,
+              0.70124686,
+              -0.016493365,
+              0.71253026
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 55
+        }
+      },
+      "material_assembling_progress": 2147483647,
+      "variant": "left",
+      "registry_key": "machine_max:santana_wheel",
+      "name": "machine_max.santana_wheel",
+      "uuid": "4f550c6a-a98d-4800-b92d-04a33e50c7b8"
+    },
+    "8ef11453-0f51-40c3-8c40-ba44f1bc06f7": {
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "pos_rot_vel_vel": {
+            "position": [
+              1.894928,
+              -0.45022202,
+              -1.0753937
+            ],
+            "rotation": [
+              -2.4747076E-5,
+              0.70139927,
+              3.259917E-5,
+              0.71276855
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 57
+        }
+      },
+      "material_assembling_progress": 2147483647,
+      "variant": "right",
+      "registry_key": "machine_max:santana_wheel",
+      "name": "machine_max.santana_wheel",
+      "uuid": "8ef11453-0f51-40c3-8c40-ba44f1bc06f7"
+    },
+    "f614cc5c-cbcd-44bc-bf20-a4bcc9d0bffc": {
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "pos_rot_vel_vel": {
+            "position": [
+              -2.1826782,
+              -0.45023346,
+              -1.1405029
+            ],
+            "rotation": [
+              -0.0034185688,
+              0.7014058,
+              0.0033524688,
+              0.712746
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 59
+        }
+      },
+      "material_assembling_progress": 2147483647,
+      "variant": "right",
+      "registry_key": "machine_max:santana_wheel",
+      "name": "machine_max.santana_wheel",
+      "uuid": "f614cc5c-cbcd-44bc-bf20-a4bcc9d0bffc"
+    },
+    "e112ca3d-89d8-4b30-8fd3-00b0828c3dda": {
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "pos_rot_vel_vel": {
+            "position": [
+              2.8277588,
+              0.42504883,
+              0.04397583
+            ],
+            "rotation": [
+              -1.3441663E-5,
+              0.7014389,
+              1.30933295E-5,
+              0.7127296
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.axis": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 61
+        }
+      },
+      "material_assembling_progress": 2147483647,
+      "variant": "default",
+      "registry_key": "machine_max:santana_trunk_door",
+      "name": "machine_max.santana_trunk_door",
+      "uuid": "e112ca3d-89d8-4b30-8fd3-00b0828c3dda"
+    },
+    "768a9803-c330-4901-85e7-fec5a12dbcbd": {
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "pos_rot_vel_vel": {
+            "position": [
+              -2.559021,
+              0.2480812,
+              -0.042037964
+            ],
+            "rotation": [
+              3.2387325E-6,
+              0.7014389,
+              -3.3211084E-6,
+              0.7127296
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.axis": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 65
+        }
+      },
+      "material_assembling_progress": 2147483647,
+      "variant": "default",
+      "registry_key": "machine_max:santana_hood",
+      "name": "machine_max.santana_hood",
+      "uuid": "768a9803-c330-4901-85e7-fec5a12dbcbd"
+    },
+    "828a1f05-e5de-48fc-953d-ad18dc0f66e7": {
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "pos_rot_vel_vel": {
+            "position": [
+              -0.6911926,
+              0.38439178,
+              1.219162
+            ],
+            "rotation": [
+              -5.708618E-6,
+              0.6976861,
+              5.451621E-6,
+              0.7164036
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.axis": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 67
+        }
+      },
+      "material_assembling_progress": 2147483647,
+      "variant": "left_front",
+      "registry_key": "machine_max:santana_door",
+      "name": "machine_max.santana_door",
+      "uuid": "828a1f05-e5de-48fc-953d-ad18dc0f66e7"
+    },
+    "5000314e-776f-4585-a864-2eed40a95ed6": {
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "pos_rot_vel_vel": {
+            "position": [
+              0.94155884,
+              0.32948303,
+              1.1828003
+            ],
+            "rotation": [
+              -5.5205123E-6,
+              0.69880575,
+              6.5793865E-6,
+              0.71531147
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.axis": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 69
+        }
+      },
+      "material_assembling_progress": 2147483647,
+      "variant": "left_back",
+      "registry_key": "machine_max:santana_door",
+      "name": "machine_max.santana_door",
+      "uuid": "5000314e-776f-4585-a864-2eed40a95ed6"
+    },
+    "990cdb6e-7fc3-4320-9b64-c7145e32effc": {
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "pos_rot_vel_vel": {
+            "position": [
+              -0.651947,
+              0.38439178,
+              -1.2349548
+            ],
+            "rotation": [
+              -5.737112E-6,
+              0.7014666,
+              5.2621754E-6,
+              0.71270233
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.axis": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 71
+        }
+      },
+      "material_assembling_progress": 2147483647,
+      "variant": "right_front",
+      "registry_key": "machine_max:santana_door",
+      "name": "machine_max.santana_door",
+      "uuid": "990cdb6e-7fc3-4320-9b64-c7145e32effc"
+    },
+    "c25165c1-7edb-4b02-b0e5-eba08ef5a5fe": {
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "pos_rot_vel_vel": {
+            "position": [
+              0.9780884,
+              0.32947922,
+              -1.1495209
+            ],
+            "rotation": [
+              -6.843855E-6,
+              0.7014655,
+              5.071312E-6,
+              0.7127034
+            ],
+            "linear_vel": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_vel": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "connector_data": {
+            "connector.machine_max.axis": {
+              "integrity_ratio": 1.0
+            }
+          },
+          "id": 73
+        }
+      },
+      "material_assembling_progress": 2147483647,
+      "variant": "right_back",
+      "registry_key": "machine_max:santana_door",
+      "name": "machine_max.santana_door",
+      "uuid": "c25165c1-7edb-4b02-b0e5-eba08ef5a5fe"
+    }
+  },
+  "part_order": [
+    "bd9e623d-15ca-44dd-86dd-e68de05b5e02",
+    "d64cab87-d864-4e5c-a7f0-b0b79ad3edea",
+    "4f550c6a-a98d-4800-b92d-04a33e50c7b8",
+    "8ef11453-0f51-40c3-8c40-ba44f1bc06f7",
+    "f614cc5c-cbcd-44bc-bf20-a4bcc9d0bffc",
+    "e112ca3d-89d8-4b30-8fd3-00b0828c3dda",
+    "768a9803-c330-4901-85e7-fec5a12dbcbd",
+    "828a1f05-e5de-48fc-953d-ad18dc0f66e7",
+    "5000314e-776f-4585-a864-2eed40a95ed6",
+    "990cdb6e-7fc3-4320-9b64-c7145e32effc",
+    "c25165c1-7edb-4b02-b0e5-eba08ef5a5fe"
+  ],
+  "pos": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "min": [
+    -3.6762197017669678,
+    -0.9424209594726562,
+    -1.6143215894699097
+  ],
+  "max": [
+    3.5924570560455322,
+    1.2025642395019531,
+    1.6070376634597778
+  ],
+  "name": "santana",
+  "uuid": "bd9e623d-15ca-44dd-86dd-e68de05b5e02"
+}

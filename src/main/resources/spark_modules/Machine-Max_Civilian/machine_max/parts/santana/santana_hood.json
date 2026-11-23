@@ -1,0 +1,70 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "machine_max:textures/icon/santana/santana_hood.png",
+  "vehicle_durability_rate": 0.03,
+  "vehicle_damage_rate": 0.1,
+  "vehicle_damage_rate_destroyed": 0,
+  "variants": {
+    "model": "machine_max:santana.geo",
+    "textures": "machine_max:textures/part/santana/santana.png",
+    "tags": [
+      "machine_max:type/land",
+      "machine_max:category/structural",
+      "machine_max:hood",
+      "machine_max:series/santana"
+    ],
+    "sub_parts": {
+      "sub_part.machine_max.main": {
+        "start_bone": "Hood",
+        "end_bones": [],
+        "durability": 30,
+        "mass": 16,
+        "projected_area": [
+          -1,
+          -1,
+          -1
+        ],
+        "hit_boxes": {
+          "HoodCollision": {
+            "type": "box",
+            "material": "machine_max:structural_steel"
+          }
+        },
+        "connectors": {
+          "connector.machine_max.axis": {
+            "locator": "hood_hinge",
+            "definition": "machine_max:fixed_down"
+          }
+        },
+        "hydrodynamics": {
+          "": {
+            "front_drag": [
+              0,
+              0
+            ],
+            "back_drag": [
+              0,
+              1
+            ],
+            "left_drag": [
+              0,
+              1
+            ],
+            "right_drag": [
+              0,
+              1
+            ],
+            "up_drag": [
+              0,
+              1
+            ],
+            "down_drag": [
+              0,
+              1
+            ]
+          }
+        }
+      }
+    }
+  }
+}

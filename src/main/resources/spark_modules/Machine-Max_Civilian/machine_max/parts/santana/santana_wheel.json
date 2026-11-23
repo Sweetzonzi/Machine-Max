@@ -1,0 +1,144 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "machine_max:textures/icon/santana/santana_wheel.png",
+  "vehicle_durability_rate": 0.02,
+  "vehicle_damage_rate": 0.05,
+  "vehicle_damage_rate_destroyed": 0,
+  "max_stack_size": 4,
+  "variants": {
+    "left": {
+      "model": "machine_max:santana.geo",
+      "textures": "machine_max:textures/part/santana/santana.png",
+      "tags": [
+        "machine_max:type/land",
+        "machine_max:category/mobility",
+        "machine_max:wheel",
+        "machine_max:direction/left",
+        "machine_max:series/santana"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "start_bone": "LeftFrontWheel",
+          "end_bones": [],
+          "durability": 30,
+          "mass": 18,
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "block_collision": "ground",
+          "collision_height": 2.5,
+          "climb_assist": true,
+          "hit_boxes": {
+            "LFWCollision": {
+              "type": "wheel",
+              "material": "machine_max:normal_tire"
+            }
+          },
+          "connectors": {
+            "connector.machine_max.chassis_connection": {
+              "locator": "wheel_left_axle",
+              "definition": "machine_max:fixed_right"
+            }
+          },
+          "hydrodynamics": {
+            "": {
+              "front_drag": [
+                0,
+                0
+              ],
+              "back_drag": [
+                0,
+                1
+              ],
+              "left_drag": [
+                0,
+                1
+              ],
+              "right_drag": [
+                0,
+                1
+              ],
+              "up_drag": [
+                0,
+                1
+              ],
+              "down_drag": [
+                0,
+                1
+              ]
+            }
+          }
+        }
+      }
+    },
+    "right": {
+      "model": "machine_max:santana.geo",
+      "textures": "machine_max:textures/part/santana/santana.png",
+      "tags": [
+        "machine_max:type/land",
+        "machine_max:category/mobility",
+        "machine_max:wheel",
+        "machine_max:direction/right",
+        "machine_max:series/santana"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "start_bone": "RightFrontWheel",
+          "end_bones": [],
+          "durability": 30,
+          "mass": 18,
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "block_collision": "ground",
+          "collision_height": 2.5,
+          "climb_assist": true,
+          "hit_boxes": {
+            "RFWCollision": {
+              "type": "wheel",
+              "material": "machine_max:normal_tire"
+            }
+          },
+          "connectors": {
+            "connector.machine_max.chassis_connection": {
+              "locator": "wheel_right_axle",
+              "definition": "machine_max:fixed_left"
+            }
+          },
+          "hydrodynamics": {
+            "": {
+              "front_drag": [
+                0,
+                0
+              ],
+              "back_drag": [
+                0,
+                1
+              ],
+              "left_drag": [
+                0,
+                1
+              ],
+              "right_drag": [
+                0,
+                1
+              ],
+              "up_drag": [
+                0,
+                1
+              ],
+              "down_drag": [
+                0,
+                1
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "template": "machine_max:santana",
+  "tooltip": "machine_max:tooltips/santana.html",
+  "icon": "machine_max:textures/icon/santana/santana.png",
+  "scale": 35.0
+}

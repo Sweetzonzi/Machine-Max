@@ -1,0 +1,510 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "machine_max:textures/icon/santana/santana_hull.png",
+  "vehicle_durability_rate": 0.9,
+  "variants": {
+    "model": "machine_max:santana.geo",
+    "textures": "machine_max:textures/part/santana/santana.png",
+    "animations": "machine_max:santana",
+    "tags": [
+      "machine_max:type/land",
+      "machine_max:category/structural",
+      "machine_max:hull",
+      "machine_max:storage",
+      "machine_max:series/santana"
+    ],
+    "sub_parts": {
+      "sub_part.machine_max.main": {
+        "start_bone": "AllHull",
+        "end_bones": [],
+        "durability": 150,
+        "mass": 908,
+        "projected_area": [
+          -1,
+          -1,
+          -1
+        ],
+        "block_collision": "ground",
+        "collision_height": 2.5,
+        "hydro_priority": 10,
+        "hit_boxes": {
+          "HullHitBox": {
+            "type": "box",
+            "material": "machine_max:structural_steel",
+            "thickness": 3
+          },
+          "LeftFrontSeatHitBox": {
+            "type": "box",
+            "material": "machine_max:pvc"
+          },
+          "RightFrontSeatHitBox": {
+            "type": "box",
+            "material": "machine_max:pvc"
+          },
+          "BackSeatHitBox": {
+            "type": "box",
+            "material": "machine_max:pvc"
+          },
+          "EngineHitBox": {
+            "id": "engine",
+            "type": "box",
+            "material": "machine_max:internal_machinery",
+            "thickness": 10,
+            "subsystem": "subsystem.machine_max.engine"
+          }
+        },
+        "interact_boxes": {
+          "interact.machine_max.glove_box": {
+            "bone": "GloveboxStorageInteract",
+            "interact_mode": "accurate",
+            "signal_targets": {
+              "interact": [
+                "subsystem.machine_max.glove_box"
+              ]
+            }
+          },
+          "interact.machine_max.trunk": {
+            "bone": "TrunkStorageInteract",
+            "interact_mode": "accurate",
+            "signal_targets": {
+              "interact": [
+                "subsystem.machine_max.trunk"
+              ]
+            }
+          },
+          "interact.machine_max.left_front_seat": {
+            "bone": "LeftFrontSeatInteract",
+            "interact_mode": "accurate",
+            "signal_targets": {
+              "interact": [
+                "subsystem.machine_max.driver_seat"
+              ]
+            }
+          },
+          "interact.machine_max.right_front_seat": {
+            "bone": "RightFrontSeatInteract",
+            "interact_mode": "accurate",
+            "signal_targets": {
+              "interact": [
+                "subsystem.machine_max.copilot_seat"
+              ]
+            }
+          },
+          "interact.machine_max.left_back_seat": {
+            "bone": "LeftBackSeatInteract",
+            "interact_mode": "accurate",
+            "signal_targets": {
+              "interact": [
+                "subsystem.machine_max.left_back_seat"
+              ]
+            }
+          },
+          "interact.machine_max.right_back_seat": {
+            "bone": "RightBackSeatInteract",
+            "interact_mode": "accurate",
+            "signal_targets": {
+              "interact": [
+                "subsystem.machine_max.right_back_seat"
+              ]
+            }
+          },
+          "interact.machine_max.left_front_door": {
+            "bone": "LeftFrontDoorInteract",
+            "interact_mode": "fast",
+            "signal_targets": {
+              "interact_left_front_door": [
+                "local"
+              ],
+              "interact": [
+                "subsystem.machine_max.driver_seat"
+              ]
+            }
+          },
+          "interact.machine_max.right_front_door": {
+            "bone": "RightFrontDoorInteract",
+            "interact_mode": "fast",
+            "signal_targets": {
+              "interact_right_front_door": [
+                "local"
+              ],
+              "interact": [
+                "subsystem.machine_max.copilot_seat"
+              ]
+            }
+          },
+          "interact.machine_max.left_back_door": {
+            "bone": "LeftBackDoorInteract",
+            "interact_mode": "fast",
+            "signal_targets": {
+              "interact_left_back_door": [
+                "local"
+              ],
+              "interact": [
+                "subsystem.machine_max.left_back_seat"
+              ]
+            }
+          },
+          "interact.machine_max.right_back_door": {
+            "bone": "RightBackDoorInteract",
+            "interact_mode": "fast",
+            "signal_targets": {
+              "interact_right_back_door": [
+                "local"
+              ],
+              "interact": [
+                "subsystem.machine_max.right_back_seat"
+              ]
+            }
+          }
+        },
+        "connectors": {
+          "connector.machine_max.hood_axis": {
+            "locator": "hull_hinge_hood",
+            "definition": "machine_max:hinge_x",
+            "overwrite": {
+              "required_tags": [
+                "machine_max:hood",
+                "machine_max:series/santana"
+              ],
+              "joint_attrs": {
+                "xr": {
+                  "lower_limit": 0,
+                  "upper_limit": 75,
+                  "equilibrium": 15,
+                  "stiffness": 14,
+                  "damping": 1.73632
+                }
+              }
+            }
+          },
+          "connector.machine_max.trunk_door_axis": {
+            "locator": "hull_hinge_trunk",
+            "definition": "machine_max:hinge_x",
+            "overwrite": {
+              "required_tags": [
+                "machine_max:trunk",
+                "machine_max:series/santana"
+              ],
+              "joint_attrs": {
+                "xr": {
+                  "lower_limit": -75,
+                  "upper_limit": 0,
+                  "equilibrium": -15,
+                  "stiffness": 9,
+                  "damping": 1.73632
+                }
+              }
+            }
+          },
+          "connector.machine_max.hull_left_front_wheel": {
+            "locator": "hull_axle_wheel_lf",
+            "definition": "machine_max:light_left_steering_wheel",
+            "overwrite": {
+              "required_tags": [
+                "machine_max:direction/left",
+                "machine_max:wheel"
+              ],
+              "direction": "xn",
+              "joint_attrs": {
+                "y": {
+                  "lower_limit": -0.1,
+                  "upper_limit": 0.15,
+                  "stiffness": 15000,
+                  "damping": 800
+                },
+                "yr": {
+                  "lower_limit": -45,
+                  "upper_limit": 45,
+                  "stiffness": 34.90916,
+                  "damping": 0.26197
+                },
+                "xr": {
+                  "lower_limit": 1,
+                  "upper_limit": -1
+                }
+              }
+            }
+          },
+          "connector.machine_max.left_front_door_axis": {
+            "locator": "hull_hinge_door_lf",
+            "definition": "machine_max:hinge_y",
+            "overwrite": {
+              "required_tags": [
+                "machine_max:door",
+                "machine_max:direction/left",
+                "machine_max:position/front",
+                "machine_max:series/santana"
+              ],
+              "joint_attrs": {
+                "yr": {
+                  "lower_limit": -75,
+                  "upper_limit": 0,
+                  "damping": 1.73632
+                }
+              }
+            }
+          },
+          "connector.machine_max.hull_right_front_wheel": {
+            "locator": "hull_axle_wheel_rf",
+            "definition": "machine_max:light_right_steering_wheel",
+            "overwrite": {
+              "required_tags": [
+                "machine_max:direction/right",
+                "machine_max:wheel"
+              ],
+              "direction": "xp",
+              "joint_attrs": {
+                "y": {
+                  "lower_limit": -0.1,
+                  "upper_limit": 0.15,
+                  "stiffness": 15000,
+                  "damping": 800
+                },
+                "yr": {
+                  "lower_limit": -45,
+                  "upper_limit": 45,
+                  "stiffness": 34.90916,
+                  "damping": 0.26197
+                },
+                "xr": {
+                  "lower_limit": 1,
+                  "upper_limit": -1
+                }
+              }
+            }
+          },
+          "connector.machine_max.right_front_door_axis": {
+            "locator": "hull_hinge_door_rf",
+            "definition": "machine_max:hinge_y",
+            "overwrite": {
+              "required_tags": [
+                "machine_max:door",
+                "machine_max:direction/right",
+                "machine_max:position/front",
+                "machine_max:series/santana"
+              ],
+              "joint_attrs": {
+                "yr": {
+                  "lower_limit": 0,
+                  "upper_limit": 75,
+                  "damping": 1.73632
+                }
+              }
+            }
+          },
+          "connector.machine_max.hull_left_back_wheel": {
+            "locator": "hull_axle_wheel_lb",
+            "definition": "machine_max:light_left_wheel",
+            "overwrite": {
+              "required_tags": [
+                "machine_max:direction/left",
+                "machine_max:wheel"
+              ],
+              "direction": "xn",
+              "joint_attrs": {
+                "y": {
+                  "lower_limit": -0.1,
+                  "upper_limit": 0.15,
+                  "stiffness": 15000,
+                  "damping": 800
+                },
+                "xr": {
+                  "lower_limit": 1,
+                  "upper_limit": -1
+                }
+              }
+            }
+          },
+          "connector.machine_max.left_back_door_axis": {
+            "locator": "hull_hinge_door_lb",
+            "definition": "machine_max:hinge_y",
+            "overwrite": {
+              "required_tags": [
+                "machine_max:door",
+                "machine_max:direction/left",
+                "machine_max:position/back",
+                "machine_max:series/santana"
+              ],
+              "joint_attrs": {
+                "yr": {
+                  "lower_limit": -75,
+                  "upper_limit": 0,
+                  "damping": 1.73632
+                }
+              }
+            }
+          },
+          "connector.machine_max.hull_right_back_wheel": {
+            "locator": "hull_axle_wheel_rb",
+            "definition": "machine_max:light_right_wheel",
+            "overwrite": {
+              "required_tags": [
+                "machine_max:direction/right",
+                "machine_max:wheel"
+              ],
+              "direction": "xp",
+              "joint_attrs": {
+                "y": {
+                  "lower_limit": -0.1,
+                  "upper_limit": 0.15,
+                  "stiffness": 15000,
+                  "damping": 800
+                },
+                "xr": {
+                  "lower_limit": 1,
+                  "upper_limit": -1
+                }
+              }
+            }
+          },
+          "connector.machine_max.right_back_door_axis": {
+            "locator": "hull_hinge_door_rb",
+            "definition": "machine_max:hinge_y",
+            "overwrite": {
+              "required_tags": [
+                "machine_max:door",
+                "machine_max:direction/right",
+                "machine_max:position/back",
+                "machine_max:series/santana"
+              ],
+              "joint_attrs": {
+                "yr": {
+                  "lower_limit": 0,
+                  "upper_limit": 75,
+                  "damping": 1.73632
+                }
+              }
+            }
+          }
+        },
+        "subsystems": {
+          "subsystem.machine_max.car_controller": {
+            "type": "machine_max:car_controller",
+            "definition": "machine_max:santana_car_controller",
+            "control_outputs": {
+              "car_control": [
+                "subsystem.machine_max.engine",
+                "subsystem.machine_max.gearbox",
+                "subsystem.machine_max.left_front_wheel",
+                "subsystem.machine_max.right_front_wheel",
+                "subsystem.machine_max.left_back_wheel",
+                "subsystem.machine_max.right_back_wheel"
+              ]
+            }
+          },
+          "subsystem.machine_max.engine": {
+            "type": "machine_max:engine",
+            "definition": "machine_max:bsa_engine",
+            "power_output": "subsystem.machine_max.gearbox"
+          },
+          "subsystem.machine_max.gearbox": {
+            "type": "machine_max:gearbox",
+            "definition": "machine_max:santana_gearbox",
+            "power_output": "subsystem.machine_max.transmission",
+            "clutch_outputs": {
+              "clutch_pedal": ["local"]
+            }
+          },
+          "subsystem.machine_max.transmission": {
+            "type": "machine_max:transmission",
+            "definition": "machine_max:open_differential",
+            "power_outputs": {
+              "subsystem.machine_max.left_front_wheel": 1,
+              "subsystem.machine_max.right_front_wheel": 1
+            }
+          },
+          "subsystem.machine_max.glove_box": {
+            "type": "machine_max:item_storage",
+            "definition": "machine_max:glove_box"
+          },
+          "subsystem.machine_max.trunk": {
+            "type": "machine_max:item_storage",
+            "definition": "machine_max:default_trunk"
+          },
+          "subsystem.machine_max.driver_seat": {
+            "type": "machine_max:seat",
+            "definition": "machine_max:default_seat",
+            "locator": "left_front_seat",
+            "control_group_preset": "machine_max:civilian_driver",
+            "loader_discovery_inputs": [],
+            "interact_inputs": [],
+            "dismount_locators": []
+          },
+          "subsystem.machine_max.left_front_wheel": {
+            "type": "machine_max:wheel_driver",
+            "definition": "machine_max:santana_front_wheel_driver",
+            "connector": "connector.machine_max.hull_left_front_wheel"
+          },
+          "subsystem.machine_max.copilot_seat": {
+            "type": "machine_max:seat",
+            "definition": "machine_max:default_passenger_seat",
+            "locator": "right_front_seat",
+            "control_group_preset": "machine_max:civilian_copilot",
+            "loader_discovery_inputs": [],
+            "interact_inputs": [],
+            "dismount_locators": []
+          },
+          "subsystem.machine_max.right_front_wheel": {
+            "type": "machine_max:wheel_driver",
+            "definition": "machine_max:santana_front_wheel_driver",
+            "connector": "connector.machine_max.hull_right_front_wheel"
+          },
+          "subsystem.machine_max.left_back_seat": {
+            "type": "machine_max:seat",
+            "definition": "machine_max:default_passenger_seat",
+            "locator": "left_back_seat",
+            "loader_discovery_inputs": [],
+            "interact_inputs": [],
+            "dismount_locators": []
+          },
+          "subsystem.machine_max.left_back_wheel": {
+            "type": "machine_max:wheel_driver",
+            "definition": "machine_max:santana_back_wheel_driver",
+            "connector": "connector.machine_max.hull_left_back_wheel"
+          },
+          "subsystem.machine_max.right_back_seat": {
+            "type": "machine_max:seat",
+            "definition": "machine_max:default_passenger_seat",
+            "locator": "right_back_seat",
+            "loader_discovery_inputs": [],
+            "interact_inputs": [],
+            "dismount_locators": []
+          },
+          "subsystem.machine_max.right_back_wheel": {
+            "type": "machine_max:wheel_driver",
+            "definition": "machine_max:santana_back_wheel_driver",
+            "connector": "connector.machine_max.hull_right_back_wheel"
+          }
+        },
+        "hydrodynamics": {
+          "": {
+            "front_drag": [
+              0,
+              0.34219
+            ],
+            "back_drag": [
+              0,
+              1
+            ],
+            "left_drag": [
+              0,
+              1
+            ],
+            "right_drag": [
+              0,
+              1
+            ],
+            "up_drag": [
+              0,
+              1
+            ],
+            "down_drag": [
+              0,
+              1
+            ]
+          }
+        }
+      }
+    }
+  }
+}

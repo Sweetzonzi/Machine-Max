@@ -1,0 +1,242 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"parallel0": {
+			"loop": true,
+			"bones": {
+				"SteeringWheelSpin": {
+					"rotation": [
+						0,
+						0,
+						"-(local.connector_rotation('connector.machine_max.hull_left_front_wheel', 1) + local.connector_rotation('connector.machine_max.hull_right_front_wheel', 1))*2"
+					]
+				},
+				"ThrottlePedal": {
+					"rotation": ["15 * math.clamp(100 * math.abs(local.get('throttle')), 0, 1)", 0, 0]
+				},
+				"BrakePedal": {
+					"rotation": ["12 * math.clamp(local.get('brake'), 0, 1)", 0, 0]
+				},
+				"ClutchPedal": {
+					"rotation": ["18 * math.clamp(local.get('clutch_pedal'), 0, 1)", 0, 0]
+				}
+			}
+		},
+		"animation.santana.hood_open": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {
+				"HoodHinge": {
+					"rotation": [-75, 0, 0]
+				}
+			}
+		},
+		"animation.santana.hood_close": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {
+				"HoodHinge": {
+					"rotation": [0, 0, 0]
+				}
+			}
+		},
+		"animation.santana.trunk_open": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {
+				"TrunkHinge": {
+					"rotation": [75, 0, 0]
+				}
+			}
+		},
+		"animation.santana.trunk_close": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {
+				"TrunkHinge": {
+					"rotation": [0, 0, 0]
+				}
+			}
+		},
+		"animation.santana.left_front_door_open": {
+			"loop": "hold_on_last_frame",
+			"animation_length": 1,
+			"bones": {
+				"LeftFrontDoorHinge": {
+					"rotation": [0, -75, 0]
+				}
+			}
+		},
+		"animation.santana.left_front_door_close": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {
+				"LeftFrontDoorHinge": {
+					"rotation": [0, 0, 0]
+				}
+			}
+		},
+		"animation.santana.right_front_door_open": {
+			"loop": "hold_on_last_frame",
+			"animation_length": 1,
+			"bones": {
+				"RightFrontDoorHinge": {
+					"rotation": [0, 75, 0]
+				}
+			}
+		},
+		"animation.santana.right_front_door_close": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {
+				"RightFrontDoorHinge": {
+					"rotation": [0, 0, 0]
+				}
+			}
+		},
+		"animation.santana.left_back_door_open": {
+			"loop": "hold_on_last_frame",
+			"animation_length": 1,
+			"bones": {
+				"LeftBackDoorHinge": {
+					"rotation": [0, -75, 0]
+				}
+			}
+		},
+		"animation.santana.left_back_door_close": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {
+				"LeftBackDoorHinge": {
+					"rotation": [0, 0, 0]
+				}
+			}
+		},
+		"animation.santana.right_back_door_open": {
+			"loop": "hold_on_last_frame",
+			"animation_length": 1,
+			"bones": {
+				"RightBackDoorHinge": {
+					"rotation": [0, 75, 0]
+				}
+			}
+		},
+		"animation.santana.right_back_door_close": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {
+				"RightBackDoorHinge": {
+					"rotation": [0, 0, 0]
+				}
+			}
+		},
+		"hood_open": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {
+				"HoodHinge": {
+					"rotation": [-75, 0, 0]
+				}
+			}
+		},
+		"hood_close": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {
+				"HoodHinge": {
+					"rotation": [0, 0, 0]
+				}
+			}
+		},
+		"trunk_open": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {
+				"TrunkHinge": {
+					"rotation": [75, 0, 0]
+				}
+			}
+		},
+		"trunk_close": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {
+				"TrunkHinge": {
+					"rotation": [0, 0, 0]
+				}
+			}
+		},
+		"left_front_door_open": {
+			"loop": "hold_on_last_frame",
+			"animation_length": 1,
+			"bones": {
+				"LeftFrontDoorHinge": {
+					"rotation": [0, -75, 0]
+				}
+			}
+		},
+		"left_front_door_close": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {
+				"LeftFrontDoorHinge": {
+					"rotation": [0, 0, 0]
+				}
+			}
+		},
+		"right_front_door_open": {
+			"loop": "hold_on_last_frame",
+			"animation_length": 1,
+			"bones": {
+				"RightFrontDoorHinge": {
+					"rotation": [0, 75, 0]
+				}
+			}
+		},
+		"right_front_door_close": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {
+				"RightFrontDoorHinge": {
+					"rotation": [0, 0, 0]
+				}
+			}
+		},
+		"left_back_door_open": {
+			"loop": "hold_on_last_frame",
+			"animation_length": 1,
+			"bones": {
+				"LeftBackDoorHinge": {
+					"rotation": [0, -75, 0]
+				}
+			}
+		},
+		"left_back_door_close": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {
+				"LeftBackDoorHinge": {
+					"rotation": [0, 0, 0]
+				}
+			}
+		},
+		"right_back_door_open": {
+			"loop": "hold_on_last_frame",
+			"animation_length": 1,
+			"bones": {
+				"RightBackDoorHinge": {
+					"rotation": [0, 75, 0]
+				}
+			}
+		},
+		"right_back_door_close": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {
+				"RightBackDoorHinge": {
+					"rotation": [0, 0, 0]
+				}
+			}
+		}
+	}
+}

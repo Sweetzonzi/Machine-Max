@@ -1,0 +1,38 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:engine",
+  "basic_durability": 60,
+  "max_power": 70000,
+  "max_torque": 145,
+  "idle_rpm": 850,
+  "idle_rpm_torque_ratio": 0.3,
+  "max_torque_rpm": 3000,
+  "red_line_rpm": 6000,
+  "red_line_torque_ratio": 0.845281,
+  "inertia": 12,
+  "damping_factors": [0.2, 0.001, 0.0000002],
+  "sounds": {
+    "fmod": {
+      "bank": "machine_max:basic_vehicle_sounds",
+      "drive": "event:/Default_Vehicles/Engine/Cars/car_drive_4c",
+      "start": "event:/Default_Vehicles/Engine/Cars/car_start_4c",
+      "stop": "event:/Default_Vehicles/Engine/Cars/car_stop_4c"
+    },
+    "on_activate": {
+      "sound_id": "machine_max:subsystem.engine.i4_start",
+      "range": 64
+    },
+    "on_deactivate": {
+      "sound_id": "machine_max:subsystem.engine.i4_stop",
+      "range": 64
+    },
+    "working": {
+      "800.0": { "sound_id": "machine_max:subsystem.engine.i4_800", "range": 64 },
+      "2000.0": { "sound_id": "machine_max:subsystem.engine.i4_2000", "range": 64 },
+      "3000.0": { "sound_id": "machine_max:subsystem.engine.i4_3000", "range": 64 },
+      "4000.0": { "sound_id": "machine_max:subsystem.engine.i4_4000", "range": 64 },
+      "5000.0": { "sound_id": "machine_max:subsystem.engine.i4_5000", "range": 64 },
+      "6000.0": { "sound_id": "machine_max:subsystem.engine.i4_6000", "range": 64 }
+    }
+  }
+}
