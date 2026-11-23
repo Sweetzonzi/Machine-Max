@@ -5,7 +5,7 @@
 ## 概览
 
 基于 NeoForge 1.21.1 的 Minecraft 载具模组。Kotlin + Java 混合，Gradle 8.9（Groovy DSL），JDK 21。
-采用数据驱动的部件化载具组装、实时物理模拟（Bullet 物理引擎，通过 Spark-Core 集成）、22 种已开放子系统类型、内容包扩展机制。
+采用数据驱动的部件化载具组装、实时物理模拟（Bullet 物理引擎，通过 Spark-Core 集成）、23 种已开放子系统类型、内容包扩展机制。
 
 ## 依赖项目
 
@@ -31,9 +31,9 @@ io.github.sweetzonzi.machine_max/
 │   │   │   ├── data/                # VehicleData, PartData, SubPartData 序列化
 │   │   │   ├── event/               # ConnectorAttachEvent, VehicleSpiltEvent ...
 │   │   │   └── interact/            # HitBox, InteractBox, InteractBoxes
-│   │   ├── subsystem/               # 22 种已开放子系统实现 — 见 subsystem/AGENTS.md
+│   │   ├── subsystem/               # 23 种已开放子系统实现 — 见 subsystem/AGENTS.md
 │   │   │   └── attr/                # SubsystemKinds（类型登记表）、SubsystemCodecs（分派）、WorkingState
-│   │   │       ├── dynamic_attr/    # 运行时动态属性类（22 个已开放类型各一份，另有 3 个开发中与 1 个占位）
+│   │   │       ├── dynamic_attr/    # 运行时动态属性类（23 个已开放类型各一份，另有 2 个开发中与 1 个占位）
 │   │   │       └── static_attr/     # JSON 驱动静态属性类（与动态属性一一配对）
 │   │   ├── projectile/              # 数据驱动投射物系统（SoA 数组）— 见 projectile/AGENTS.md
 │   │   ├── signal/                  # 信号系统：Signal, SignalChannel, ISignalBus ... — 见 signal/AGENTS.md
@@ -291,7 +291,7 @@ revision / version / bytes / sha256，`SKILL.md` 的“版本”与“全部 N �
 | 音效事件引用 | 所有 `sound_id` 按 `<命名空间>:<事件名>` 在内容包的 `sounds/sounds.json` 与 `assets/<命名空间>/sounds.json` 的键里找；引用到没注册的事件时客户端解析不到音频缓冲，那一处静默无声、不报错也不刷日志。只核对内容命名空间里的事件（`minecraft:` 与外部 mod 的事件离线无法核对，跳过）；基础名没注册、只有 `<事件名>_interior` 有录音是合法配置——车内换成该变体、车外静音，弹壳音就是这么配的 |
 | 座位控制组预设 | 任何 JSON 里出现的 `control_group_preset`（只由座位安装块的 `SeatSubsystemAttr` 读取）按 `<namespace>:<control_groups/ 下的文件名>` 在全部包合并后的索引里找；拼错时 `SeatSubsystem` 构造器打一条 WARN 就按空控制组继续，乘员按什么键都没反应，控制面板里也列不出组 |
 | 连接点信号表 | `signal_targets` 的目标若是本变体内的子系统，按该类型的接受频道字段（座位的 `interact_inputs`、引擎与变速箱的 `control_inputs`、武器控制器的 `aim_inputs` / `fire_inputs` 等）核对到达频道，不在列表里时 `SignalPort` 转发会静默丢弃；`signal_translations` 的每个目标频道必须在同一张 `signal_targets` 里；内部连接点（`"internal": true`）两端同属一个 Part，不得配置这两张表——同件直连写子系统名即可 |
-| 交互区目标 | 交互区的 `signal_targets` 必须落在本变体内的子系统或连接点上（跨零件写连接点名）。交互区只发不收：点击直接调目标子系统的 `onInteract`，目标写成保留地址、另一个交互区或不存在的名字时解析不出终端，交互区会静默地完全不激活——提示不亮、射线也选不中 |
+| 交互区目标 | 交互区的 `signal_targets` 必须落在本变体内的子系统或连接点上（跨零件写连接点名），或写动画事件保留地址 `local` / `global`。交互区只发不收：点击先投动画事件（`local` 给所属部件、`global` 交给装配体广播给全载具部件），再按声明序直接调目标子系统的 `onInteract`；目标写成另一个交互区或不存在的名字时解析不出终端；既没有动画事件目标也没有可交互子系统时，交互区会静默地完全不激活——提示不亮、射线也选不中 |
 | 履带临时配方 | `recipe/fittings/*.json` 的 `result.components["machine_max:fitting_type"]` 必须指向 `type` 为 `track` 的 `fittings/<名>.json`，且每个第一方履带型号恰好有一条配方；型号写错时配方照常加载，游戏里只表现为物品铺不上、模型回落默认型号 |
 | 名字键的构形与译文 | 子零件 / 子系统 / 连接点 / 交互区 / 控制组五类名字必须是 `<类别>.<命名空间>.<名字>` 三段（名字段不含点），且在该命名空间的合并语言表里有 `zh_cn` 与 `en_us` 条目。名字直接交给 `Component.translatable`，缺一条就原样显示 `connector.machine_max.axis`（装配 HUD 的连接点提示、载具信息面板、交互提示都吃这些键）。语言表按命名空间合并，所以 `machine_max` 命名空间的名字写在 builtin 那一份才保证别的包也查得到 |
 | 名字引用的可达性 | 名字除了是键位，还会被当字符串引用：变体里的 `condition` MoLang 与 `subsystem` / `connector` / `signal_targets` / `control_outputs`，动画的 `local.has_connector` / `connector_offset` / `subsystem_destroyed` 等查询，模板的 `advConnectorName` / `simplePointConnectorName`。解析不到时条件恒假、动画查询恒为 0、装配体少一组约束，全都没有日志。作用域：变体内按本变体，动画按引用它的变体并集，模板按全部包并集；音效 id（`sounds/*.json` 的键也形如 `subsystem.gearbox.up.light`）不算名字 |

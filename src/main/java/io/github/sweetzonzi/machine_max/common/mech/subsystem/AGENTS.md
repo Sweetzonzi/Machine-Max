@@ -1,6 +1,6 @@
 # subsystem/ — 子系统实现
 
-**范围**: 22 种已开放子系统类型（另有 3 个开发中未登记类型、1 个未登记占位）、属性体系、基类层级。
+**范围**: 23 种已开放子系统类型（另有 2 个开发中未登记类型、1 个未登记占位）、属性体系、基类层级。
 
 ## 结构
 
@@ -17,7 +17,7 @@ subsystem/
 │   ├── IAmmoTransporter.java           # 弹药运输者：本段时长、执行资源、推进量
 │   └── ITorqueProvider.java            # 扭矩提供接口
 ├── attr/
-│   ├── SubsystemKinds.java             # 类型登记表：22 条已开放登记、下游登记入口、封表
+│   ├── SubsystemKinds.java             # 类型登记表：23 条已开放登记、下游登记入口、封表
 │   ├── SubsystemCodecs.java            # 安装属性与静态属性的分派 Codec
 │   ├── WorkingState.java               # 工作状态枚举
 │   ├── static_attr/                    # 型号 JSON 驱动静态属性（每个已登记类型一份）
@@ -85,8 +85,8 @@ subsystem/
 
 ## 约定
 
-- **类型登记在模组初始化期，内容包装载开始时封表**：一条 `SubsystemKinds.Kind` 同时给出该类型的安装属性 Codec 与静态属性 Codec，两侧配对由登记项本身保证。内建 22 条随 `SubsystemKinds` 类初始化完成；下游在自己的模组初始化阶段调用 `SubsystemKinds.register(id, new SubsystemKinds.Kind(安装Codec, 静态Codec))`。`SubsystemModule.onStart` 首次执行时封表，此后的登记抛异常。
-- **开发中的类型不登记**：`joint_driver`、`scriptable`、`battery` 的字段契约仍在定稿（属性类标 `@ApiStatus.Experimental`），`SubsystemKinds` 里对应的 `register` 被注释掉，解码按「未知类型」拒绝；schema 也不提供这三个类型。契约定稿后取消注释即可，两侧 Codec 与登记结构不用改。
+- **类型登记在模组初始化期，内容包装载开始时封表**：一条 `SubsystemKinds.Kind` 同时给出该类型的安装属性 Codec 与静态属性 Codec，两侧配对由登记项本身保证。内建 23 条随 `SubsystemKinds` 类初始化完成；下游在自己的模组初始化阶段调用 `SubsystemKinds.register(id, new SubsystemKinds.Kind(安装Codec, 静态Codec))`。`SubsystemModule.onStart` 首次执行时封表，此后的登记抛异常。
+- **开发中的类型不登记**：`scriptable`、`battery` 的字段契约仍在定稿（属性类标 `@ApiStatus.Experimental`），`SubsystemKinds` 里对应的 `register` 被注释掉，解码按「未知类型」拒绝；schema 也不提供这两个类型。契约定稿后取消注释即可，两侧 Codec 与登记结构不用改。
 - **类型身份由登记项派生**：`getType()` 是基类的 final 方法，按 `codec()` 的实例身份反查登记 ID；具体属性类只声明自己的 `CODEC` 单例与 `createSubsystem` 工厂，不声明类型常量、也不覆写 `getType`。型号绑定比较两侧派生 ID 的值，发生在安装属性的解码构造器里（`getStaticAttr`）。
 - **继承链**：`AbstractSubsystem` → `AbstractControllableSubsystem` → 具体类型。
 - **信号 I/O**：全部实现 `ISignalReceiver`/`ISignalSender`。通道为 `ConcurrentMap<String, SignalChannel>`；寻址名由 `getSignalAddress()` 提供（子系统名），保留目标名 `"local"` = Part、`"global"` = 装配体。默认输出目标（`*_outputs`）应写 `["local","global"]` 或 `["global"]`。

@@ -94,7 +94,7 @@ ISignalBus（local = AbstractPart，global = SubsystemController）
 | `diff_lock_control` | 座位 → 变速箱 | 差速锁 |
 | `ammo_switch` | 座位 → 武器控制器 | 弹种切换指令（一次性按下：`RegularInputSignal` 的 `NEXT_AMMO_TYPE`／`PREV_AMMO_TYPE`，控制器消费一次后把槽位清空） |
 
-玩家交互不占频道：`InteractBox` 只发不收，点击直接调目标子系统的 `onInteract`（见下面「交互区只发不收」）。
+玩家交互不写信号槽：`InteractBox` 只发不收；点击直接调目标子系统的 `onInteract`，并可将 `signal_targets` 中指向 `local` 的频道作为所属 Part 的一次性动画事件、指向 `global` 的频道交给装配体广播给全载具部件（见下面「交互区只发不收」）。
 
 ## 约定
 
@@ -114,7 +114,7 @@ ISignalBus（local = AbstractPart，global = SubsystemController）
 - **目标名解析作用域是 Part**：`setTargetFromNames` 在建首跳表时聚合发送者所属**整个 Part** 的子系统 / 交互区 / 连接点（一趟 `subParts` 现场遍历，不设常驻索引），三类名字共用一套命名空间、在 Part 内唯一（解码期 `VariantAttr#validateUniqueNames` 强制）。三类里交互区只当节点名（命名唯一性与 `SubsystemInteractPayload` 的寻址），不是信号目标——`getReceiversFromNames` 碰到它会记一条错误日志，因为交互区只发不收。跨子零件的具名目标因此可达；`getReceiversFromNames` 的形参签名保持不变（JS Hook 契约），改造只更换传入的表内容。名字通路只保证"两个对象同属一个 Part"，不保证线路连通；需要"线断了信号就断"时写连接点名走 `SignalPort`。`global`（`SubsystemController` 总线按每个订阅者声明的接受列表广播）与 `SignalPort`（`signal_targets` 加频道转译）是另外两条通路。首跳表在 `onAttach`、换组、结构变化与载具入世时整体重建，配置里删掉的频道不会留在表中。按名读取子零件的口是 `SubPart#findOwnSubsystem`（存档恢复、MoLang、能源端口按 `(子零件, 名字)` 定位），跨 Part 全域解析走 `AbstractPart#findSubsystem` / `#findConnector` / `#findInteractBox`。网络载荷对子系统与连接点不走名字：它们按 `(子零件 ID, 声明序序号)` 寻址（`SubPart#subsystemIndex` / `#subsystemAt` 等），理由与约束见 `docs/plan/已实现/信号系统-Part级名字解析与子系统封装.md` §3.6；交互区活表是并发容器且没有声明序（物理线程读、主线程销毁时清空），`SubsystemInteractPayload` 保持交互区名。
 - **同 Part 内一律具名直连**：既然名字在 Part 内全域可达，同一 Part 里的连线（含跨子零件，如炮塔里的火控与并列机枪）就写子系统名，不经连接点。内部连接点（`"internal": true`）由 `AbstractPart#autoAttachInternalConnectors` 按「高级 + 简单、不同子零件、几何对齐」自动配对，两端必然同 Part，在它上面配 `signal_targets` / `signal_translations` 只会多一条几何配对依赖，配不上时整条线静默断开；`checkContent` 把这种写法判为失败。连接点只用于跨 Part。
 - **端口的表在接收侧**：`SignalPort#onSignalUpdated` 用 `owner.attachedConnector.signalPort` 的 `signal_translations` 与 `signal_targets` 投递，即信号到达哪一侧端口，就用**对侧**（接收方零件）连接点的两张表。因此在端口表里读到的键是"跨过关节之后本零件要收的到达频道"，投递前还要过接收者的 `getAcceptedChannels()`（`acceptAllRoutingInput()` 为真时跳过）。`resolveTargets` 走同一套（`ISignalSender#resolveSignalLine` 同样先 `other.translateChannel` 再查 `other.getTargets()`），所以发现与投递不会给出两套答案。
-- **交互区只发不收**：`InteractBox` 不实现 `ISignalReceiver`，点击路径不写任何人的输入槽，也不会在槽里留下一个持有实体的交互值。结构变化与载具入世时它用 `resolveTargets` 把 `signal_targets` 解析成**终端子系统表**（按频道与声明序展平、去重，跨零件经连接点到达对侧座位），点击按表序逐个调 `onInteract`：`CONSUME` 结束，`FAIL`/`PASS` 继续试下一个。激活要三件事同时成立——终端表非空、`condition` 的 MoLang 门控成立（主线程每 tick 求值一次；写错则恒不可交互并留一条错误日志）、任一终端 `isInteractable()`。物理线程只做"这个子形状是哪个交互区"的几何筛选，激活判定全在主线程。交互区名因此只是节点名（命名唯一性与 `SubsystemInteractPayload` 的寻址），把它写成信号目标会在装载期被拒。
+- **交互区只发不收**：`InteractBox` 不实现 `ISignalReceiver`，点击路径不写任何人的输入槽，也不会在槽里留下一个持有实体的交互值。结构变化与载具入世时它用 `resolveTargets` 把 `signal_targets` 解析成**终端子系统表**（按频道与声明序展平、去重，跨零件经连接点到达对侧座位），点击按表序逐个调 `onInteract`：`CONSUME` 结束，`FAIL`/`PASS` 继续试下一个。动画事件目标另有一档：直接目标 `local` 把频道名投递给所属 Part，直接目标 `global` 交给装配体广播给全载具部件；两者都在子系统交互前投递，不受 `CONSUME` 影响，不写入输入槽，也不经常规 `broadcast`。激活条件为 MoLang 门控成立，且存在动画事件目标（`local` 或 `global`）或至少一个可交互终端；门控由主线程每 tick 求值。物理线程只做几何筛选，提示与服务端点击复核均在主线程。交互区名仍只是节点名，不能写作信号目标。
 
 ## 反模式
 
