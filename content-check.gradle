@@ -1738,19 +1738,33 @@ tasks.register('checkContent') {
                 ((Map) data).keySet().each { Object key -> keys << key.toString() }
             }
         }
-        // 控制组的名字是 `base_group.name`，不是文件名：预设 id 取文件名，显示名取这个字段。
+        // 控制组的名字是 `base_group.name` 与 `groups[].name`，不是文件名：预设 id 取文件名，
+        // 显示名取这两个字段。子组必须一起登记——模板保存的是预设解析后的整份
+        // ControlGroupSet，底组与子组都落在模板 JSON 里；只登记底组时，引用子组名的模板
+        // 会被判成悬空名字（名字其实由预设声明）。`ControlGroup` 没有嵌套子组，登记一层即可。
         controlGroupPresetFiles.keySet().sort().each { String presetId ->
             Object raw = readJsonc((File) controlGroupPresetFiles[presetId])
             if (!(raw instanceof Map)) {
                 return
             }
             Object baseGroup = ((Map) raw).get('base_group')
-            if (!(baseGroup instanceof Map)) {
-                return
+            if (baseGroup instanceof Map) {
+                Object baseName = ((Map) baseGroup).get('name')
+                if (baseName != null) {
+                    nameDeclarations.putIfAbsent(baseName.toString(), '控制组预设 ' + presetId)
+                }
             }
-            Object rawName = ((Map) baseGroup).get('name')
-            if (rawName != null) {
-                nameDeclarations.putIfAbsent(rawName.toString(), '控制组预设 ' + presetId)
+            Object groups = ((Map) raw).get('groups')
+            if (groups instanceof List) {
+                ((List) groups).each { Object group ->
+                    if (group instanceof Map) {
+                        Object groupName = ((Map) group).get('name')
+                        if (groupName != null) {
+                            nameDeclarations.putIfAbsent(groupName.toString(),
+                                    '控制组预设 ' + presetId + ' 的子组')
+                        }
+                    }
+                }
             }
         }
 
