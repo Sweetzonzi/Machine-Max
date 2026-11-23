@@ -1,0 +1,9 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
+  "type": "machine_max:blueprint_research",
+  "groups": ["machine_max:santana"],
+  "research_cost": 200,
+  "icon": "machine_max:textures/icon/santana/santana_hull.png",
+  "description": "research.machine_max.santana_hull_blueprint.desc",
+  "unlock_recipe": "machine_max:part_fabricating/santana_hull"
+}
