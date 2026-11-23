@@ -36,6 +36,17 @@
             "definition": "machine_max:fixed_down"
           }
         },
+        "interact_boxes": {
+          "interact.machine_max.trunk_door": {
+            "bone": "TrunkInteract",
+            "interact_mode": "accurate",
+            "signal_targets": {
+              "interact_trunk_door": [
+                "global"
+              ]
+            }
+          }
+        },
         "hydrodynamics": {
           "": {
             "front_drag": [

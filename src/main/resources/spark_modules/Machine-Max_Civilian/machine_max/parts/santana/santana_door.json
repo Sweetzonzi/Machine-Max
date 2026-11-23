@@ -33,6 +33,17 @@
               "material": "machine_max:structural_steel"
             }
           },
+          "interact_boxes": {
+            "interact.machine_max.left_front_door": {
+              "bone": "LeftFrontDoorInteract",
+              "interact_mode": "accurate",
+              "signal_targets": {
+                "interact_left_front_door": [
+                  "global"
+                ]
+              }
+            }
+          },
           "connectors": {
             "connector.machine_max.axis": {
               "locator": "door_lf_hinge",
@@ -96,6 +107,17 @@
             "RightFrontDoorCollison": {
               "type": "box",
               "material": "machine_max:structural_steel"
+            }
+          },
+          "interact_boxes": {
+            "interact.machine_max.right_front_door": {
+              "bone": "RightFrontDoorInteract",
+              "interact_mode": "accurate",
+              "signal_targets": {
+                "interact_right_front_door": [
+                  "global"
+                ]
+              }
             }
           },
           "connectors": {
@@ -163,6 +185,17 @@
               "material": "machine_max:structural_steel"
             }
           },
+          "interact_boxes": {
+            "interact.machine_max.left_back_door": {
+              "bone": "LeftBackDoorInteract",
+              "interact_mode": "accurate",
+              "signal_targets": {
+                "interact_left_back_door": [
+                  "global"
+                ]
+              }
+            }
+          },
           "connectors": {
             "connector.machine_max.axis": {
               "locator": "door_lb_hinge",
@@ -226,6 +259,17 @@
             "RightBackDoorCollision": {
               "type": "box",
               "material": "machine_max:structural_steel"
+            }
+          },
+          "interact_boxes": {
+            "interact.machine_max.right_back_door": {
+              "bone": "RightBackDoorInteract",
+              "interact_mode": "accurate",
+              "signal_targets": {
+                "interact_right_back_door": [
+                  "global"
+                ]
+              }
             }
           },
           "connectors": {

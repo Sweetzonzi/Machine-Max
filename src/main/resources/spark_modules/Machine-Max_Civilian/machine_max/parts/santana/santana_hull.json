@@ -5,7 +5,7 @@
   "variants": {
     "model": "machine_max:santana.geo",
     "textures": "machine_max:textures/part/santana/santana.png",
-    "animations": "machine_max:santana",
+    "animations": "machine_max:santana.geo",
     "tags": [
       "machine_max:type/land",
       "machine_max:category/structural",
@@ -107,54 +107,6 @@
                 "subsystem.machine_max.right_back_seat"
               ]
             }
-          },
-          "interact.machine_max.left_front_door": {
-            "bone": "LeftFrontDoorInteract",
-            "interact_mode": "fast",
-            "signal_targets": {
-              "interact_left_front_door": [
-                "local"
-              ],
-              "interact": [
-                "subsystem.machine_max.driver_seat"
-              ]
-            }
-          },
-          "interact.machine_max.right_front_door": {
-            "bone": "RightFrontDoorInteract",
-            "interact_mode": "fast",
-            "signal_targets": {
-              "interact_right_front_door": [
-                "local"
-              ],
-              "interact": [
-                "subsystem.machine_max.copilot_seat"
-              ]
-            }
-          },
-          "interact.machine_max.left_back_door": {
-            "bone": "LeftBackDoorInteract",
-            "interact_mode": "fast",
-            "signal_targets": {
-              "interact_left_back_door": [
-                "local"
-              ],
-              "interact": [
-                "subsystem.machine_max.left_back_seat"
-              ]
-            }
-          },
-          "interact.machine_max.right_back_door": {
-            "bone": "RightBackDoorInteract",
-            "interact_mode": "fast",
-            "signal_targets": {
-              "interact_right_back_door": [
-                "local"
-              ],
-              "interact": [
-                "subsystem.machine_max.right_back_seat"
-              ]
-            }
           }
         },
         "connectors": {
@@ -170,9 +122,9 @@
                 "xr": {
                   "lower_limit": 0,
                   "upper_limit": 75,
-                  "equilibrium": 15,
-                  "stiffness": 14,
-                  "damping": 1.73632
+                  "equilibrium": 75,
+                  "stiffness": 2.3,
+                  "damping": 0.55
                 }
               }
             }
@@ -189,9 +141,9 @@
                 "xr": {
                   "lower_limit": -75,
                   "upper_limit": 0,
-                  "equilibrium": -15,
-                  "stiffness": 9,
-                  "damping": 1.73632
+                  "equilibrium": -75,
+                  "stiffness": 1.4,
+                  "damping": 0.22
                 }
               }
             }
@@ -238,8 +190,7 @@
               "joint_attrs": {
                 "yr": {
                   "lower_limit": -75,
-                  "upper_limit": 0,
-                  "damping": 1.73632
+                  "upper_limit": 0
                 }
               }
             }
@@ -286,8 +237,7 @@
               "joint_attrs": {
                 "yr": {
                   "lower_limit": 0,
-                  "upper_limit": 75,
-                  "damping": 1.73632
+                  "upper_limit": 75
                 }
               }
             }
@@ -328,8 +278,7 @@
               "joint_attrs": {
                 "yr": {
                   "lower_limit": -75,
-                  "upper_limit": 0,
-                  "damping": 1.73632
+                  "upper_limit": 0
                 }
               }
             }
@@ -370,8 +319,7 @@
               "joint_attrs": {
                 "yr": {
                   "lower_limit": 0,
-                  "upper_limit": 75,
-                  "damping": 1.73632
+                  "upper_limit": 75
                 }
               }
             }
@@ -435,6 +383,11 @@
             "definition": "machine_max:santana_front_wheel_driver",
             "connector": "connector.machine_max.hull_left_front_wheel"
           },
+          "subsystem.machine_max.left_front_door_driver": {
+            "type": "machine_max:joint_driver",
+            "definition": "machine_max:rotation_joint_driver",
+            "connector": "connector.machine_max.left_front_door_axis"
+          },
           "subsystem.machine_max.copilot_seat": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_passenger_seat",
@@ -449,6 +402,11 @@
             "definition": "machine_max:santana_front_wheel_driver",
             "connector": "connector.machine_max.hull_right_front_wheel"
           },
+          "subsystem.machine_max.right_front_door_driver": {
+            "type": "machine_max:joint_driver",
+            "definition": "machine_max:rotation_joint_driver",
+            "connector": "connector.machine_max.right_front_door_axis"
+          },
           "subsystem.machine_max.left_back_seat": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_passenger_seat",
@@ -462,6 +420,11 @@
             "definition": "machine_max:santana_back_wheel_driver",
             "connector": "connector.machine_max.hull_left_back_wheel"
           },
+          "subsystem.machine_max.left_back_door_driver": {
+            "type": "machine_max:joint_driver",
+            "definition": "machine_max:rotation_joint_driver",
+            "connector": "connector.machine_max.left_back_door_axis"
+          },
           "subsystem.machine_max.right_back_seat": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_passenger_seat",
@@ -474,6 +437,21 @@
             "type": "machine_max:wheel_driver",
             "definition": "machine_max:santana_back_wheel_driver",
             "connector": "connector.machine_max.hull_right_back_wheel"
+          },
+          "subsystem.machine_max.right_back_door_driver": {
+            "type": "machine_max:joint_driver",
+            "definition": "machine_max:rotation_joint_driver",
+            "connector": "connector.machine_max.right_back_door_axis"
+          },
+          "subsystem.machine_max.hood_driver": {
+            "type": "machine_max:joint_driver",
+            "definition": "machine_max:rotation_joint_driver",
+            "connector": "connector.machine_max.hood_axis"
+          },
+          "subsystem.machine_max.trunk_door_driver": {
+            "type": "machine_max:joint_driver",
+            "definition": "machine_max:rotation_joint_driver",
+            "connector": "connector.machine_max.trunk_door_axis"
           }
         },
         "hydrodynamics": {

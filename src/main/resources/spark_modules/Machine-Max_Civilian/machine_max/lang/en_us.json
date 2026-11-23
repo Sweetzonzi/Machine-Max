@@ -215,5 +215,11 @@
   "machine_max.santana_door": "Santana Door",
   "machine_max.santana_hood": "Santana Hood",
   "machine_max.santana_trunk_door": "Santana Trunk Lid",
-  "machine_max.santana_wheel": "Santana Wheel"
+  "machine_max.santana_wheel": "Santana Wheel",
+  "subsystem.machine_max.left_front_door_driver": "Left Front Door Hinge Driver",
+  "subsystem.machine_max.right_front_door_driver": "Right Front Door Hinge Driver",
+  "subsystem.machine_max.left_back_door_driver": "Left Rear Door Hinge Driver",
+  "subsystem.machine_max.right_back_door_driver": "Right Rear Door Hinge Driver",
+  "subsystem.machine_max.hood_driver": "Hood Hinge Driver",
+  "subsystem.machine_max.trunk_door_driver": "Trunk Lid Hinge Driver"
 }
