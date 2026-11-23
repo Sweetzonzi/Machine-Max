@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/joint_driver_dynamic_attr.json",
+  "title": "动画关节执行器动态属性",
+  "description": "绑定本子零件上的高级连接点。执行器读取该连接点 locator 的动画位姿并驱动物理关节。",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:joint_driver",
+      "description": "子系统类型。"
+    },
+    "definition": {
+      "type": "string",
+      "description": "动画关节执行器型号的资源地址。"
+    },
+    "connector": {
+      "type": "string",
+      "description": "被驱动的高级连接点名称；该连接点的 locator 同时作为动画目标。"
+    }
+  },
+  "required": ["type", "definition", "connector"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:joint_driver",
+      "definition": "machine_max:door_hinge_driver",
+      "connector": "left_door_hinge"
+    }
+  ]
+}

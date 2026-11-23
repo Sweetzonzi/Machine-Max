@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/part/variant_attr.json",
   "title": "部件变体属性",
-  "description": "定义载具部件的一个变体（Variant），包含该变体的模型、纹理、动画、标签与子部件。部件定义既可以内联单个变体，也可以写成变体名到变体的映射。",
+  "description": "定义载具部件的一个变体（Variant），包含该变体的模型、纹理、动画集、控制器集、标签与子部件。部件定义既可以内联单个变体，也可以写成变体名到变体的映射。",
   "type": "object",
   "properties": {
     "tags": {
@@ -45,8 +45,13 @@
       "allOf": [
         { "$ref": "../base/resource_location.schema.json" }
       ],
-      "default": "machine_max:empty",
-      "description": "动画路径。忽略前导文件夹：machine_max:ae86 会匹配内容包 animations/ 下文件夹名为 ae86 的所有动画 json，作为该模型的可用动画。"
+      "description": "动画集。缺省取 model 同名：machine_max:santana.geo 会使用 animations/part/santana.geo/ 下的全部动画 json。显式写 machine_max:empty 表示这一变体没有动画集。显式指定的集合必须存在。"
+    },
+    "controllers": {
+      "allOf": [
+        { "$ref": "../base/resource_location.schema.json" }
+      ],
+      "description": "控制器集。缺省取 model 同名：machine_max:santana.geo 会使用 controllers/part/santana.geo/ 下的全部动画控制器。显式值选中一整套控制器，不是文件名、单个控制器名或事件名。显式指定的集合必须存在。"
     },
     "sub_parts": {
       "oneOf": [

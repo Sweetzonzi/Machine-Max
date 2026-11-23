@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/joint_driver_static_attr.json",
+  "title": "动画关节执行器静态属性",
+  "description": "设置动画目标使用的关节轴、旋转顺序和各轴驱动上限。角轴速度单位为度/秒，平移轴速度单位为米/秒。",
+  "definitions": {
+    "JointDriverAxisAttr": {
+      "type": "object",
+      "properties": {
+        "max_force": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "该轴最大驱动力；平移轴单位 N，旋转轴单位 N·m。"
+        },
+        "max_speed": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "该轴最大伺服速度；平移轴单位 m/s，旋转轴单位 °/s。"
+        }
+      },
+      "required": ["max_force", "max_speed"],
+      "additionalProperties": false
+    }
+  },
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema 引用路径。",
+      "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:joint_driver"
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20
+    },
+    "pass_damage": {
+      "type": "boolean",
+      "default": true
+    },
+    "limit_damage": {
+      "type": "boolean",
+      "default": false
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false
+    },
+    "rotation_order": {
+      "type": "string",
+      "enum": ["XYZ", "XZY", "YXZ", "YZX", "ZXY", "ZYX"],
+      "default": "ZYX",
+      "description": "关节旋转顺序，必须与同一关节上的其他驱动配置一致。"
+    },
+    "axes": {
+      "type": "object",
+      "properties": {
+        "X": { "$ref": "#/definitions/JointDriverAxisAttr" },
+        "Y": { "$ref": "#/definitions/JointDriverAxisAttr" },
+        "Z": { "$ref": "#/definitions/JointDriverAxisAttr" },
+        "XR": { "$ref": "#/definitions/JointDriverAxisAttr" },
+        "YR": { "$ref": "#/definitions/JointDriverAxisAttr" },
+        "ZR": { "$ref": "#/definitions/JointDriverAxisAttr" }
+      },
+      "minProperties": 1,
+      "additionalProperties": false,
+      "description": "动画执行器写入的轴；仅声明并有动画影响的轴会启用伺服。"
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_deactivate": { "$ref": "../../base/sound_event.schema.json" },
+        "on_destroyed": { "$ref": "../../base/sound_event.schema.json" },
+        "on_activate": { "$ref": "../../base/sound_event.schema.json" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["type", "axes"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:joint_driver",
+      "rotation_order": "ZYX",
+      "axes": {
+        "YR": {
+          "max_force": 1200,
+          "max_speed": 90
+        }
+      }
+    }
+  ]
+}

@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/subsystem/dynamic/gearbox_dynamic_attr.json",
   "title": "Transmission Subsystem Dynamic Attributes",
-  "description": "Dynamic attributes of the transmission, defining power output targets and gear signal output.",
+  "description": "Dynamic attributes of the transmission, defining power output targets and gear and clutch pedal signals.",
   "properties": {
     "type": {
       "type": "string",
@@ -23,6 +23,13 @@
       ],
       "default": { "gear": ["local", "global"] },
       "description": "Gear name output channel and targets. Optional, by default sends current gear name to the gear channel of parts and vehicles."
+    },
+    "clutch_outputs": {
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
+      "default": {},
+      "description": "Clutch pedal feedback channels and targets. Sends numeric 0 when the clutch is engaged, or 1 when it is disengaged (including automatic shifts). No output by default."
     }
   },
   "required": ["type", "definition", "power_output"],

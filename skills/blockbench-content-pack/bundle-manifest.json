@@ -1,13 +1,13 @@
 {
   "format_version": 1,
-  "bundled_on": "2026-11-23",
+  "bundled_on": "2026-11-24",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "c62730ef6986800e0c282d7f8d9517f557a7b4b1",
+    "revision": "005dff406af8827c4c7b5f5c95b48259ba47a26a",
     "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
-    "file_count": 80,
+    "file_count": 82,
     "files": [
       {
         "path": "references/schemas/base/axis.schema.json",
@@ -131,8 +131,8 @@
       },
       {
         "path": "references/schemas/part/variant_attr.schema.json",
-        "bytes": 4178,
-        "sha256": "b5fe3498b0c0e69f79ee55e6886c5866d773acebcdad7f0f42c5aafc35cbf5f0"
+        "bytes": 4612,
+        "sha256": "b1f85809fc9c43cadd3e7f73fc054e5062a700067ee6b8cff62a1b43b4640f33"
       },
       {
         "path": "references/schemas/part_definition_schema.json",
@@ -206,13 +206,18 @@
       },
       {
         "path": "references/schemas/subsystem/dynamic/gearbox_dynamic_attr.schema.json",
-        "bytes": 1307,
-        "sha256": "6a322d2febdaea27e5e15189afa295ecf3cb5b3a5cc354229fab82b9505ca887"
+        "bytes": 1617,
+        "sha256": "b6e35916de2dd279935a91a5e2d94dbce5dd3e1de73d7e9543cb5a534695cee4"
       },
       {
         "path": "references/schemas/subsystem/dynamic/item_storage_dynamic_attr.schema.json",
         "bytes": 792,
         "sha256": "32951278a77b8e243900ef48127c4ab76b39191c45b6db931c2ee78cbfae75a9"
+      },
+      {
+        "path": "references/schemas/subsystem/dynamic/joint_driver_dynamic_attr.schema.json",
+        "bytes": 1019,
+        "sha256": "e056c03faebe6a6c7c6fec1fce83aba27989f1386b63ca66e223d996b2d48d82"
       },
       {
         "path": "references/schemas/subsystem/dynamic/launcher_dynamic_attr.schema.json",
@@ -325,6 +330,11 @@
         "sha256": "86737fe7002990778ef0a56ef317e5564bdfc4eae1f820dc80ebbb87083803ec"
       },
       {
+        "path": "references/schemas/subsystem/static/joint_driver_static_attr.schema.json",
+        "bytes": 3020,
+        "sha256": "0e310a085fa2105483c79509a16c2fa2d3f1b1b16363a9b148b17610c198eabe"
+      },
+      {
         "path": "references/schemas/subsystem/static/launcher_static_attr.schema.json",
         "bytes": 13698,
         "sha256": "ad1b356a947c3ce47ea269bf4c72097d431b413b4d0532910703a7bf0f44db6e"
@@ -401,13 +411,13 @@
       },
       {
         "path": "references/schemas/subsystem/subsystem_dynamic_attr.schema.json",
-        "bytes": 7947,
-        "sha256": "f4792577ebcf4fdf62a729e165245568b63fbb815c0b88ad7586a27b1def835d"
+        "bytes": 8208,
+        "sha256": "b244382ee8355aa0ede95b7e040e50e24d0daa1b866bf1112df7386b67aa4518"
       },
       {
         "path": "references/schemas/subsystem/subsystem_static_attr.schema.json",
-        "bytes": 7691,
-        "sha256": "b86db646eb434437f408c99272d0c62019e682d9fde72e0e865451e4eeef9865"
+        "bytes": 7950,
+        "sha256": "b08ad4981cc5a0b25974731b5c75ed9d1ce707fb59b5edd7b56a5d79992b740a"
       }
     ]
   },

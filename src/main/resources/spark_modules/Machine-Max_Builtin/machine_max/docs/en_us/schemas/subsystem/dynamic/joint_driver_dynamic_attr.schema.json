@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/joint_driver_dynamic_attr.json",
+  "title": "Animation Joint Driver Dynamic Attributes",
+  "description": "Binds an advanced connector on this subpart. The driver follows the animated pose of that connector's locator.",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:joint_driver"
+    },
+    "definition": {
+      "type": "string",
+      "description": "Resource location of the animation joint driver definition."
+    },
+    "connector": {
+      "type": "string",
+      "description": "Name of the advanced connector to drive; its locator is also used as the animation target."
+    }
+  },
+  "required": ["type", "definition", "connector"],
+  "additionalProperties": false
+}

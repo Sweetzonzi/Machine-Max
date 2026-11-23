@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/part/variant_attr.json",
   "title": "Part Variant Attributes",
-  "description": "Defines one variant of a vehicle part: its model, textures, animations, tags and sub-parts. A part definition either holds a single variant written inline or a map of named variants.",
+  "description": "Defines one variant of a vehicle part: its model, textures, animation set, controller set, tags and sub-parts. A part definition either holds a single variant written inline or a map of named variants.",
   "type": "object",
   "properties": {
     "tags": {
@@ -45,8 +45,13 @@
       "allOf": [
         { "$ref": "../base/resource_location.schema.json" }
       ],
-      "default": "machine_max:empty",
-      "description": "Animation path. Leading folders are ignored: machine_max:ae86 matches every animation json under animations/ in the content pack whose folder is named ae86, and exposes them as available animations of the model."
+      "description": "Animation set. Defaults to the model id: machine_max:santana.geo uses every animation json under animations/part/santana.geo/. Write machine_max:empty to declare that this variant has no animation set. An explicitly declared set must exist."
+    },
+    "controllers": {
+      "allOf": [
+        { "$ref": "../base/resource_location.schema.json" }
+      ],
+      "description": "Controller set. Defaults to the model id: machine_max:santana.geo uses every animation controller under controllers/part/santana.geo/. An explicit value selects a whole set, not a file name, a single controller name or an event name. An explicitly declared set must exist."
     },
     "sub_parts": {
       "oneOf": [

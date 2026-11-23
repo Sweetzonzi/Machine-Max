@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/subsystem/subsystem_static_attr.json",
   "title": "子系统静态属性",
-  "description": "子系统静态属性的顶层架构，根据 type 字段分派到具体子系统类型。type 接受 22 个已开放的内置 machine_max 类型，或命名空间不是 machine_max 的扩展类型；joint_driver、scriptable、battery 三个类型仍在开发中、字段契约未定稿，尚未登记，因此既不能在这里选择，也不会被运行时接受。",
+  "description": "子系统静态属性的顶层架构，根据 type 字段分派到具体子系统类型。type 接受 23 个已开放的内置 machine_max 类型，或命名空间不是 machine_max 的扩展类型；scriptable、battery 两个类型仍在开发中、字段契约未定稿，尚未登记，因此既不能在这里选择，也不会被运行时接受。",
   "type": "object",
   "properties": {
     "type": {
@@ -21,6 +21,7 @@
           "machine_max:track_drive",
           "machine_max:gearbox",
           "machine_max:transmission",
+          "machine_max:joint_driver",
           "machine_max:wheel_driver",
           "machine_max:turret_driver",
           "machine_max:light",
@@ -33,7 +34,7 @@
           "machine_max:regen_ammo_rack",
           "machine_max:reactive_armor"
           ],
-          "description": "内置子系统类型，取值必须是上列 22 个之一。"
+          "description": "内置子系统类型，取值必须是上列 23 个之一。"
         },
         {
           "pattern": "^(?!machine_max:)[a-z0-9_.-]+:[a-z0-9/._-]+$",
@@ -178,6 +179,18 @@
       },
       "then": {
         "$ref": "static/transmission_static_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:joint_driver"
+          }
+        }
+      },
+      "then": {
+        "$ref": "static/joint_driver_static_attr.schema.json"
       }
     },
     {

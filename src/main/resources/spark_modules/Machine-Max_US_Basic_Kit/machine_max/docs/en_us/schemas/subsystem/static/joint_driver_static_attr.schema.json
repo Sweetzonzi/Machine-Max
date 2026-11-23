@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/joint_driver_static_attr.json",
+  "title": "Animation Joint Driver Static Attributes",
+  "description": "Configures the joint axes, rotation order, and per-axis drive limits. Rotational speed is in degrees per second; translation speed is in meters per second.",
+  "definitions": {
+    "JointDriverAxisAttr": {
+      "type": "object",
+      "properties": {
+        "max_force": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Maximum drive force: N for translation axes and N·m for rotation axes."
+        },
+        "max_speed": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Maximum servo speed: m/s for translation axes and °/s for rotation axes."
+        }
+      },
+      "required": ["max_force", "max_speed"],
+      "additionalProperties": false
+    }
+  },
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference path.",
+      "default": "../../docs/en_us/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:joint_driver"
+    },
+    "basic_durability": { "type": "number", "minimum": 0, "default": 20 },
+    "pass_damage": { "type": "boolean", "default": true },
+    "limit_damage": { "type": "boolean", "default": false },
+    "hidden": { "type": "boolean", "default": false },
+    "rotation_order": {
+      "type": "string",
+      "enum": ["XYZ", "XZY", "YXZ", "YZX", "ZXY", "ZYX"],
+      "default": "ZYX",
+      "description": "Joint rotation order; keep it consistent with other drivers on this joint."
+    },
+    "axes": {
+      "type": "object",
+      "properties": {
+        "X": { "$ref": "#/definitions/JointDriverAxisAttr" },
+        "Y": { "$ref": "#/definitions/JointDriverAxisAttr" },
+        "Z": { "$ref": "#/definitions/JointDriverAxisAttr" },
+        "XR": { "$ref": "#/definitions/JointDriverAxisAttr" },
+        "YR": { "$ref": "#/definitions/JointDriverAxisAttr" },
+        "ZR": { "$ref": "#/definitions/JointDriverAxisAttr" }
+      },
+      "minProperties": 1,
+      "additionalProperties": false,
+      "description": "Axes written by the animation driver. A declared axis is servo-driven only while its locator bone chain has animation contribution."
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_deactivate": { "$ref": "../../base/sound_event.schema.json" },
+        "on_destroyed": { "$ref": "../../base/sound_event.schema.json" },
+        "on_activate": { "$ref": "../../base/sound_event.schema.json" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["type", "axes"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:joint_driver",
+      "rotation_order": "ZYX",
+      "axes": {
+        "YR": {
+          "max_force": 1200,
+          "max_speed": 90
+        }
+      }
+    }
+  ]
+}
