@@ -13,6 +13,7 @@ import lombok.Getter;
 import net.minecraft.world.entity.LivingEntity;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -21,23 +22,20 @@ import java.util.Map;
 
 /**
  * 玩家交互判定区：一块模型骨骼包围出的空间，配合射线（{@code accurate}）或碰撞箱接触（{@code fast}）被选中，
- * 点击后依次询问解析出的子系统。
+ * 点击时把 {@code signal_targets} 中声明为动画事件的频道投递给所属 Part 或装配体，并依次询问解析出的子系统。
  *
- * <p><b>能不能交互</b>由三件事同时决定，缺一不可：</p>
- * <ol>
- *   <li>结构：{@code signal_targets} 解析出至少一个终端子系统（{@link #interactTargets}）。
- *       解析在结构变化与载具入世时整体重建：模板载具的接线发生在入世之前，入世那一次才是第一次
- *       完整解析。零件单独摆在地上、跨零件的门没接上时解析结果就是空的，交互区因此完全不会激活，
- *       而不是亮着提示却点不出反应。</li>
- *   <li>内容门控：{@code condition} 的 MoLang 表达式（主线程每 tick 求值一次），写错的表达式
- *       让这个交互区恒不可用并留一条错误日志。</li>
- *   <li>运行时可用性：任一终端子系统此刻返回 {@link AbstractSubsystem#isInteractable()}。
+ * <p><b>能不能交互</b> = {@code condition} 成立，且（有动画事件目标，或至少一个终端子系统可交互）：</p>
+ * <ul>
+ *   <li>动画事件目标：{@code signal_targets} 直接写 {@code local} 的频道投给所属 Part，写 {@code global}
+ *       的频道交给装配体广播给全部部件。纯动画交互区不依赖子系统可用性。</li>
+ *   <li>子系统目标：结构解析出终端子系统，并有任一终端此刻返回 {@link AbstractSubsystem#isInteractable()}。
  *       座位被占、子系统损坏时提示随之消失，不需要内容里再接线把它"报"给交互区。</li>
- * </ol>
+ *   <li>内容门控：{@code condition} 的 MoLang 表达式主线程每 tick 求值一次；写错会使交互区恒不可用并留错误日志。</li>
+ * </ul>
  *
- * <p><b>只发不收：</b>交互区不是信号接收者。玩家点击是一次事件，{@link #interact(LivingEntity)} 直接调
- * 目标的 {@link AbstractSubsystem#onInteract(LivingEntity)}，不写任何人的输入槽、不经连接点转译，
- * 所以也不存在"点击残留一个持有实体的信号值"这种事。</p>
+ * <p><b>只发不收：</b>交互区不是信号接收者。玩家点击是一次事件：声明给 {@code local} 的频道作为动画事件
+ * 发给所属 Part，声明给 {@code global} 的频道由装配体广播给全载具部件；子系统目标仍直接调用
+ * {@link AbstractSubsystem#onInteract(LivingEntity)}。点击不会写入信号槽，也不会经连接点转译动画事件。</p>
  *
  * <p><b>线程：</b>{@link #setTargetFromNames()}、{@link #updateCondition()}、{@link #interact(LivingEntity)}
  * 与 {@link #canInteract()} 都在主线程；物理线程只做"这个子形状属于哪个交互区"的几何筛选，不读本类的状态。</p>
@@ -51,6 +49,10 @@ public class InteractBox implements ISignalSender {
     public final Map<String, Map<String, ISignalReceiver>> targets = new LinkedHashMap<>();
     public final SubPart subPart;
     public final InteractMode interactMode;
+    /** 配置中直接指向所属 Part 的频道，点击时作为本部件的动画状态机事件名。 */
+    private volatile List<String> localAnimationEventChannels;
+    /** 配置中指向装配体的频道，点击时交给装配体广播给全载具的动画状态机。 */
+    private volatile List<String> globalAnimationEventChannels;
 
     /** {@code condition} 为空或字面量 {@code true}：不门控，恒可用。 */
     private final boolean alwaysActive;
@@ -74,6 +76,15 @@ public class InteractBox implements ISignalSender {
         this.attr = attr;
         this.targetNames = attr.getSignalTargets();
         this.interactMode = InteractMode.valueOf(attr.getMode().toUpperCase(Locale.ROOT));
+        List<String> localChannels = new ArrayList<>();
+        List<String> globalChannels = new ArrayList<>();
+        targetNames.forEach((channel, names) -> {
+            if (channel.isEmpty()) return;
+            if (names.contains("local")) localChannels.add(channel);
+            if (names.contains("global")) globalChannels.add(channel);
+        });
+        this.localAnimationEventChannels = List.copyOf(localChannels);
+        this.globalAnimationEventChannels = List.copyOf(globalChannels);
 
         String source = attr.getCondition();
         this.alwaysActive = source == null || source.isBlank() || source.equalsIgnoreCase(InteractBoxAttr.ALWAYS);
@@ -122,8 +133,9 @@ public class InteractBox implements ISignalSender {
                 }
             }
         }
-        if (ordered.isEmpty() && !targets.isEmpty()) {
-            MachineMax.LOGGER.debug("交互区 {} 没有解析到可交互的子系统（目标不可达或不是子系统）：{}",
+        if (ordered.isEmpty() && !targets.isEmpty()
+                && localAnimationEventChannels.isEmpty() && globalAnimationEventChannels.isEmpty()) {
+            MachineMax.LOGGER.debug("交互区 {} 没有解析到可交互的子系统，也没有动画事件目标（目标不可达或不是子系统）：{}",
                     name, targets.keySet());
         }
         return List.copyOf(ordered);
@@ -152,15 +164,15 @@ public class InteractBox implements ISignalSender {
     }
 
     /**
-     * 此刻这个交互区能不能用：门控成立，且至少有一个终端子系统宣告自己可交互。
+     * 此刻这个交互区能不能用：门控成立，且至少有一个终端子系统宣告自己可交互，或存在动画事件目标。
      * <p>
-     * 客户端用它决定要不要亮提示，服务端用它挡住拿着过期状态的点击。终端表为空时恒为 {@code false}——
-     * 没有接收者的交互区完全不激活。
+     * 客户端用它决定要不要亮提示，服务端用它挡住拿着过期状态的点击。纯动画交互区不依赖子系统可用性。
      * <p>
      * <b>调用线程：</b>主线程。
      */
     public boolean canInteract() {
         if (!conditionHolds) return false;
+        if (!localAnimationEventChannels.isEmpty() || !globalAnimationEventChannels.isEmpty()) return true;
         for (AbstractSubsystem target : interactTargets) {
             if (target.isInteractable()) return true;
         }
@@ -168,16 +180,30 @@ public class InteractBox implements ISignalSender {
     }
 
     /**
-     * 按解析顺序逐个尝试终端，第一个 {@link SignalResult#CONSUME} 结束本次交互。
+     * 动画事件先投递一次，因此座位的 {@code CONSUME} 不会吞掉开门事件；子系统仍按解析顺序尝试，
+     * 第一个 {@link SignalResult#CONSUME} 结束对子系统的遍历。
      * <p>
      * {@link SignalResult#PASS}（目标不处理）与 {@link SignalResult#FAIL}（目标该处理却接不了，如座位已被占）
      * 都继续试下一个：一扇门通往多个座位的交互区因此从列表第一个空位开始坐，前排被占不影响后排。
      * 顺序由 {@link ISignalSender#setTargetFromNames()} 保序写入的接收者表与终端的声明序共同保证，
      * 不能依赖 Map 的哈希顺序。
      * <p>
+     * {@code local} 频道投给所属 Part，{@code global} 频道交给装配体广播给全载具部件：动画控制器挂在
+     * 车体上时，点击长在盖板上的交互区也能让车体的状态机切换。
+     * <p>
      * <b>调用线程：</b>主线程（服务端）。
      */
     public void interact(LivingEntity entity) {
+        if (subPart != null) {
+            for (String channel : localAnimationEventChannels) {
+                subPart.part.triggerInteractionEvent(channel);
+            }
+            if (!globalAnimationEventChannels.isEmpty() && subPart.part.assembly != null) {
+                for (String channel : globalAnimationEventChannels) {
+                    subPart.part.assembly.broadcastInteractionEvent(channel);
+                }
+            }
+        }
         for (AbstractSubsystem target : interactTargets) {
             if (target.onInteract(entity) == SignalResult.CONSUME) return;
         }
@@ -186,6 +212,8 @@ public class InteractBox implements ISignalSender {
     /** 主线程。丢弃解析结果与首跳表，不再有任何引用。 */
     public void destroy() {
         interactTargets = List.of();
+        localAnimationEventChannels = List.of();
+        globalAnimationEventChannels = List.of();
         targets.clear();
     }
 }

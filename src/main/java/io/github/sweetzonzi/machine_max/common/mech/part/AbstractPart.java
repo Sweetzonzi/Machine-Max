@@ -2,12 +2,12 @@ package io.github.sweetzonzi.machine_max.common.mech.part;
 
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.*;
 
+import cn.solarmoon.spark_core.animation.AnimResourceKey;
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.anim.AnimController;
 import cn.solarmoon.spark_core.animation.anim.AnimGroups;
 import cn.solarmoon.spark_core.animation.anim.AnimLayer;
 import cn.solarmoon.spark_core.animation.anim.AnimInstance;
-import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex;
 import cn.solarmoon.spark_core.animation.anim.origin.Loop;
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimation;
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet;
@@ -115,6 +115,18 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
     // 部件模型、动画、纹理与 MoLang 上下文
     public ModelController modelController;
     public AnimController animController;
+    /** 变体选定的动画集键；{@code null} 表示本部件没有动画集。变体固定，构造期一次算定。 */
+    private final AnimResourceKey animationSetKey;
+    /** 变体选定的控制器集键；两个键各自独立解析，控制器集不从动画集推导。 */
+    private final AnimResourceKey controllerSetKey;
+    /**
+     * 客户端自动播放的常驻片段：片段名 → 本部件自己启动的实例。
+     * <p>本表是这些实例的唯一持有者，退出只经 {@link #autoPlayLoopAnimations()}；片段对象换了或
+     * 片段不再归本方法播放时才退出。</p>
+     */
+    private final Map<String, AnimInstance> autoLoopInstances = new HashMap<>();
+    /** {@link #autoLoopInstances} 建实例时所用的动画集；当前动画集与此不同即说明旧实例引用的片段已作废。 */
+    private OAnimationSet autoLoopSet;
     /** AbstractPart 级 Molang 求值上下文（同时供动画、HitBox 条件与 HUD 使用） */
     private MechMolangContext molangContext;
     /** 当前使用的纹理索引（用于切换纹理） */
@@ -204,6 +216,10 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
         this.crowbarRemovable = context.crowbarRemovable();
         this.molangContext = new MechMolangContext(this);
         this.textureName = variant.getTextures().keySet().iterator().next();
+        this.animationSetKey = variant.hasAnimationSet()
+                ? new AnimResourceKey("part", variant.getAnimationSet()) : null;
+        this.controllerSetKey = VariantAttr.EMPTY_ANIM.equals(variant.getControllerSet())
+                ? null : new AnimResourceKey("part", variant.getControllerSet());
     }
 
     /**
@@ -585,34 +601,67 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
     }
 
     /**
-     * 客户端自动播放持续动画（loop:true）；一次性事件动画由 {@link #playAnim(String)} 按名触发。
+     * 客户端自动播放常驻循环片段（{@code loop:true}）。
+     *
+     * <p><b>归属按片段名划分，与是否绑定控制器集无关：</b>被本部件控制器集任一状态的
+     * {@code animations} 引用的片段归控制器，由状态进入与退出启动和结束，本方法不碰；
+     * 其余 {@code loop:true} 片段一律由本方法持续播放。因此绑定了控制器集的部件照样能跑常驻片段——
+     * 例如桑塔纳的 {@code parallel0}（方向盘与踏板）与六台门/盖控制器各播各的，互不影响。
+     *
+     * <p><b>幂等：</b>按名字记住自己启动的实例，已在播就不再进入，不会每 tick 叠一层。
+     * 片段被删、改成非循环、或改由控制器引用时退出并移除；动画集整表替换（资源重载）后按新集合重建。
+     *
+     * <p>一次性动画由 {@link #playAnim(String)} 按名触发，不在本方法范围内。
      */
     private void autoPlayLoopAnimations() {
-        ModelIndex index = new ModelIndex("part", variant.getAnimations());
-        OAnimationSet animSet = OAnimationSet.getORIGINS().get(index);
-        if (animController.isPlayingAnim() || animSet == null || animSet.getAnimations().isEmpty()) return;
-        for (Map.Entry<String, OAnimation> entry : animSet.getAnimations().entrySet()) {
-            if (entry.getValue().getLoop() != Loop.TRUE) continue;
-            AnimInstance instance = new AnimInstance(this, new AnimIndex(index, entry.getKey()));
+        OAnimationSet animSet = animController.getOriginAnimations();
+        if (animSet != autoLoopSet) {
+            // 资源整表替换或改绑到别的集合：旧实例手里的片段对象已作废，先全部退出再按新集合重建
+            autoLoopSet = animSet;
+            autoLoopInstances.values().forEach(AnimInstance::exit);
+            autoLoopInstances.clear();
+        }
+        Map<String, OAnimation> animations = animSet.getAnimations();
+        Set<String> controllerAnimations = animController.getControllerAnimations();
+        // 回收不再归本方法播放的实例：片段被删、改成非循环、或改由控制器状态引用（含资源重载后同名换对象）
+        autoLoopInstances.entrySet().removeIf(tracked -> {
+            OAnimation target = animations.get(tracked.getKey());
+            boolean stillMine = target != null
+                    && target.getLoop() == Loop.TRUE
+                    && !controllerAnimations.contains(tracked.getKey());
+            if (!stillMine) tracked.getValue().exit();
+            return !stillMine;
+        });
+        // 补上还没在播的：同名的片段对象换了（重载前后各一份定义）也重建
+        for (Map.Entry<String, OAnimation> entry : animations.entrySet()) {
+            OAnimation target = entry.getValue();
+            if (target.getLoop() != Loop.TRUE || controllerAnimations.contains(entry.getKey())) continue;
+            AnimInstance current = autoLoopInstances.get(entry.getKey());
+            if (current != null && current.getOrigin() == target) continue;
+            if (current != null) current.exit();
+            AnimInstance instance = new AnimInstance(this, target);
+            autoLoopInstances.put(entry.getKey(), instance);
             instance.enter();
         }
     }
 
     /**
      * 播放指定名称的动画（仅客户端）。
-     * <p>动画取自变体自身的动画集，播放于 {@link AnimGroups#ACTION} 动作覆盖层。</p>
+     * <p>片段取自本部件当前绑定的动画集（{@link AnimController#getOriginAnimations()}），播放于
+     * {@link AnimGroups#ACTION} 动作覆盖层。</p>
      * <p><b>重触发粒度：</b>仅退出 ACTION 层中<b>同名</b>的旧实例后再进入，
      * 而非清空整层。这样同一零件上的多个事件动画（如一门机炮 + 一挺机枪共用同一 AbstractPart）
      * 只要动画名不同即可同时播放、互不打断；同名则从 0 重启。</p>
-     * <p>循环行为由动画自身的 {@code loop} 设置决定：缺省 ONCE 播完自停；
-     * 作者写 {@code loop:true} 则持续循环，需自行负责停止。</p>
+     * <p><b>用途是一次性动画</b>（开火、后座、命中反馈），片段不写 {@code loop} 即 ONCE，播完自停。
+     * 常驻片段不走这里：{@code loop:true} 且未被控制器状态引用的片段已由
+     * {@link #autoPlayLoopAnimations()} 常驻播放，在这里再触发一次只会在 ACTION 层多出一份；
+     * 被控制器状态引用的片段由状态进入与退出负责启停。</p>
      *
-     * @param animName 动画名（对应 variant 动画集中的键）
+     * @param animName 动画名（对应绑定动画集里的键）
      */
     public void playAnim(String animName) {
         if (!level.isClientSide()) return;
-        ModelIndex index = new ModelIndex("part", variant.getAnimations());
-        OAnimationSet set = OAnimationSet.getOrEmpty(index);
+        OAnimationSet set = animController.getOriginAnimations();
         OAnimation target = set.getAnimation(animName);
         if (target == null) {
             MachineMax.LOGGER.warn("[AbstractPart {}-{}] 未找到动画 {}", name, uuid, animName);
@@ -631,13 +680,22 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
                 if (old.getOrigin() == target) old.exit();
             }
         }
-        AnimInstance instance = new AnimInstance(this, new AnimIndex(index, animName));
+        AnimInstance instance = new AnimInstance(this, target);
         instance.setGroup(AnimGroups.ACTION);
         // 事件动画（开火/后座）需要即时响应：AnimInstance 默认 inTransitionTime = 0.15s，
         // 权重从 0 线性爬升会导致后坐位移缓慢淡入，高射速重触发时永远爬不满权重。
         // 置 0 使实例进入后第一个物理子步即达满权重。
         instance.setInTransitionTime(0f);
         instance.enter();
+    }
+
+    /**
+     * 服务端交互向本部件动画状态机投递一次性事件。
+     * <p>这与信号总线的 {@link #broadcast(String, Object, ISignalSender)} 分开，避免普通持续信号
+     * 每次广播时都被误认为一次玩家交互。</p>
+     */
+    public void triggerInteractionEvent(String eventName) {
+        animController.triggerEvent(eventName);
     }
 
     /**
@@ -648,8 +706,7 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
      * @return true 表示动画存在
      */
     public boolean hasAnim(String animName) {
-        ModelIndex index = new ModelIndex("part", variant.getAnimations());
-        return OAnimationSet.getOrEmpty(index).hasAnimation(animName);
+        return animController.getOriginAnimations().hasAnimation(animName);
     }
 
     /**
@@ -1137,6 +1194,26 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
     @Override
     public final ModelIndex getDefaultModelIndex() {
         return new ModelIndex("part", variant.getModel());
+    }
+
+    /**
+     * 变体选定的动画集键：显式值与「与模型同名」的缺省都映射成 {@code part} 类型；显式
+     * {@code machine_max:empty} 表示没有动画集，返回 {@code null}。
+     * <p>键在构造期算定。部件的模型由变体固定、运行期不换模，因此它与 Spark-Core 从当前模型索引
+     * 派生的结果相同，同时省掉每 tick 重新分配键。</p>
+     */
+    @Override
+    public @Nullable AnimResourceKey getAnimationSetKey() {
+        return animationSetKey;
+    }
+
+    /**
+     * 变体选定的控制器集键：显式值与「与模型同名」的缺省都映射成 {@code part} 类型；
+     * {@code machine_max:empty} 表示没有控制器集，返回 {@code null}。
+     */
+    @Override
+    public @Nullable AnimResourceKey getControllerSetKey() {
+        return controllerSetKey;
     }
 
     /**

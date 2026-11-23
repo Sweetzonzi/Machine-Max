@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -20,7 +21,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 交互区的终端解析规则。
  *
  * <p>交互区只发不收：{@code signal_targets} 解析出的终端只保留子系统，其余（部件、总线、
- * 另一个交互区……）一律丢掉。一个终端都解析不出来时交互区完全不激活，点击是空操作。</p>
+ * 另一个交互区……）一律丢掉。没有终端、也没有动画事件目标时交互区完全不激活，点击是空操作。</p>
+ *
+ * <p>动画事件目标分两档：{@code local} 投给所属 Part，{@code global} 交给装配体广播给全载具部件。</p>
  *
  * <p>尝试顺序、被占座位只让位不终止遍历这两条需要在真实内容上验证（单位测试里造不出座位实例），
  * 由 {@code InteractBoxGameTest} 在 K17 后舱盖与面包车车门上钉住。</p>
@@ -76,5 +79,32 @@ class InteractBoxTargetsTest {
         assertTrue(box.getInteractTargets().isEmpty(), "未解析时不应有目标");
         assertFalse(box.canInteract(), "没有接收者的交互区必须不激活");
         box.interact(null);// 空操作
+    }
+
+    @Test
+    void localTargetEnablesAnimationOnlyInteraction() {
+        InteractBox box = new InteractBox(null, "interact.test",
+                new InteractBoxAttr("TestInteract", Map.of("door_open", List.of("local")), "fast", "true"));
+
+        assertEquals(List.of("door_open"), box.getLocalAnimationEventChannels());
+        assertTrue(box.canInteract(), "显式指向 local 的纯动画交互区应可用");
+        box.interact(null);// 无宿主的逻辑测试中安全空操作
+        box.destroy();
+        assertTrue(box.getLocalAnimationEventChannels().isEmpty(), "销毁时应清除本地动画事件目标");
+        assertFalse(box.canInteract(), "销毁后的交互区不能继续激活");
+    }
+
+    @Test
+    void globalTargetEnablesVehicleWideAnimationInteraction() {
+        InteractBox box = new InteractBox(null, "interact.test",
+                new InteractBoxAttr("TestInteract", Map.of("hood_toggle", List.of("global")), "accurate", "true"));
+
+        assertEquals(List.of("hood_toggle"), box.getGlobalAnimationEventChannels());
+        assertTrue(box.getLocalAnimationEventChannels().isEmpty(), "global 频道不得混入本地事件表");
+        assertTrue(box.canInteract(), "显式指向 global 的纯动画交互区应可用");
+        box.interact(null);// 无宿主的逻辑测试中安全空操作
+        box.destroy();
+        assertTrue(box.getGlobalAnimationEventChannels().isEmpty(), "销毁时应清除全局动画事件目标");
+        assertFalse(box.canInteract(), "销毁后的交互区不能继续激活");
     }
 }

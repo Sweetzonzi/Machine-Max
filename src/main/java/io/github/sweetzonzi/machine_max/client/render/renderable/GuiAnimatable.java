@@ -3,14 +3,13 @@ package io.github.sweetzonzi.machine_max.client.render.renderable;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud.molang.HudRuntimeElement;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud.molang.HudMolangContext;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud.molang.HudExpression;
+import cn.solarmoon.spark_core.animation.AnimResourceKey;
 import cn.solarmoon.spark_core.animation.anim.AnimController;
 import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.animation.anim.AnimInstance;
-import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex;
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimation;
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet;
 import cn.solarmoon.spark_core.animation.model.ModelController;
-import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.ModelInstance;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.molang.MolangContextRegistry;
@@ -321,8 +320,8 @@ public class GuiAnimatable implements HudElementInstance, ITickableRenderable, R
         var level = runtime.getAnimLevel();
         if (disposed || level == null || SparkLevel.getPhysicsLevelOrNull(level) == null) return;
         getAnimController().tick();
-        var modelIndexForAnim = new ModelIndex(style.modelIndex().getType(), style.animation());
-        var animSet = OAnimationSet.getORIGINS().get(modelIndexForAnim);
+        var animSet = OAnimationSet.getOrNull(
+                new AnimResourceKey(style.modelIndex().getType(), style.animation()));
         if (!animController.isPlayingAnim() && animSet != null && !animSet.getAnimations().isEmpty()) {
             for (Map.Entry<String, OAnimation> entry : animSet.getAnimations().entrySet()) {
                 String name = entry.getKey();
@@ -334,7 +333,7 @@ public class GuiAnimatable implements HudElementInstance, ITickableRenderable, R
                     io.github.sweetzonzi.machine_max.MachineMax.LOGGER.warn("HUD 动画绑定失败 (style={}, animation={}): {}", styleId, name, failure.toString());
                     continue;
                 }
-                var animInstance = new AnimInstance(runtime, new AnimIndex(modelIndexForAnim, name));
+                var animInstance = new AnimInstance(runtime, entry.getValue());
                 animInstance.enter();
             }
         }

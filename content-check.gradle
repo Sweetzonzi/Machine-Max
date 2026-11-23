@@ -35,10 +35,10 @@
 //     AUI 的 Loader.resolve 解析（以 / 开头是绝对逻辑路径，否则相对页面所在目录，折叠 . 与
 //     ..），结果必须落在某个内容包的 documents/ 里。解析不到时页面照常打开，只是整页丢掉
 //     样式——既不报错也不刷日志，只有肉眼看得出“文字样式不对”。
-// 11. 交互区的目标只能是本变体内的子系统，或本变体内的连接点（跨零件用）。交互区只发不收：
-//     点击时它按声明序直接询问解析到的子系统，不经过信号槽。目标写错名字、写成保留地址
-//     （local / global）或写成另一个交互区时，解析结果为空，这个交互区会静默地完全不激活
-//     ——提示不亮、射线选不中，进游戏只表现为“这扇门没反应”。
+// 11. 交互区的目标只能是 local / global 动画事件、变体内子系统，或变体内连接点（跨零件用）。交互区只发不收：
+//     local 按频道名直接向所属 Part 投递一次动画事件，global 交给装配体广播给全载具部件；其他目标按声明序
+//     直接询问解析到的子系统，不经过信号槽。目标写错名字或写成另一个交互区时，解析结果为空，
+//     这个交互区会静默地完全不激活——提示不亮、射线选不中，进游戏只表现为“这扇门没反应”。
 // 12. 五类名字键（子零件 / 子系统 / 连接点 / 交互区 / 控制组）的构形与译文。名字就是完整翻译键，缺一条界面上就原样显示 connector.machine_max.axis；语言表按命名空间合并，所以 machine_max 命名空间的名字必须写进 builtin 那一份，车包私有命名空间的写自己那份。名字还要恰好三段：带点的名字（interact.machine_max.golden.seat）能翻得出来，但对不上「类别.命名空间.名字」这套规则，拼写检查与词表都会漏掉它。
 // 13. 动画与模板里的名字引用。动画的 MoLang 用完整名字键查本部件，模板用完整名字键把两个零件的
 //     连接点配成一条线；名字改过而引用没跟随时查不到东西，表现是悬架不跟动、爆反挡板不缩、装配体
@@ -381,6 +381,18 @@ tasks.register('checkContent') {
         Set<String> resourceFiles = new HashSet<>()
         Set<String> geoModels = new HashSet<>()
         Set<String> particleIds = new HashSet<>()
+        // 动画集 / 控制器集的集合 id 是 <命名空间>:<type>/<集合名>：集合由目录决定，与文件名无关，
+        // 同一个集合可以含多个文件。变体的显式 animations / controllers 按同一口径核对。
+        Set<String> animationSets = new HashSet<>()
+        Set<String> controllerSets = new HashSet<>()
+        // 内容 id 的位置写法（<命名空间>:<路径>）转成集合 id（<命名空间>:<type>/<路径>）。
+        // 省略命名空间时与 ResourceLocation 一样按 minecraft 补齐。
+        def contentSetId = { String reference, String type ->
+            int colon = reference.indexOf(':')
+            String namespace = colon >= 0 ? reference.substring(0, colon) : 'minecraft'
+            String path = colon >= 0 ? reference.substring(colon + 1) : reference
+            namespace + ':' + type + '/' + path
+        }
         packs.each { pack ->
             pack.dir.eachFileRecurse(FileType.FILES) { File file ->
                 if (file.toPath().any { it.toString() == 'docs' }) {
@@ -406,6 +418,16 @@ tasks.register('checkContent') {
                     // 粒子 id 是 <namespace>/<文件名去掉 .particle.json>
                     String name = file.name.substring(0, file.name.length() - '.particle.json'.length())
                     particleIds << pack.namespace + ':' + name
+                }
+                if (relative.endsWith('.json')) {
+                    List<String> segments = relative.split('/') as List<String>
+                    // animations/<type>/<set>/... 与 controllers/<type>/<set>/...：集合取前两段，
+                    // 与加载器「只用首两段」的口径一致。
+                    if (segments.size() >= 4 && segments[0] == 'animations') {
+                        animationSets << pack.namespace + ':' + segments[1] + '/' + segments[2]
+                    } else if (segments.size() >= 4 && segments[0] == 'controllers') {
+                        controllerSets << pack.namespace + ':' + segments[1] + '/' + segments[2]
+                    }
                 }
             }
         }
@@ -1402,16 +1424,41 @@ tasks.register('checkContent') {
                     interactBoxes.keySet().each { String name ->
                         nameDeclarations.putIfAbsent(name, declarationLabel)
                     }
-                    // 第 13 节用：本变体自己声明的名字集合 + 它使用的动画名（忽略前导目录）。
+                    // 第 13 节用：本变体自己声明的名字集合 + 它使用的动画集（缺省与模型同名）。
                     Set<String> ownNames = new LinkedHashSet<>()
                     subPartEntries.keySet().each { Object name -> ownNames << name.toString() }
                     ownNames.addAll(subsystems.keySet())
                     ownNames.addAll(connectors.keySet())
                     ownNames.addAll(interactBoxes.keySet())
+                    Object modelRaw = ((Map) variantRaw).get('model')
+                    String modelRef = modelRaw instanceof CharSequence ? modelRaw.toString() : null
                     Object animationRaw = ((Map) variantRaw).get('animations')
-                    String animationName = animationRaw instanceof CharSequence
-                            ? animationRaw.toString().substring(animationRaw.toString().indexOf(':') + 1)
-                            : null
+                    Object controllerRaw = ((Map) variantRaw).get('controllers')
+                    String animationName = null
+                    if (animationRaw instanceof CharSequence) {
+                        // 显式动画集：machine_max:empty 表示没有动画集，其余必须能找到目录。
+                        String declared = animationRaw.toString()
+                        if (declared != 'machine_max:empty') {
+                            animationName = declared.substring(declared.indexOf(':') + 1)
+                            if (!animationSets.contains(contentSetId(declared, 'part'))) {
+                                problems << relative + '：变体 ' + variantName + ' 的 animations ' + declared +
+                                        ' 没有对应的动画集（在 animations/part/' + animationName + '/ 下放动画文件，' +
+                                        '或删掉该字段改用与模型同名的缺省绑定）'
+                            }
+                        }
+                    } else if (modelRef != null) {
+                        animationName = modelRef.substring(modelRef.indexOf(':') + 1)
+                    }
+                    if (controllerRaw instanceof CharSequence) {
+                        // 显式控制器集：控制器集会驱动整套动作，写错时动画完全不播、没有日志。
+                        String declared = controllerRaw.toString()
+                        if (!controllerSets.contains(contentSetId(declared, 'part'))) {
+                            problems << relative + '：变体 ' + variantName + ' 的 controllers ' + declared +
+                                    ' 没有对应的控制器集（在 controllers/part/' +
+                                    declared.substring(declared.indexOf(':') + 1) + '/ 下放控制器文件，' +
+                                    '或删掉该字段改用与模型同名的缺省绑定）'
+                        }
+                    }
                     variantScopes << [label: declarationLabel, variant: variantName.toString(),
                                       names: ownNames, animation: animationName]
                     // 13. 名字引用：变体内以字符串出现的名字键必须落在本变体自己的子零件里。
@@ -1426,8 +1473,9 @@ tasks.register('checkContent') {
                         problems << relative + '：变体 ' + variantName + ' 引用的名字 ' + ref +
                                 ' 不在本变体内（碰撞箱 / 交互区条件恒假、动画查询恒为 0，没有日志）'
                     }
-                    // 交互区只发不收：目标只能是本变体内存在的子系统，或跨零件用的本变体连接点。
-                    // 解析不到终端的交互区会静默地完全不激活（提示不亮、射线选不中也点不动）。
+                    // local / global 是交互事件专用目标：点击时把频道名作为动画事件投给所属 Part（local）
+                    // 或交给装配体广播给全载具部件（global），两者都不参与终端解析。
+                    // 其余目标只能是本变体内存在的子系统，或跨零件用的本变体连接点。
                     interactBoxes.each { Object boxName, Map box ->
                         Object boxTargetsRaw = box.get('signal_targets')
                         if (!(boxTargetsRaw instanceof Map)) {
@@ -1439,13 +1487,10 @@ tasks.register('checkContent') {
                             }
                             ((List) namesRaw).each { Object targetRaw ->
                                 String target = targetRaw.toString()
-                                interactTargetCount++
-                                if (reservedSignalNames.contains(target)) {
-                                    problems << relative + '：变体 ' + variantName + ' 的交互区 ' + boxName +
-                                            ' 把目标写成保留地址 ' + target +
-                                            '——交互只能落在子系统上，这个交互区会完全不激活'
+                                if (target == 'local' || target == 'global') {
                                     return
                                 }
+                                interactTargetCount++
                                 if (!subsystems.containsKey(target) && !connectors.containsKey(target)) {
                                     problems << relative + '：变体 ' + variantName + ' 的交互区 ' + boxName +
                                             ' 的目标 ' + target + ' 不是本变体内的子系统或连接点' +
@@ -1740,9 +1785,10 @@ tasks.register('checkContent') {
         // 查不到连接点时返回 0，悬架摆臂就不跟动；`local.subsystem_destroyed('...')` 查不到子系统时
         // 条件恒为「未摧毁」，爆反挡板永远缩着。两种都只是画面不对，没有日志。
         //
-        // 变体的 `animations` 是「忽略前导目录的目录名」（machine_max:ae86 命中 animations/ 下目录名
-        // 为 ae86 的所有动画文件），一份动画可能被同一装配体的多个变体共用，每个变体只认自己有的
-        // 连接点，所以按引用方的名字并集核对；没有变体引用的动画（HUD 动画）不查。
+        // 变体的动画集缺省与模型同名，显式写 machine_max:empty 表示没有动画集。集合按「忽略前导目录
+        // 的目录名」匹配（machine_max:ae86 命中 animations/ 下目录名为 ae86 的所有动画文件）；一份动画
+        // 可能被同一装配体的多个变体共用，每个变体只认自己有的连接点，所以按引用方的名字并集核对；
+        // 没有变体引用的动画（HUD 动画）不查。
         Map<String, Set<String>> animationScopes = [:]
         variantScopes.each { Map scope ->
             if (scope.animation) {

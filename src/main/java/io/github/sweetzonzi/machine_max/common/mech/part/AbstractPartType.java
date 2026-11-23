@@ -145,7 +145,7 @@ public abstract class AbstractPartType {
      */
     public void validate(Map<ResourceLocation, AbstractPartType> candidates) {
         for (Map.Entry<String, VariantAttr> variantEntry : variants.entrySet()) {
-            variantEntry.getValue().validate(variantEntry.getKey());
+            variantEntry.getValue().validate(registryKey, variantEntry.getKey());
         }
     }
 }
