@@ -446,8 +446,11 @@ public final class CameraController {
         Quaternionf rotation = SparkMathKt.toQuaternionf(reference);
         Vec3 anchor = mount.position();
         if (first) {
-            Vec3 offset = settings.firstPersonOffset();
-            Vector3f localOffset = new Vector3f((float) offset.x, (float) offset.y, (float) offset.z);
+            Vec3 extraOffset = settings.firstPersonOffset();
+            Vector3f localOffset = new Vector3f(
+                    (float) extraOffset.x,
+                    1.1f + (float) extraOffset.y,
+                    (float) extraOffset.z);
             rotation.transform(localOffset);
             return anchor.add(localOffset.x, localOffset.y, localOffset.z);
         }
