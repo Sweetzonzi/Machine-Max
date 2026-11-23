@@ -65,6 +65,11 @@ public class GearboxSubsystem extends BasicSubsystem implements IMechPowerConsum
             List<String> targets = entry.getValue();
             for (String targetName : targets) sendSignalToTarget(signalChannel, targetName, gear);
         }
+        // 反馈表示踏板压下，而 isClutched() 表示离合器已接合。
+        float clutchPedal = isClutched() ? 0f : 1f;
+        for (var entry : attr.clutchOutputTargets.entrySet()) {
+            for (String targetName : entry.getValue()) sendSignalToTarget(entry.getKey(), targetName, clutchPedal);
+        }
     }
 
     @Override
@@ -271,9 +276,19 @@ public class GearboxSubsystem extends BasicSubsystem implements IMechPowerConsum
 
     @Override
     public Map<String, List<String>> getTargetNames() {
-        Map<String, List<String>> result = new HashMap<>(2);
-        result.putAll(attr.gearOutputTargets);
+        Map<String, List<String>> result = new LinkedHashMap<>();
+        mergeSignalTargets(result, attr.gearOutputTargets);
+        mergeSignalTargets(result, attr.clutchOutputTargets);
         return result;
+    }
+
+    private static void mergeSignalTargets(Map<String, List<String>> into, Map<String, List<String>> from) {
+        from.forEach((channel, targets) -> into.merge(channel, targets, (first, second) -> {
+            Set<String> union = new LinkedHashSet<>(first.size() + second.size());
+            union.addAll(first);
+            union.addAll(second);
+            return List.copyOf(union);
+        }));
     }
 
     private static List<String> generateGears(double[] ratios) {

@@ -7,6 +7,9 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemKind
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.BasicSubsystemDynamicAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.AbstractSubsystemStaticAttr;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.JointDriverSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.JointDriverSubsystemStaticAttr;
+import io.github.sweetzonzi.machine_max.util.data.Axis;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.AfterEach;
@@ -32,12 +35,12 @@ class SubsystemKindDispatchTest {
     static final List<String> BUILTIN_IDS = List.of(
             "basic", "seat", "item_storage", "engine", "motor", "car_controller",
             "motorbike_controller", "track_controller", "track_drive", "gearbox", "transmission",
-            "wheel_driver", "turret_driver", "light",
+            "joint_driver", "wheel_driver", "turret_driver", "light",
             "launcher", "ammo_loader", "ammo_rack", "weapon_controller", "camera", "sight",
             "regen_ammo_rack", "reactive_armor");
 
     /** 字段契约未定稿、因此没有登记的开发中类型。 */
-    static final List<String> WIP_IDS = List.of("joint_driver", "scriptable", "battery");
+    static final List<String> WIP_IDS = List.of("scriptable", "battery");
 
     static final ResourceLocation PROBE_DEFINITION = ResourceLocation.parse("machine_max_test:probe");
 
@@ -107,6 +110,30 @@ class SubsystemKindDispatchTest {
         var encoded = AbstractSubsystemAttr.CODEC.encodeStart(JsonOps.INSTANCE, attr).getOrThrow().getAsJsonObject();
         assertEquals("machine_max:basic", encoded.get("type").getAsString());
         assertEquals(PROBE_DEFINITION.toString(), encoded.get("definition").getAsString());
+    }
+
+    @Test
+    void jointDriverDefinitionAndInstallDecodeThroughRegisteredCodecs() {
+        MMDynamicRes.STATIC_SUBSYSTEM_ATTRS.put(PROBE_DEFINITION,
+                parseStatic("""
+                        {"type":"machine_max:joint_driver",
+                         "axes":{"YR":{"max_force":1200,"max_speed":90}}}
+                        """));
+
+        AbstractSubsystemStaticAttr staticAttr = MMDynamicRes.STATIC_SUBSYSTEM_ATTRS.get(PROBE_DEFINITION);
+        assertInstanceOf(JointDriverSubsystemStaticAttr.class, staticAttr);
+        JointDriverSubsystemStaticAttr jointStatic = (JointDriverSubsystemStaticAttr) staticAttr;
+        assertEquals("ZYX", jointStatic.getRotationOrder());
+        assertEquals(1200f, jointStatic.getAxes().get(Axis.YR).maxForce());
+        assertEquals(90f, jointStatic.getAxes().get(Axis.YR).maxSpeed());
+
+        AbstractSubsystemAttr install = parseInstall("""
+                {"type":"machine_max:joint_driver","definition":"machine_max_test:probe",
+                 "connector":"door_hinge"}
+                """);
+
+        assertInstanceOf(JointDriverSubsystemAttr.class, install);
+        assertEquals("door_hinge", ((JointDriverSubsystemAttr) install).getControlledConnector());
     }
 
     @Test

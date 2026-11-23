@@ -3,50 +3,41 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.MotorAttr;
 import io.github.sweetzonzi.machine_max.util.data.Axis;
 import lombok.Getter;
-import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Map;
 
-/**
- * 关节驱动子系统静态属性：被控连接点、旋转顺序与各轴参数。
- * <p>
- * <b>WIP：</b>字段名与默认值尚未定稿。
- */
-@ApiStatus.Experimental
+/** 动画关节执行器型号参数：旋转顺序及参与动画跟随的平动轴、旋转轴。 */
 @Getter
 public class JointDriverSubsystemStaticAttr extends BasicSubsystemStaticAttr {
-    public final String controlledConnector;
     public final String rotationOrder;
-    public final Map<Axis, MotorAttr> axisParams;
+    public final Map<Axis, JointDriverAxisAttr> axes;
 
     public static final MapCodec<JointDriverSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
-            Codec.STRING.fieldOf("locator").forGetter(JointDriverSubsystemStaticAttr::getControlledConnector),
-            Codec.STRING.fieldOf("rotation_order").forGetter(JointDriverSubsystemStaticAttr::getRotationOrder),
-            MotorAttr.MAP_CODEC.fieldOf("axes").forGetter(JointDriverSubsystemStaticAttr::getAxisParams),
+            Codec.STRING.optionalFieldOf("rotation_order", "ZYX").forGetter(JointDriverSubsystemStaticAttr::getRotationOrder),
+            Codec.unboundedMap(Axis.CODEC, JointDriverAxisAttr.CODEC).fieldOf("axes").forGetter(JointDriverSubsystemStaticAttr::getAxes),
             BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT).forGetter(BasicSubsystemStaticAttr::getSoundAttr)
-    ).apply(instance, JointDriverSubsystemStaticAttr::new
-    ));
+    ).apply(instance, JointDriverSubsystemStaticAttr::new));
 
     public JointDriverSubsystemStaticAttr(
-            BasicSubsystemStaticAttr.BasicAttr basicAttr,
-            String controlledConnector,
+            BasicAttr basicAttr,
             String rotationOrder,
-            Map<Axis, MotorAttr> axisParams,
-            BasicSoundAttr sounds
-    ) {
+            Map<Axis, JointDriverAxisAttr> axes,
+            BasicSoundAttr sounds) {
         super(basicAttr, sounds);
-        this.controlledConnector = controlledConnector;
+        if (axes.isEmpty()) throw new IllegalArgumentException("axes must not be empty");
+        if (axes.keySet().stream().anyMatch(axis -> axis.getValue() < 0 || axis.getValue() > 5)) {
+            throw new IllegalArgumentException("axes must be one of X, Y, Z, XR, YR or ZR");
+        }
+        com.jme3.bullet.RotationOrder.valueOf(rotationOrder);
         this.rotationOrder = rotationOrder;
-        this.axisParams = axisParams;
+        this.axes = Map.copyOf(axes);
     }
 
     @Override
     public MapCodec<? extends AbstractSubsystemStaticAttr> codec() {
         return CODEC;
     }
-
 }

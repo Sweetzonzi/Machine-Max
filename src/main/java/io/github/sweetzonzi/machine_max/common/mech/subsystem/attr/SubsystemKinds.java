@@ -69,8 +69,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * {@code type} 分派到安装属性，子系统型号 JSON 的 {@code type} 分派到静态属性，两侧因此
  * 不可能出现"安装侧叫 A、静态侧叫 B"的错配。</p>
  *
- * <p>内建 22 条登记在静态初始化里完成；另有三个仍在开发中的类型（{@code joint_driver}、
- * {@code scriptable}、{@code battery}）的登记被注释掉，内容包无法引用它们，见静态初始化的说明。
+ * <p>内建 23 条登记在静态初始化里完成；另有两个仍在开发中的类型（{@code scriptable}、
+ * {@code battery}）的登记被注释掉，内容包无法引用它们，见静态初始化的说明。
  * 下游在自己的模组初始化阶段调用 {@link #register(ResourceLocation, Kind)}，必须早于内容包装载；
  * 内容包装载开始时 {@link #seal()} 封表，此后的登记立即失败。</p>
  *
@@ -124,12 +124,12 @@ public final class SubsystemKinds {
         register("track_drive", TrackDriveSubsystemAttr.CODEC, TrackDriveSubsystemStaticAttr.CODEC);
         register("gearbox", GearboxSubsystemAttr.CODEC, GearboxSubsystemStaticAttr.CODEC);
         register("transmission", TransmissionSubsystemAttr.CODEC, TransmissionSubsystemStaticAttr.CODEC);
-        // WIP：以下三个类型的字段契约尚未定稿（两侧属性类均标 @ApiStatus.Experimental）。
-        // 登记一旦生效，内容包就能引用随时会变的字段，因此暂时不登记：解码遇到这些 ID 会按「未知类型」拒绝。
-        // 契约定稿后取消注释即可，两侧 Codec 与登记结构都不用改。
-        // register("joint_driver", JointDriverSubsystemAttr.CODEC, JointDriverSubsystemStaticAttr.CODEC);
+        register("joint_driver", JointDriverSubsystemAttr.CODEC, JointDriverSubsystemStaticAttr.CODEC);
         register("wheel_driver", WheelDriverSubsystemAttr.CODEC, WheelDriverSubsystemStaticAttr.CODEC);
         register("turret_driver", TurretDriverSubsystemAttr.CODEC, TurretDriverSubsystemStaticAttr.CODEC);
+        // WIP：以下两个类型的字段契约尚未定稿（两侧属性类均标 @ApiStatus.Experimental）。
+        // 登记一旦生效，内容包就能引用随时会变的字段，因此暂时不登记：解码遇到这些 ID 会按「未知类型」拒绝。
+        // 契约定稿后取消注释即可，两侧 Codec 与登记结构都不用改。
         // register("scriptable", ScriptableSubsystemAttr.CODEC, ScriptableSubsystemStaticAttr.CODEC);
         // register("battery", BatterySubsystemAttr.CODEC, BatterySubsystemStaticAttr.CODEC);
         register("light", LightingSubsystemAttr.CODEC, LightingSubsystemStaticAttr.CODEC);

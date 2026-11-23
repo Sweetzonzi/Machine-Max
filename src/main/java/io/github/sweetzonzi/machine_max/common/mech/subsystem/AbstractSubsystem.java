@@ -225,6 +225,10 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     public void onPrePhysicsTick() {
     }
 
+    /** 动画姿态完成本物理步混合后、物理求解前调用。 */
+    public void onPostAnimationPhysicsTick() {
+    }
+
     public void onPostPhysicsTick() {
         physicsTickCount++;
     }

@@ -215,6 +215,14 @@ public class SubsystemController implements ISignalBus {
         }
     }
 
+    /** 所有部件动画混合完成后调用各子系统，在本物理步求解前应用动画驱动目标。 */
+    public void postAnimationPhysicsTick() {
+        Set<AbstractSubsystem> snapshot = allSubsystems;
+        for (AbstractSubsystem subsystem : snapshot) {
+            if (subsystem != null) subsystem.onPostAnimationPhysicsTick();
+        }
+    }
+
     /**
      * 初始化子系统，连接机械功传递链路，调用{@link AbstractSubsystem#onAttach}方法并注册总线订阅
      */

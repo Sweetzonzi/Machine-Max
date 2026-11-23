@@ -1,310 +1,251 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
+import cn.solarmoon.spark_core.animation.anim.AnimInstance;
+import cn.solarmoon.spark_core.animation.anim.AnimLayer;
+import cn.solarmoon.spark_core.animation.anim.KeyAnimData;
+import cn.solarmoon.spark_core.animation.model.ModelInstance;
+import cn.solarmoon.spark_core.animation.model.ModelPose;
+import cn.solarmoon.spark_core.animation.model.origin.OBone;
+import cn.solarmoon.spark_core.animation.model.origin.OLocator;
+import cn.solarmoon.spark_core.util.PPhase;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.RotationOrder;
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.bullet.joints.motors.MotorParam;
-import com.jme3.bullet.joints.motors.RotationMotor;
-import com.jme3.bullet.joints.motors.TranslationMotor;
 import com.jme3.math.Quaternion;
+import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.MotorAttr;
-import io.github.sweetzonzi.machine_max.common.mech.energy.IMechPowerConsumer;
-import io.github.sweetzonzi.machine_max.common.mech.energy.MechPower;
-import io.github.sweetzonzi.machine_max.common.mech.signal.*;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.JointDriverSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.JointDriverAxisAttr;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AdvancedConnector;
 import io.github.sweetzonzi.machine_max.util.data.Axis;
-import jme3utilities.math.MyQuaternion;
-import org.jetbrains.annotations.ApiStatus;
+import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * 关节驱动子系统：驱动 {@link AdvancedConnector} 的 {@code New6Dof} 关节各轴，
- * 按轴分配机械功率并回传速度／位置信号。
- * <p>
- * <b>WIP：</b>平动轴的控制信号尚未接入（见 {@code onPrePhysicsTick()} 中的 TODO），
- * 当前只处理旋转轴；JSON 契约与数值也未定稿。
- */
-@ApiStatus.Experimental
-public class JointDriverSubsystem extends BasicSubsystem implements IMechPowerConsumer {
+/** 以连接点 locator 的动画姿态为目标，按配置力值驱动高级连接器的 6 自由度关节。 */
+public class JointDriverSubsystem extends BasicSubsystem {
     public final JointDriverSubsystemAttr attr;
+    @Nullable
     public final AdvancedConnector connector;
-    private final Float[] powerAllocation = new Float[6];
-    private final Float[] MAX_FORCE = new Float[6];
-    private final Float[] MAX_BRAKE_FORCE = new Float[6];
-    private final Float[] MAX_SPEED = new Float[6];
-    private final float TOTAL_POWER_WEIGHT;
-    private boolean connected = false;
+    private final RotationOrder rotationOrder;
 
-    private MechPower receivedPower = MechPower.ZERO;
-    private float feedbackSpeed = 0;
+    private New6Dof drivenJoint;
+    @Nullable
+    private RotationOrder previousRotationOrder;
+    private Map<Integer, MotorState> previousMotorStates = Map.of();
 
     public JointDriverSubsystem(ISubsystemHost owner, String name, JointDriverSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
-        if (owner.getSubPart() != null &&
-                owner.getSubPart().connectors.get(this.attr.controlledConnector) instanceof AdvancedConnector advancedConnector) {
-            this.connector = advancedConnector;
-            float totalPowerWeight = 0f;
-            for (Axis axis : this.attr.axisParams.keySet()) {
-                MotorAttr axisAttr = this.attr.axisParams.get(axis);
-                if (axisAttr.needsPower() && axisAttr.maxForce() > 0.0)
-                    totalPowerWeight += axisAttr.maxForce();
-                MAX_FORCE[axis.getValue()] = Math.max(0f, axisAttr.maxForce());
-                MAX_BRAKE_FORCE[axis.getValue()] = Math.max(0f, axisAttr.maxBrakeForce());
-                MAX_SPEED[axis.getValue()] = Math.max(0f, axisAttr.maxSpeed() * (axis.getValue() <= 2 ? 1f : (float) Math.PI / 180f));
-            }
-            TOTAL_POWER_WEIGHT = Math.max(1f, totalPowerWeight);
+        this.rotationOrder = RotationOrder.valueOf(attr.staticAttribute.rotationOrder);
+        if (owner.getSubPart() != null
+                && owner.getSubPart().connectors.get(attr.controlledConnector) instanceof AdvancedConnector advanced) {
+            this.connector = advanced;
         } else {
             this.connector = null;
-            TOTAL_POWER_WEIGHT = 1f;
-            MachineMax.LOGGER.error("关节驱动子系统 {} 无法找到特殊连接点 {}", name, this.attr.controlledConnector);
+            MachineMax.LOGGER.error("动画关节执行器 {} 找不到高级连接点 {}", name, attr.controlledConnector);
         }
     }
 
     @Override
-    public void onTick() {
-        super.onTick();
-        if (this.connector != null && this.connector.joint instanceof New6Dof joint) {
-            //检查并设置关节的旋转顺序
-            if (RotationOrder.valueOf(attr.rotationOrder) != joint.getRotationOrder()) {
-                joint.setRotationOrder(RotationOrder.valueOf(attr.rotationOrder));
-            }
-            if (!connected) {
-                for (Axis axis : attr.axisParams.keySet()) {//设置关节的各轴弹簧刚度阻尼参数
-                    MotorAttr jointAttr = attr.axisParams.get(axis);
-                    if (jointAttr.lowerLimit() != null)
-                        joint.set(MotorParam.LowerLimit, axis.getValue(), (float) (jointAttr.lowerLimit() * (axis.getValue() <= 2 ? 1 : Math.PI / 180)));
-                    if (jointAttr.upperLimit() != null)
-                        joint.set(MotorParam.UpperLimit, axis.getValue(), (float) (jointAttr.upperLimit() * (axis.getValue() <= 2 ? 1 : Math.PI / 180)));
-                    if (jointAttr.equilibrium() != null)
-                        joint.set(MotorParam.Equilibrium, axis.getValue(), (float) (jointAttr.equilibrium() * (axis.getValue() <= 2 ? 1 : Math.PI / 180)));
-                    if (jointAttr.stiffness() != null) {
-                        joint.set(MotorParam.Stiffness, axis.getValue(), (float) (jointAttr.stiffness() * (axis.getValue() <= 2 ? 1 : Math.PI / 180)));
-                        joint.enableSpring(axis.getValue(), true);
-                    }
-                    if (jointAttr.damping() != null) {
-                        joint.set(MotorParam.Damping, axis.getValue(), (float) (jointAttr.damping() * (axis.getValue() <= 2 ? 1 : Math.PI / 180)));
-                        joint.enableSpring(axis.getValue(), true);
-                    }
-                }
-                connected = true;
-            }
-            distributePower();//分配收到的功率至各轴
-        } else connected = false;
+    public void onPostAnimationPhysicsTick() {
+        if (!isActive() || connector == null || connector.joint == null
+                || connector.joint.getPhysicsSpace() == null) {
+            releaseDrive();
+            return;
+        }
+
+        List<String> locatorBoneChain = getLocatorBoneChain();
+        if (locatorBoneChain.isEmpty() || !hasAnimationContribution(locatorBoneChain)) {
+            releaseDrive();
+            return;
+        }
+
+        New6Dof joint = connector.joint;
+        if (joint != drivenJoint) {
+            releaseDrive();
+            previousRotationOrder = joint.getRotationOrder();
+            previousMotorStates = captureMotorStates(joint);
+            joint.setRotationOrder(rotationOrder);
+            drivenJoint = joint;
+        }
+
+        Transform animatedLocator = sampleAnimatedLocator();
+        if (animatedLocator == null) {
+            releaseDrive();
+            return;
+        }
+
+        Transform restLocator = connector.subPart.getLocatorLocalTransform(connector.attr.locatorName);
+        Quaternion frameRotation = connector.actualTransform.getRotation()
+                .mult(new Quaternion().fromAngles(0f, (float) Math.PI, 0f));
+        JointTargetSampler.Target target = JointTargetSampler.sample(
+                restLocator, animatedLocator, frameRotation, rotationOrder);
+
+        for (Map.Entry<Axis, JointDriverAxisAttr> entry : attr.staticAttribute.axes.entrySet()) {
+            int axis = entry.getKey().getValue();
+            JointDriverAxisAttr axisAttr = entry.getValue();
+            applyServoTarget(joint, axis, JointTargetSampler.servoTarget(target, entry.getKey()), axisAttr);
+        }
     }
 
-    @Override
-    public void onPrePhysicsTick() {
-        super.onPrePhysicsTick();
-        if (this.connector != null && this.connector.joint instanceof New6Dof joint) {
-            MotorControlSignal controlSignal = getControlInput();
-            Float[] speedControl = controlSignal.getValue().getFirst();
-            Float[] positionControl = controlSignal.getValue().getSecond();
-            //TODO:处理平动控制信号
-            TranslationMotor translationMotor = joint.getTranslationMotor();
-            Vector3f relativeLinearVel = getRelativeLinearVel();
-//            for (int axis : attr.axisParams.keySet()) {
-//                if (axis <= 2) {
-//                    StaticWheelRollingAxisAttr axisAttr = attr.axisParams.get(axis);
-//                    //处理速度控制信号
-//                    if (speedControl[axis] == null) {
-//                        translationMotor.setMotorEnabled(axis, false);
-//                    } else {
-//                        translationMotor.setMotorEnabled(axis, true);
-//                    }
-//                    //处理位置控制信号
-//                    if (positionControl[axis] == null) translationMotor.setServoEnabled(axis, false);
-//                    else if (powerAllocation[axis] != null) {
-//                        translationMotor.setServoEnabled(axis, true);
-//                    }
-//                } else break;//跳过旋转控制信号
-//            }
-            //处理转动控制信号
-            Vector3f relativeAngularVel = getRelativeAngularVel();
-            for (Axis axis : attr.axisParams.keySet()) {
-                if (axis.getValue() <= 2) continue;//跳过平动控制信号
-                RotationMotor rotationMotor = joint.getRotationMotor(axis.getValue() - 3);
-                MotorAttr axisAttr = attr.axisParams.get(axis);
-                //处理速度控制信号
-                if (speedControl[axis.getValue()] == null) rotationMotor.setMotorEnabled(false);
-                else {
-                    rotationMotor.setMotorEnabled(true);
-                    rotationMotor.set(MotorParam.TargetVelocity, speedControl[axis.getValue()]);
-                    float delta = speedControl[axis.getValue()] - relativeAngularVel.get(axis.getValue() - 3);
-                    if (!axisAttr.needsPower()) {
-                        if (delta * Math.signum(relativeAngularVel.get(axis.getValue() - 3)) < 0)
-                            rotationMotor.set(MotorParam.MaxMotorForce, MAX_FORCE[axis.getValue()]);
-                        else rotationMotor.set(MotorParam.MaxMotorForce, MAX_BRAKE_FORCE[axis.getValue()]);
-                    } else if (powerAllocation[axis.getValue()] != null) {
-                        if (delta * Math.signum(relativeAngularVel.get(axis.getValue() - 3)) <= 0) {//加速过程
-                            float torque = powerAllocation[axis.getValue()] / Math.max(relativeAngularVel.get(axis.getValue() - 3), 0.25f);
-                            rotationMotor.set(MotorParam.MaxMotorForce, Math.clamp(torque, -MAX_FORCE[axis.getValue()], MAX_FORCE[axis.getValue()]));
-                        } else {//减速过程
-//                            rotationMotor.set(MotorParam.MaxMotorForce, MAX_BRAKE_FORCE[axis.getValue()] - Math.clamp(powerAllocation[axis.getValue()], -MAX_FORCE[axis.getValue()], 0));
-                            rotationMotor.set(MotorParam.MaxMotorForce, MAX_BRAKE_FORCE[axis.getValue()]);
-                        }
-                    }
-                }
-                //处理位置控制信号
-                if (positionControl[axis.getValue()] == null) rotationMotor.setServoEnabled(false);
-                else {
-                    rotationMotor.setServoEnabled(true);
-                    rotationMotor.set(MotorParam.ServoTarget, -positionControl[axis.getValue()]);
-                    rotationMotor.set(MotorParam.TargetVelocity, Math.abs(MAX_SPEED[axis.getValue()]));
+    private void applyServoTarget(New6Dof joint, int axis, float requestedTarget, JointDriverAxisAttr attr) {
+        float lower = joint.get(MotorParam.LowerLimit, axis);
+        float upper = joint.get(MotorParam.UpperLimit, axis);
+        float target = lower <= upper ? Math.clamp(requestedTarget, lower, upper) : requestedTarget;
+        float maxSpeed = axis < 3 ? attr.maxSpeed() : (float) Math.toRadians(attr.maxSpeed());
+
+        joint.set(MotorParam.MaxMotorForce, axis, attr.maxForce());
+        joint.set(MotorParam.TargetVelocity, axis, maxSpeed);
+        joint.set(MotorParam.ServoTarget, axis, target);
+        setMotorEnabled(joint, axis, true);
+        setServoEnabled(joint, axis, true);
+        joint.getBodyA().activate();
+        joint.getBodyB().activate();
+    }
+
+    private List<String> getLocatorBoneChain() {
+        ModelInstance model = getSubPart().part.modelController.getModel();
+        if (model == null) return List.of();
+        OLocator locator = model.getOrigin().getLocators().get(connector.attr.locatorName);
+        if (locator == null) return List.of();
+
+        List<String> names = new ArrayList<>();
+        for (OBone bone = locator.getBone(); bone != null; bone = bone.getParent()) {
+            names.add(bone.getName());
+        }
+        return names;
+    }
+
+    private boolean hasAnimationContribution(List<String> boneChain) {
+        for (AnimLayer layer : getSubPart().part.animController.getLayers().values()) {
+            for (AnimInstance animation : layer.snapshotAnimations()) {
+                if (!JointTargetSampler.hasDriveTarget(animation.getOrigin().getLoop(), animation.getTime(),
+                        animation.getMaxLength(), animation.getCurrentWeight())) continue;
+                for (String boneName : boneChain) {
+                    if (animation.getOrigin().getBones().containsKey(boneName)) return true;
                 }
             }
         }
+        return false;
+    }
+
+    @Nullable
+    private Transform sampleAnimatedLocator() {
+        SubPart subPart = connector.subPart;
+        ModelInstance model = subPart.part.modelController.getModel();
+        if (model == null) return null;
+        ModelPose pose = model.getPose();
+        OLocator locator = model.getOrigin().getLocators().get(connector.attr.locatorName);
+        if (locator == null) return null;
+
+        Matrix4f bodyFromModel = SparkMathKt.toMatrix4f(subPart.getLocalMassCenterTransform().clone().invert())
+                .mul(subPart.getAttr().getModelToStartBone(subPart.part.variant));
+        Matrix4f bodyFromLocator = bodyFromModel.mul(getPhysicsSpaceLocatorMatrix(pose, locator));
+        org.joml.Vector3f modelTranslation = bodyFromLocator.getTranslation(new org.joml.Vector3f());
+        Vector3f translation = new Vector3f(modelTranslation.x, modelTranslation.y, modelTranslation.z);
+        Quaternion rotation = SparkMathKt.toBQuaternion(bodyFromLocator.getNormalizedRotation(new Quaternionf()));
+        return new Transform(translation, rotation);
+    }
+
+    private static Matrix4f getPhysicsSpaceLocatorMatrix(ModelPose pose, OLocator locator) {
+        List<OBone> chain = new ArrayList<>();
+        for (OBone bone = locator.getBone(); bone != null; bone = bone.getParent()) chain.add(bone);
+
+        Matrix4f matrix = new Matrix4f();
+        for (int i = chain.size() - 1; i >= 0; i--) {
+            OBone bone = chain.get(i);
+            KeyAnimData animation = pose.getPhysicsLocalTransform(bone.getName());
+            Vec3 position = animation == null ? Vec3.ZERO : animation.getPosition();
+            Vec3 rotation = animation == null ? Vec3.ZERO : animation.getRotation();
+            Vec3 scale = animation == null ? new Vec3(1.0, 1.0, 1.0) : animation.getScale();
+            Vec3 pivot = bone.getPivot();
+
+            matrix.translate((float) pivot.x, (float) pivot.y, (float) pivot.z)
+                    .translate((float) position.x, (float) position.y, (float) position.z)
+                    .rotateZYX(
+                            (float) (rotation.z + bone.getRotation().z),
+                            (float) (rotation.y + bone.getRotation().y),
+                            (float) (rotation.x + bone.getRotation().x))
+                    .scale((float) scale.x, (float) scale.y, (float) scale.z)
+                    .translate((float) -pivot.x, (float) -pivot.y, (float) -pivot.z);
+        }
+
+        Vec3 offset = locator.getOffset();
+        Vec3 rotation = locator.getRotation();
+        return matrix.translate((float) offset.x, (float) offset.y, (float) offset.z)
+                .rotateZYX((float) rotation.z, (float) rotation.y, (float) rotation.x);
+    }
+
+    private Map<Integer, MotorState> captureMotorStates(New6Dof joint) {
+        Map<Integer, MotorState> states = new LinkedHashMap<>();
+        for (Axis configuredAxis : attr.staticAttribute.axes.keySet()) {
+            int axis = configuredAxis.getValue();
+            boolean motorEnabled = joint.isMotorEnabled(axis);
+            boolean servoEnabled = joint.isServoEnabled(axis);
+            states.put(axis, new MotorState(
+                    motorEnabled,
+                    servoEnabled,
+                    joint.get(MotorParam.MaxMotorForce, axis),
+                    joint.get(MotorParam.TargetVelocity, axis),
+                    joint.get(MotorParam.ServoTarget, axis)));
+        }
+        return Map.copyOf(states);
+    }
+
+    private void releaseDrive() {
+        New6Dof joint = drivenJoint;
+        if (joint == null) return;
+        if (joint.getPhysicsSpace() != null) {
+            previousMotorStates.forEach((axis, state) -> restoreAxis(joint, axis, state));
+            if (previousRotationOrder != null) joint.setRotationOrder(previousRotationOrder);
+        }
+        drivenJoint = null;
+        previousRotationOrder = null;
+        previousMotorStates = Map.of();
+    }
+
+    private static void restoreAxis(New6Dof joint, int axis, MotorState state) {
+        setMotorEnabled(joint, axis, state.motorEnabled());
+        setServoEnabled(joint, axis, state.servoEnabled());
+        joint.set(MotorParam.MaxMotorForce, axis, state.maxMotorForce());
+        joint.set(MotorParam.TargetVelocity, axis, state.targetVelocity());
+        joint.set(MotorParam.ServoTarget, axis, state.servoTarget());
+    }
+
+    private static void setMotorEnabled(New6Dof joint, int axis, boolean enabled) {
+        if (axis < 3) joint.getTranslationMotor().setMotorEnabled(axis, enabled);
+        else joint.getRotationMotor(axis - 3).setMotorEnabled(enabled);
+    }
+
+    private static void setServoEnabled(New6Dof joint, int axis, boolean enabled) {
+        if (axis < 3) joint.getTranslationMotor().setServoEnabled(axis, enabled);
+        else joint.getRotationMotor(axis - 3).setServoEnabled(enabled);
     }
 
     @Override
-    public void onPostPhysicsTick() {
-        super.onPostPhysicsTick();
-        if (this.connector != null && this.connector.joint instanceof New6Dof joint) {
-            Vector3f relativePos = getRelativePos();
-            Vector3f relativeAngle = getRelativeAngle();
-            Vector3f relativeLinearVel = getRelativeLinearVel();
-            Vector3f relativeAngularVel = getRelativeAngularVel();
-            for (Axis axis : attr.axisParams.keySet()) {
-                var axisAttr = attr.axisParams.get(axis);
-                if (axis.getValue() <= 2) {//一般平动信号
-                    for (String signalKey : axisAttr.speedSignalOutputs().keySet())//一般平动速度信号
-                        publishFeedback(signalKey, relativeLinearVel.get(axis.getValue()));
-                    for (String signalKey : axisAttr.positionSignalOutputs().keySet())//一般平动位置信号
-                        publishFeedback(signalKey, relativePos.get(axis.getValue()));
-                } else {//一般转动信号
-                    for (String signalKey : axisAttr.speedSignalOutputs().keySet())//一般转动速度信号
-                        publishFeedback(signalKey, relativeAngularVel.get(axis.getValue() - 3));
-                    for (String signalKey : axisAttr.positionSignalOutputs().keySet())//一般转动位置信号
-                        publishFeedback(signalKey, -relativeAngle.get(axis.getValue() - 3));
-                }
-            }
-            feedbackSpeed = getPrimaryFeedbackSpeed(relativeAngularVel, relativeLinearVel);
-        }
+    public void onDetach() {
+        getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
+            releaseDrive();
+            return null;
+        });
+        super.onDetach();
     }
 
-    private float getPrimaryFeedbackSpeed(Vector3f relativeAngularVel, Vector3f relativeLinearVel) {
-        for (Axis axis : attr.axisParams.keySet()) {
-            var axisAttr = attr.axisParams.get(axis);
-            if (!axisAttr.needsPower()) continue;
-            if (axis.getValue() <= 2) return relativeLinearVel.get(axis.getValue());
-            else return relativeAngularVel.get(axis.getValue() - 3);
-        }
-        return 0;
-    }
-
-    private MotorControlSignal getControlInput() {
-        Float[] speedInput = new Float[6];
-        Float[] positionInput = new Float[6];
-        for (Axis axis : attr.axisParams.keySet()) {
-            MotorAttr axisAttr = attr.axisParams.get(axis);
-            SignalChannel targetSpeed = new SignalChannel();
-            SignalChannel targetPosition = new SignalChannel();
-            //获取控制信号
-            for (String signalKey : axisAttr.targetSpeedSignalKey()) {
-                targetSpeed = getSignalChannel(signalKey);//获取目标速度信号(马达，仅控制速度)
-                if (!targetSpeed.isEmpty() && !(targetSpeed.getFirstSignal() instanceof EmptySignal)) break;
-            }
-            for (String signalKey : axisAttr.targetPositionSignalKey()) {
-                targetPosition = getSignalChannel(signalKey);//获取目标位置信号(伺服电机，试图达到目标位置)
-                if (!targetPosition.isEmpty() && !(targetPosition.getFirstSignal() instanceof EmptySignal)) break;
-            }
-            //按类型处理控制信号
-            //处理速度控制信号
-            if (targetSpeed.getFirstSignal() instanceof MoveInputSignal moveInputSignal) {//若输入为原始移动输入信号
-                int i = axis.getValue();
-                if (axis.getValue() == 3) i = 2;
-                float speed = Math.signum(moveInputSignal.getMoveInput()[i]) * 300000;//则不限制转速，只控制旋转方向
-                if (speed != 0 || i == 4) speedInput[axis.getValue()] = Math.clamp(speed, -MAX_SPEED[axis.getValue()], MAX_SPEED[axis.getValue()]);
-            } else if (targetSpeed.getFirstSignal() instanceof Float speed)
-                speedInput[axis.getValue()] = Math.clamp(speed, -MAX_SPEED[axis.getValue()], MAX_SPEED[axis.getValue()]);//若为float信号则设置目标速度
-            else speedInput[axis.getValue()] = null;//若为其他任何类型的信号则不对速度进行控制
-            //处理位置控制信号
-            if (targetPosition.getFirstSignal() instanceof MoveInputSignal moveInputSignal) {
-                positionInput[axis.getValue()] = (float) moveInputSignal.getMoveInput()[axis.getValue()] / 100;//若输入为原始移动输入信号则直接设置目标位置
-            } else if (targetPosition.getFirstSignal() instanceof Float position)
-                positionInput[axis.getValue()] = position;//若为float信号则设置目标位置
-            else positionInput[axis.getValue()] = null;//若为其他任何类型的信号则不对位置进行控制
-        }
-        return new MotorControlSignal(speedInput, positionInput);
-    }
-
-    private void distributePower() {
-        float totalPower = receivedPower.power();
-        if (Float.isNaN(totalPower)) totalPower = 0;
-        for (Axis axis : attr.axisParams.keySet()) {
-            MotorAttr axisAttr = attr.axisParams.get(axis);
-            if (axisAttr.needsPower() && axisAttr.maxForce() > 0.0)
-                powerAllocation[axis.getValue()] = totalPower * axisAttr.maxForce() / TOTAL_POWER_WEIGHT;//根据权重分配功率
-            else powerAllocation[axis.getValue()] = null;//不需要功率输入或最大值非法则不分配功率
-        }
-    }
-
-    @Override
-    public void onMechPowerReceived(String producerName, MechPower power) {
-        this.receivedPower = power;
-    }
-
-    @Override
-    public float getFeedbackSpeed() {
-        return feedbackSpeed;
-    }
-
-    @Override
-    public void setFeedbackSpeed(float speed) {
-        this.feedbackSpeed = speed;
-    }
-
-    private Vector3f getRelativeAngle() {
-        Vector3f result = new Vector3f();
-        connector.joint.getAngles(result);
-        return result;
-    }
-
-    private Vector3f getRelativeAngularVel() {
-        Vector3f result = new Vector3f();
-        if (connector.joint != null) {
-            Vector3f angularVelA = connector.joint.getBodyA().getAngularVelocity(null);
-            Vector3f angularVelB = connector.joint.getBodyB().getAngularVelocity(null);
-            Vector3f relativeVelInWorld = angularVelB.subtract(angularVelA);
-            Quaternion localToWorld = connector.joint.getBodyA().getPhysicsRotation(null);
-            MyQuaternion.rotateInverse(localToWorld, relativeVelInWorld, result);
-        }
-        return result;
-    }
-
-    private Vector3f getRelativePos() {
-        Vector3f result = new Vector3f();
-        Vector3f posA = connector.joint.getBodyA().getPhysicsLocation(null);
-        Vector3f posB = connector.joint.getBodyB().getPhysicsLocation(null);
-        Vector3f relativePosInWorld = posB.subtract(posA);
-        Quaternion localToWorld = connector.joint.getBodyA().getPhysicsRotation(null);
-        MyQuaternion.rotateInverse(localToWorld, relativePosInWorld, result);
-        return result;
-    }
-
-    private Vector3f getRelativeLinearVel() {
-        Vector3f result = new Vector3f();
-        Vector3f linearVelA = connector.joint.getBodyA().getLinearVelocity(null);
-        Vector3f linearVelB = connector.joint.getBodyB().getLinearVelocity(null);
-        Vector3f relativeVelInWorld = linearVelB.subtract(linearVelA);
-        Quaternion localToWorld = connector.joint.getBodyA().getPhysicsRotation(null);
-        MyQuaternion.rotateInverse(localToWorld, relativeVelInWorld, result);
-        return result;
-    }
-
-    @Override
-    public Map<String, List<String>> getTargetNames() {
-        Map<String, List<String>> result = new HashMap<>(6);
-        for (Axis axis : attr.axisParams.keySet()) {
-            MotorAttr axisAttr = attr.axisParams.get(axis);
-            result.putAll(axisAttr.speedSignalOutputs());
-            result.putAll(axisAttr.positionSignalOutputs());
-        }
-        return result;
+    private record MotorState(
+            boolean motorEnabled,
+            boolean servoEnabled,
+            float maxMotorForce,
+            float targetVelocity,
+            float servoTarget) {
     }
 }

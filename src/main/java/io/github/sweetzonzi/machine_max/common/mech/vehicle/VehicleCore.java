@@ -620,6 +620,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
             for (RegularPart part : partMap.values()) {
                 part.onPrePhysicsTick();
             }
+            subSystemController.postAnimationPhysicsTick();
             for (TrackLink link : new ArrayList<>(trackLinks)) link.applyTension();
         }
     }
@@ -1681,6 +1682,19 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
     @Override
     public void activatePhysics() {
         this.activate();
+    }
+
+    /**
+     * 交互区的一次性动画事件广播给本载具的每个部件。
+     *
+     * <p>点击与拓扑变化都在主线程，遍历 {@link #partMap} 的同时不会有别的线程拆装部件；
+     * 没有对应动画控制器的部件会忽略未知事件，因此不需要按型号筛选。</p>
+     */
+    @Override
+    public void broadcastInteractionEvent(String eventName) {
+        for (RegularPart part : partMap.values()) {
+            part.triggerInteractionEvent(eventName);
+        }
     }
 
     // ==================== Target 接口实现 ====================

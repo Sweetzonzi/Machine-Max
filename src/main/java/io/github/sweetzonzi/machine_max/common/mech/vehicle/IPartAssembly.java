@@ -125,6 +125,22 @@ public interface IPartAssembly {
     SubsystemController getSubsystemController();
 
     // ========================================
+    // 动画
+    // ========================================
+
+    /**
+     * 向装配体内的全部部件广播一次性动画事件。
+     *
+     * <p>交互区把 {@code signal_targets} 中指向 {@code global} 的频道交给装配体投递：每个部件
+     * 用自己的动画状态机决定是否响应，没有对应控制器的部件忽略未知事件。宿主的部件不承载
+     * 动画时保持默认空实现。</p>
+     *
+     * @param eventName 动画状态机事件名，与内容里的频道同名
+     */
+    default void broadcastInteractionEvent(String eventName) {
+    }
+
+    // ========================================
     // 伤害传递
     // ========================================
 

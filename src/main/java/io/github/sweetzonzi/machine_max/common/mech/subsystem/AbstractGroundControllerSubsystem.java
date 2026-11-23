@@ -244,10 +244,12 @@ public abstract class AbstractGroundControllerSubsystem extends BasicSubsystem {
 
     /** 主线程：把上一物理步算出的控制量按配置线路投递。 */
     private void sendControlOutputs() {
+        // 离座后物理步不再更新油门，反馈不能继续发送最后一次踩下的值。
+        float throttleFeedback = moveInput == null ? 0f : actualThrottle * 0.01f;
         for (Map.Entry<String, List<String>> entry : getThrottleOutputTargets().entrySet()) {
             String signalChannel = entry.getKey();
             for (String targetName : entry.getValue()) {
-                sendSignalToTarget(signalChannel, targetName, actualThrottle * 0.01f);
+                sendSignalToTarget(signalChannel, targetName, throttleFeedback);
             }
         }
         for (Map.Entry<String, List<String>> entry : getBrakeOutputTargets().entrySet()) {
