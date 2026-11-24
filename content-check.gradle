@@ -59,6 +59,10 @@
 //     座位 / 火控能发现哪些视点：具名目标不走接收侧接受频道，名字写错或指向别的类型时发现
 //     结果为空、频道写错也照样命中；local / global 与连接点名要过视点的 discovery_inputs，
 //     写错时永远命中不了。两种情况都只表现为"少一个视角"，没有日志。
+// 17. 非根子零件的内部连接点。同一 Part 内非 internal 的连接点只在运行时按需连接，构造期
+//     不会预连；一个只靠它连到别处的子零件在构造后没有任何关节约束，入世即成为自由刚体
+//     掉落（同装配体的碰撞过滤让它直接穿过车体）。判定按质量最大的子零件当根；可开件用
+//     internal 铰链 + 非 internal 锁扣，可分离件自成 Part。
 //
 // 扫描前先按运行期口径做一遍语法体检：`{"a":1,}` 这类对象尾逗号 JsonSlurper 读得进去，
 // 而运行期读内容包的 Gson（JsonParser.parseString，宽松模式）会抛 Expected name，
@@ -1197,7 +1201,9 @@ tasks.register('checkContent') {
                 'machine_max:sight'               : [static : [discovery_inputs: ['camera_sight']], install: [:]],
                 'machine_max:lighting'            : [static : [:], install: [:], always: ['toggle_light']],
                 'machine_max:ammo_loader'         : [static : [:], install: [ammo_discovery_inputs: []]],
-                'machine_max:regen_ammo_rack'     : [static : [:], install: [ammo_discovery_inputs: []]]
+                'machine_max:regen_ammo_rack'     : [static : [:], install: [ammo_discovery_inputs: []]],
+                // 锁扣只经连接点端口接受交互区的解扣请求；频道是端口到达标签，不是新增的信号输入
+                'machine_max:coupler'             : [static : [:], install: [:], always: ['interact']]
         ]
 
         Map<String, Object> definitionCache = [:]
@@ -1408,6 +1414,42 @@ tasks.register('checkContent') {
                                 if (block instanceof Map) {
                                     interactBoxes[name.toString()] = (Map) block
                                 }
+                            }
+                        }
+                    }
+                    // 17. 非根子零件必须有内部连接点（根 = 质量最大的子零件，与
+                    // VariantAttr.selectRootSubPartName 同口径；并列最大的一律跳过，避免误报）。
+                    if (subPartEntries.size() > 1) {
+                        Map<String, Double> subPartMasses = [:]
+                        Map<String, Integer> internalConnectorCounts = [:]
+                        subPartEntries.each { Object name, Object subPartRaw ->
+                            if (!(subPartRaw instanceof Map)) {
+                                return
+                            }
+                            Object massRaw = ((Map) subPartRaw).get('mass')
+                            subPartMasses[name.toString()] =
+                                    massRaw instanceof Number ? ((Number) massRaw).doubleValue() : 0d
+                            int count = 0
+                            Object consRaw = ((Map) subPartRaw).get('connectors')
+                            if (consRaw instanceof Map) {
+                                ((Map) consRaw).each { Object ignoredName, Object connectorRaw ->
+                                    if (connectorRaw instanceof Map
+                                            && Boolean.TRUE == ((Map) connectorRaw).get('internal')) {
+                                        count++
+                                    }
+                                }
+                            }
+                            internalConnectorCounts[name.toString()] = count
+                        }
+                        if (subPartMasses) {
+                            double maxMass = subPartMasses.values().max()
+                            subPartMasses.each { String name, Double mass ->
+                                if (mass < maxMass || internalConnectorCounts[name] > 0) {
+                                    return
+                                }
+                                problems << relative + '：变体 ' + variantName + ' 的子零件 ' + name +
+                                        ' 没有内部连接点——构造期不会有任何关节约束它，入世后会作为自由刚体掉落；' +
+                                        '可开件用 internal 铰链 + 非 internal 锁扣，可分离件自成 Part'
                             }
                         }
                     }
