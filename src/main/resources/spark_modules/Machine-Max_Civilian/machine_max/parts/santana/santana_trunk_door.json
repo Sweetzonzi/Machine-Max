@@ -37,7 +37,13 @@
           },
           "connector.machine_max.lock": {
             "locator": "trunk_latch",
-            "definition": "machine_max:fixed_down"
+            "definition": "machine_max:fixed_down",
+            "overwrite": {
+              // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+              "integrity": 3.5,
+              "impact_reduction": 0.5,
+              "impact_absorption": 0.6
+            }
           }
         },
         "interact_boxes": {

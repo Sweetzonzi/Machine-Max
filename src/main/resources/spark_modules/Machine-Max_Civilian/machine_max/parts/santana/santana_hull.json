@@ -141,6 +141,10 @@
             "locator": "hull_hood_latch",
             "definition": "machine_max:fixed_rigid",
             "overwrite": {
+              // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+              "integrity": 3.5,
+              "impact_reduction": 0.5,
+              "impact_absorption": 0.6,
               "direction": "yp",
               "required_tags": [
                 "machine_max:hood",
@@ -179,6 +183,10 @@
             "locator": "hull_trunk_latch",
             "definition": "machine_max:fixed_rigid",
             "overwrite": {
+              // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+              "integrity": 3.5,
+              "impact_reduction": 0.5,
+              "impact_absorption": 0.6,
               "direction": "yp",
               "required_tags": [
                 "machine_max:trunk",
@@ -245,6 +253,10 @@
             "locator": "hull_door_lf_latch",
             "definition": "machine_max:fixed_rigid",
             "overwrite": {
+              // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+              "integrity": 3.5,
+              "impact_reduction": 0.5,
+              "impact_absorption": 0.6,
               "required_tags": [
                 "machine_max:door",
                 "machine_max:direction/left",
@@ -312,6 +324,10 @@
             "locator": "hull_door_rf_latch",
             "definition": "machine_max:fixed_rigid",
             "overwrite": {
+              // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+              "integrity": 3.5,
+              "impact_reduction": 0.5,
+              "impact_absorption": 0.6,
               "direction": "xn",
               "required_tags": [
                 "machine_max:door",
@@ -374,6 +390,10 @@
             "locator": "hull_door_lb_latch",
             "definition": "machine_max:fixed_rigid",
             "overwrite": {
+              // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+              "integrity": 3.5,
+              "impact_reduction": 0.5,
+              "impact_absorption": 0.6,
               "required_tags": [
                 "machine_max:door",
                 "machine_max:direction/left",
@@ -435,6 +455,10 @@
             "locator": "hull_door_rb_latch",
             "definition": "machine_max:fixed_rigid",
             "overwrite": {
+              // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+              "integrity": 3.5,
+              "impact_reduction": 0.5,
+              "impact_absorption": 0.6,
               "direction": "xn",
               "required_tags": [
                 "machine_max:door",

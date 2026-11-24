@@ -54,6 +54,10 @@
               "locator": "door_lf_latch",
               "definition": "machine_max:fixed_left",
               "overwrite": {
+                // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+                "integrity": 3.5,
+                "impact_reduction": 0.5,
+                "impact_absorption": 0.6,
                 "required_tags": [
                   "machine_max:hull",
                   "machine_max:series/santana"
@@ -141,6 +145,10 @@
               "locator": "door_rf_latch",
               "definition": "machine_max:fixed_right",
               "overwrite": {
+                // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+                "integrity": 3.5,
+                "impact_reduction": 0.5,
+                "impact_absorption": 0.6,
                 "required_tags": [
                   "machine_max:hull",
                   "machine_max:series/santana"
@@ -228,6 +236,10 @@
               "locator": "door_lb_latch",
               "definition": "machine_max:fixed_left",
               "overwrite": {
+                // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+                "integrity": 3.5,
+                "impact_reduction": 0.5,
+                "impact_absorption": 0.6,
                 "required_tags": [
                   "machine_max:hull",
                   "machine_max:series/santana"
@@ -315,6 +327,10 @@
               "locator": "door_rb_latch",
               "definition": "machine_max:fixed_right",
               "overwrite": {
+                // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+                "integrity": 3.5,
+                "impact_reduction": 0.5,
+                "impact_absorption": 0.6,
                 "required_tags": [
                   "machine_max:hull",
                   "machine_max:series/santana"
