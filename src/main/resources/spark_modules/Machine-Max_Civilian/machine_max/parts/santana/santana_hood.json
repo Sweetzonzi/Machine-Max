@@ -34,6 +34,10 @@
           "connector.machine_max.axis": {
             "locator": "hood_hinge",
             "definition": "machine_max:fixed_down"
+          },
+          "connector.machine_max.lock": {
+            "locator": "hood_latch",
+            "definition": "machine_max:fixed_down"
           }
         },
         "interact_boxes": {
@@ -42,6 +46,7 @@
             "interact_mode": "accurate",
             "signal_targets": {
               "interact_hood": [
+                "connector.machine_max.axis",
                 "global"
               ]
             }

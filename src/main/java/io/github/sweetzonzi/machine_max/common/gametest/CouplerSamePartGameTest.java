@@ -84,7 +84,7 @@ public final class CouplerSamePartGameTest {
                       "subsystems": {
                         "subsystem.machine_max.test_same_part_coupler": {
                           "type": "machine_max:coupler",
-                          "definition": "machine_max:santana_door_latch",
+                          "definition": "machine_max:santana_latch",
                           "connector": "connector.machine_max.test_active"
                         }
                       }

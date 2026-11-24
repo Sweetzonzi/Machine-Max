@@ -113,6 +113,14 @@
           "connector.machine_max.hood_axis": {
             "locator": "hull_hinge_hood",
             "definition": "machine_max:hinge_x",
+            "signal_targets": {
+              "interact": [
+                "subsystem.machine_max.hood_coupler"
+              ]
+            },
+            "signal_translations": {
+              "interact_hood": "interact"
+            },
             "overwrite": {
               "required_tags": [
                 "machine_max:hood",
@@ -129,9 +137,28 @@
               }
             }
           },
+          "connector.machine_max.hood_lock": {
+            "locator": "hull_hood_latch",
+            "definition": "machine_max:fixed_rigid",
+            "overwrite": {
+              "direction": "yp",
+              "required_tags": [
+                "machine_max:hood",
+                "machine_max:series/santana"
+              ]
+            }
+          },
           "connector.machine_max.trunk_door_axis": {
             "locator": "hull_hinge_trunk",
             "definition": "machine_max:hinge_x",
+            "signal_targets": {
+              "interact": [
+                "subsystem.machine_max.trunk_door_coupler"
+              ]
+            },
+            "signal_translations": {
+              "interact_trunk_door": "interact"
+            },
             "overwrite": {
               "required_tags": [
                 "machine_max:trunk",
@@ -146,6 +173,17 @@
                   "damping": 0.22
                 }
               }
+            }
+          },
+          "connector.machine_max.trunk_door_lock": {
+            "locator": "hull_trunk_latch",
+            "definition": "machine_max:fixed_rigid",
+            "overwrite": {
+              "direction": "yp",
+              "required_tags": [
+                "machine_max:trunk",
+                "machine_max:series/santana"
+              ]
             }
           },
           "connector.machine_max.hull_left_front_wheel": {
@@ -180,6 +218,14 @@
           "connector.machine_max.left_front_door_axis": {
             "locator": "hull_hinge_door_lf",
             "definition": "machine_max:hinge_y",
+            "signal_targets": {
+              "interact": [
+                "subsystem.machine_max.left_front_door_coupler"
+              ]
+            },
+            "signal_translations": {
+              "interact_left_front_door": "interact"
+            },
             "overwrite": {
               "required_tags": [
                 "machine_max:door",
@@ -193,6 +239,18 @@
                   "upper_limit": 0
                 }
               }
+            }
+          },
+          "connector.machine_max.left_front_door_lock": {
+            "locator": "hull_door_lf_latch",
+            "definition": "machine_max:fixed_rigid",
+            "overwrite": {
+              "required_tags": [
+                "machine_max:door",
+                "machine_max:direction/left",
+                "machine_max:position/front",
+                "machine_max:series/santana"
+              ]
             }
           },
           "connector.machine_max.hull_right_front_wheel": {
@@ -227,6 +285,14 @@
           "connector.machine_max.right_front_door_axis": {
             "locator": "hull_hinge_door_rf",
             "definition": "machine_max:hinge_y",
+            "signal_targets": {
+              "interact": [
+                "subsystem.machine_max.right_front_door_coupler"
+              ]
+            },
+            "signal_translations": {
+              "interact_right_front_door": "interact"
+            },
             "overwrite": {
               "required_tags": [
                 "machine_max:door",
@@ -240,6 +306,19 @@
                   "upper_limit": 75
                 }
               }
+            }
+          },
+          "connector.machine_max.right_front_door_lock": {
+            "locator": "hull_door_rf_latch",
+            "definition": "machine_max:fixed_rigid",
+            "overwrite": {
+              "direction": "xn",
+              "required_tags": [
+                "machine_max:door",
+                "machine_max:direction/right",
+                "machine_max:position/front",
+                "machine_max:series/santana"
+              ]
             }
           },
           "connector.machine_max.hull_left_back_wheel": {
@@ -268,6 +347,14 @@
           "connector.machine_max.left_back_door_axis": {
             "locator": "hull_hinge_door_lb",
             "definition": "machine_max:hinge_y",
+            "signal_targets": {
+              "interact": [
+                "subsystem.machine_max.left_back_door_coupler"
+              ]
+            },
+            "signal_translations": {
+              "interact_left_back_door": "interact"
+            },
             "overwrite": {
               "required_tags": [
                 "machine_max:door",
@@ -281,6 +368,18 @@
                   "upper_limit": 0
                 }
               }
+            }
+          },
+          "connector.machine_max.left_back_door_lock": {
+            "locator": "hull_door_lb_latch",
+            "definition": "machine_max:fixed_rigid",
+            "overwrite": {
+              "required_tags": [
+                "machine_max:door",
+                "machine_max:direction/left",
+                "machine_max:position/back",
+                "machine_max:series/santana"
+              ]
             }
           },
           "connector.machine_max.hull_right_back_wheel": {
@@ -309,6 +408,14 @@
           "connector.machine_max.right_back_door_axis": {
             "locator": "hull_hinge_door_rb",
             "definition": "machine_max:hinge_y",
+            "signal_targets": {
+              "interact": [
+                "subsystem.machine_max.right_back_door_coupler"
+              ]
+            },
+            "signal_translations": {
+              "interact_right_back_door": "interact"
+            },
             "overwrite": {
               "required_tags": [
                 "machine_max:door",
@@ -322,6 +429,19 @@
                   "upper_limit": 75
                 }
               }
+            }
+          },
+          "connector.machine_max.right_back_door_lock": {
+            "locator": "hull_door_rb_latch",
+            "definition": "machine_max:fixed_rigid",
+            "overwrite": {
+              "direction": "xn",
+              "required_tags": [
+                "machine_max:door",
+                "machine_max:direction/right",
+                "machine_max:position/back",
+                "machine_max:series/santana"
+              ]
             }
           }
         },
@@ -388,6 +508,11 @@
             "definition": "machine_max:rotation_joint_driver",
             "connector": "connector.machine_max.left_front_door_axis"
           },
+          "subsystem.machine_max.left_front_door_coupler": {
+            "type": "machine_max:coupler",
+            "definition": "machine_max:santana_latch",
+            "connector": "connector.machine_max.left_front_door_lock"
+          },
           "subsystem.machine_max.copilot_seat": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_passenger_seat",
@@ -407,6 +532,11 @@
             "definition": "machine_max:rotation_joint_driver",
             "connector": "connector.machine_max.right_front_door_axis"
           },
+          "subsystem.machine_max.right_front_door_coupler": {
+            "type": "machine_max:coupler",
+            "definition": "machine_max:santana_latch",
+            "connector": "connector.machine_max.right_front_door_lock"
+          },
           "subsystem.machine_max.left_back_seat": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_passenger_seat",
@@ -424,6 +554,11 @@
             "type": "machine_max:joint_driver",
             "definition": "machine_max:rotation_joint_driver",
             "connector": "connector.machine_max.left_back_door_axis"
+          },
+          "subsystem.machine_max.left_back_door_coupler": {
+            "type": "machine_max:coupler",
+            "definition": "machine_max:santana_latch",
+            "connector": "connector.machine_max.left_back_door_lock"
           },
           "subsystem.machine_max.right_back_seat": {
             "type": "machine_max:seat",
@@ -443,15 +578,30 @@
             "definition": "machine_max:rotation_joint_driver",
             "connector": "connector.machine_max.right_back_door_axis"
           },
+          "subsystem.machine_max.right_back_door_coupler": {
+            "type": "machine_max:coupler",
+            "definition": "machine_max:santana_latch",
+            "connector": "connector.machine_max.right_back_door_lock"
+          },
           "subsystem.machine_max.hood_driver": {
             "type": "machine_max:joint_driver",
             "definition": "machine_max:rotation_joint_driver",
             "connector": "connector.machine_max.hood_axis"
           },
+          "subsystem.machine_max.hood_coupler": {
+            "type": "machine_max:coupler",
+            "definition": "machine_max:santana_latch",
+            "connector": "connector.machine_max.hood_lock"
+          },
           "subsystem.machine_max.trunk_door_driver": {
             "type": "machine_max:joint_driver",
             "definition": "machine_max:rotation_joint_driver",
             "connector": "connector.machine_max.trunk_door_axis"
+          },
+          "subsystem.machine_max.trunk_door_coupler": {
+            "type": "machine_max:coupler",
+            "definition": "machine_max:santana_latch",
+            "connector": "connector.machine_max.trunk_door_lock"
           }
         },
         "hydrodynamics": {

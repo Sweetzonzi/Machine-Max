@@ -39,6 +39,7 @@
               "interact_mode": "accurate",
               "signal_targets": {
                 "interact_left_front_door": [
+                  "connector.machine_max.axis",
                   "global"
                 ]
               }
@@ -48,6 +49,16 @@
             "connector.machine_max.axis": {
               "locator": "door_lf_hinge",
               "definition": "machine_max:fixed_down"
+            },
+            "connector.machine_max.lock": {
+              "locator": "door_lf_latch",
+              "definition": "machine_max:fixed_left",
+              "overwrite": {
+                "required_tags": [
+                  "machine_max:hull",
+                  "machine_max:series/santana"
+                ]
+              }
             }
           },
           "hydrodynamics": {
@@ -115,6 +126,7 @@
               "interact_mode": "accurate",
               "signal_targets": {
                 "interact_right_front_door": [
+                  "connector.machine_max.axis",
                   "global"
                 ]
               }
@@ -124,6 +136,16 @@
             "connector.machine_max.axis": {
               "locator": "door_rf_hinge",
               "definition": "machine_max:fixed_down"
+            },
+            "connector.machine_max.lock": {
+              "locator": "door_rf_latch",
+              "definition": "machine_max:fixed_right",
+              "overwrite": {
+                "required_tags": [
+                  "machine_max:hull",
+                  "machine_max:series/santana"
+                ]
+              }
             }
           },
           "hydrodynamics": {
@@ -191,6 +213,7 @@
               "interact_mode": "accurate",
               "signal_targets": {
                 "interact_left_back_door": [
+                  "connector.machine_max.axis",
                   "global"
                 ]
               }
@@ -200,6 +223,16 @@
             "connector.machine_max.axis": {
               "locator": "door_lb_hinge",
               "definition": "machine_max:fixed_down"
+            },
+            "connector.machine_max.lock": {
+              "locator": "door_lb_latch",
+              "definition": "machine_max:fixed_left",
+              "overwrite": {
+                "required_tags": [
+                  "machine_max:hull",
+                  "machine_max:series/santana"
+                ]
+              }
             }
           },
           "hydrodynamics": {
@@ -267,6 +300,7 @@
               "interact_mode": "accurate",
               "signal_targets": {
                 "interact_right_back_door": [
+                  "connector.machine_max.axis",
                   "global"
                 ]
               }
@@ -276,6 +310,16 @@
             "connector.machine_max.axis": {
               "locator": "door_rb_hinge",
               "definition": "machine_max:fixed_down"
+            },
+            "connector.machine_max.lock": {
+              "locator": "door_rb_latch",
+              "definition": "machine_max:fixed_right",
+              "overwrite": {
+                "required_tags": [
+                  "machine_max:hull",
+                  "machine_max:series/santana"
+                ]
+              }
             }
           },
           "hydrodynamics": {

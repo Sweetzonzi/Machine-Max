@@ -279,9 +279,15 @@
   "machine_max.santana_trunk_door": "Santana Trunk Lid",
   "machine_max.santana_wheel": "Santana Wheel",
   "subsystem.machine_max.left_front_door_driver": "Left Front Door Hinge Driver",
+  "subsystem.machine_max.left_front_door_coupler": "Left Front Door Latch",
+  "subsystem.machine_max.right_front_door_coupler": "Right Front Door Latch",
+  "subsystem.machine_max.left_back_door_coupler": "Left Rear Door Latch",
+  "subsystem.machine_max.right_back_door_coupler": "Right Rear Door Latch",
   "subsystem.machine_max.right_front_door_driver": "Right Front Door Hinge Driver",
   "subsystem.machine_max.left_back_door_driver": "Left Rear Door Hinge Driver",
   "subsystem.machine_max.right_back_door_driver": "Right Rear Door Hinge Driver",
   "subsystem.machine_max.hood_driver": "Hood Hinge Driver",
-  "subsystem.machine_max.trunk_door_driver": "Trunk Lid Hinge Driver"
+  "subsystem.machine_max.hood_coupler": "Hood Latch",
+  "subsystem.machine_max.trunk_door_driver": "Trunk Lid Hinge Driver",
+  "subsystem.machine_max.trunk_door_coupler": "Trunk Lid Latch"
 }

@@ -70,7 +70,12 @@ class SantanaDoorAnimationResourceTest {
         listOf("left_front_door", "right_front_door", "left_back_door", "right_back_door").forEach { name ->
             val channel = "interact_$name"
             assertEquals("santana_door", partByChannel[channel], "车门交互区随车门零件一起拆走，长在车门上")
-            assertEquals(setOf("global"), targetsByChannel[channel], "$channel 在车门上，事件投给 global")
+            // 每扇门都经门轴端口把同一次点击送给车体上的锁扣，动画事件仍必须是 global。
+            assertEquals(
+                setOf("connector.machine_max.axis", "global"),
+                targetsByChannel[channel],
+                "$channel 在车门上：走门轴端口去解扣，同时投给 global 让状态机切动画"
+            )
             assertEquals(
                 "accurate",
                 boxesByChannel.getValue(channel).get("interact_mode").asString,
@@ -79,7 +84,12 @@ class SantanaDoorAnimationResourceTest {
         }
         listOf("interact_hood" to "santana_hood", "interact_trunk_door" to "santana_trunk_door").forEach { (channel, partName) ->
             assertEquals(partName, partByChannel[channel], "$channel 长在 $partName 上")
-            assertEquals(setOf("global"), targetsByChannel[channel], "$channel 在盖板上，事件投给 global")
+            // 盖板与车门同构：经自己的铰链端口把同一次点击送给车体上的锁扣，动画事件仍必须是 global。
+            assertEquals(
+                setOf("connector.machine_max.axis", "global"),
+                targetsByChannel[channel],
+                "$channel 在盖板上：走铰链端口去解扣，同时投给 global 让状态机切动画"
+            )
             assertEquals(
                 "accurate",
                 boxesByChannel.getValue(channel).get("interact_mode").asString,

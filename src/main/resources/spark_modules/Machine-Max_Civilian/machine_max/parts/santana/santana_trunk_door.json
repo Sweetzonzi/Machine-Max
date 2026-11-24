@@ -34,6 +34,10 @@
           "connector.machine_max.axis": {
             "locator": "trunk_hinge",
             "definition": "machine_max:fixed_down"
+          },
+          "connector.machine_max.lock": {
+            "locator": "trunk_latch",
+            "definition": "machine_max:fixed_down"
           }
         },
         "interact_boxes": {
@@ -42,6 +46,7 @@
             "interact_mode": "accurate",
             "signal_targets": {
               "interact_trunk_door": [
+                "connector.machine_max.axis",
                 "global"
               ]
             }

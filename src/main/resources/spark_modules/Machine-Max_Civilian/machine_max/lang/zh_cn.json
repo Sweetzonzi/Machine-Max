@@ -279,9 +279,15 @@
   "machine_max.santana_trunk_door": "桑塔纳后备箱盖",
   "machine_max.santana_wheel": "桑塔纳车轮",
   "subsystem.machine_max.left_front_door_driver": "左前车门铰链驱动器",
+  "subsystem.machine_max.left_front_door_coupler": "左前车门锁扣",
+  "subsystem.machine_max.right_front_door_coupler": "右前车门锁扣",
+  "subsystem.machine_max.left_back_door_coupler": "左后车门锁扣",
+  "subsystem.machine_max.right_back_door_coupler": "右后车门锁扣",
   "subsystem.machine_max.right_front_door_driver": "右前车门铰链驱动器",
   "subsystem.machine_max.left_back_door_driver": "左后车门铰链驱动器",
   "subsystem.machine_max.right_back_door_driver": "右后车门铰链驱动器",
   "subsystem.machine_max.hood_driver": "引擎盖铰链驱动器",
-  "subsystem.machine_max.trunk_door_driver": "后备箱盖铰链驱动器"
+  "subsystem.machine_max.hood_coupler": "引擎盖锁扣",
+  "subsystem.machine_max.trunk_door_driver": "后备箱盖铰链驱动器",
+  "subsystem.machine_max.trunk_door_coupler": "后备箱盖锁扣"
 }

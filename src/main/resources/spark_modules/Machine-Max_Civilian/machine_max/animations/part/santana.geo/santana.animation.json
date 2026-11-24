@@ -22,114 +22,6 @@
 				}
 			}
 		},
-		"animation.santana.hood_open": {
-			"loop": true,
-			"animation_length": 1,
-			"bones": {
-				"HoodHinge": {
-					"rotation": [-75, 0, 0]
-				}
-			}
-		},
-		"animation.santana.hood_close": {
-			"loop": true,
-			"animation_length": 1,
-			"bones": {
-				"HoodHinge": {
-					"rotation": [0, 0, 0]
-				}
-			}
-		},
-		"animation.santana.trunk_open": {
-			"loop": true,
-			"animation_length": 1,
-			"bones": {
-				"TrunkHinge": {
-					"rotation": [75, 0, 0]
-				}
-			}
-		},
-		"animation.santana.trunk_close": {
-			"loop": true,
-			"animation_length": 1,
-			"bones": {
-				"TrunkHinge": {
-					"rotation": [0, 0, 0]
-				}
-			}
-		},
-		"animation.santana.left_front_door_open": {
-			"loop": "hold_on_last_frame",
-			"animation_length": 1,
-			"bones": {
-				"LeftFrontDoorHinge": {
-					"rotation": [0, -75, 0]
-				}
-			}
-		},
-		"animation.santana.left_front_door_close": {
-			"loop": true,
-			"animation_length": 1,
-			"bones": {
-				"LeftFrontDoorHinge": {
-					"rotation": [0, 0, 0]
-				}
-			}
-		},
-		"animation.santana.right_front_door_open": {
-			"loop": "hold_on_last_frame",
-			"animation_length": 1,
-			"bones": {
-				"RightFrontDoorHinge": {
-					"rotation": [0, 75, 0]
-				}
-			}
-		},
-		"animation.santana.right_front_door_close": {
-			"loop": true,
-			"animation_length": 1,
-			"bones": {
-				"RightFrontDoorHinge": {
-					"rotation": [0, 0, 0]
-				}
-			}
-		},
-		"animation.santana.left_back_door_open": {
-			"loop": "hold_on_last_frame",
-			"animation_length": 1,
-			"bones": {
-				"LeftBackDoorHinge": {
-					"rotation": [0, -75, 0]
-				}
-			}
-		},
-		"animation.santana.left_back_door_close": {
-			"loop": true,
-			"animation_length": 1,
-			"bones": {
-				"LeftBackDoorHinge": {
-					"rotation": [0, 0, 0]
-				}
-			}
-		},
-		"animation.santana.right_back_door_open": {
-			"loop": "hold_on_last_frame",
-			"animation_length": 1,
-			"bones": {
-				"RightBackDoorHinge": {
-					"rotation": [0, 75, 0]
-				}
-			}
-		},
-		"animation.santana.right_back_door_close": {
-			"loop": true,
-			"animation_length": 1,
-			"bones": {
-				"RightBackDoorHinge": {
-					"rotation": [0, 0, 0]
-				}
-			}
-		},
 		"hood_open": {
 			"loop": true,
 			"animation_length": 1,
@@ -167,7 +59,7 @@
 			}
 		},
 		"left_front_door_open": {
-			"loop": "hold_on_last_frame",
+			"loop": false,
 			"animation_length": 1,
 			"bones": {
 				"LeftFrontDoorHinge": {
@@ -176,7 +68,7 @@
 			}
 		},
 		"left_front_door_close": {
-			"loop": true,
+			"loop": false,
 			"animation_length": 1,
 			"bones": {
 				"LeftFrontDoorHinge": {
@@ -185,7 +77,7 @@
 			}
 		},
 		"right_front_door_open": {
-			"loop": "hold_on_last_frame",
+			"loop": false,
 			"animation_length": 1,
 			"bones": {
 				"RightFrontDoorHinge": {
@@ -194,7 +86,7 @@
 			}
 		},
 		"right_front_door_close": {
-			"loop": true,
+			"loop": false,
 			"animation_length": 1,
 			"bones": {
 				"RightFrontDoorHinge": {
@@ -203,7 +95,7 @@
 			}
 		},
 		"left_back_door_open": {
-			"loop": "hold_on_last_frame",
+			"loop": false,
 			"animation_length": 1,
 			"bones": {
 				"LeftBackDoorHinge": {
@@ -212,7 +104,7 @@
 			}
 		},
 		"left_back_door_close": {
-			"loop": true,
+			"loop": false,
 			"animation_length": 1,
 			"bones": {
 				"LeftBackDoorHinge": {
@@ -221,7 +113,7 @@
 			}
 		},
 		"right_back_door_open": {
-			"loop": "hold_on_last_frame",
+			"loop": false,
 			"animation_length": 1,
 			"bones": {
 				"RightBackDoorHinge": {
@@ -230,7 +122,7 @@
 			}
 		},
 		"right_back_door_close": {
-			"loop": true,
+			"loop": false,
 			"animation_length": 1,
 			"bones": {
 				"RightBackDoorHinge": {

@@ -47,14 +47,18 @@ public class CouplerSubsystemAttr extends BasicSubsystemDynamicAttr {
                                 + " targets internal connector " + connector
                                 + "; internal connectors are permanent and cannot be unlatched"));
             }
-            // 同一子零件最多安装一个锁扣：主动端按连接点名唯一，两个锁扣抢同一个端点无法表达。
-            long count = subPart.getSubsystems().values().stream()
-                    .filter(install -> install instanceof CouplerSubsystemAttr)
-                    .count();
-            if (count > 1) {
-                throw new PackContentException(Component.literal(
-                        "Sub part " + subPartName + " of " + variant.getModel()
-                                + " installs more than one coupler"));
+            // 一个高级连接点最多挂一个锁扣：主动端按连接点名唯一，两个锁扣抢同一个端点无法表达。
+            // 同一子零件上的多个锁扣只要各绑各的连接点就没有冲突——车体一处装四扇门的锁扣是正常布置。
+            for (var entry : subPart.getSubsystems().entrySet()) {
+                if (entry.getKey().equals(subsystemName)) continue;
+                if (entry.getValue() instanceof CouplerSubsystemAttr other
+                        && connector.equals(other.getConnector())) {
+                    throw new PackContentException(Component.literal(
+                            "Coupler " + subsystemName + " of " + variant.getModel()
+                                    + " shares connector " + connector
+                                    + " with another coupler;"
+                                    + " one advanced connector holds at most one coupler"));
+                }
             }
         }
     }

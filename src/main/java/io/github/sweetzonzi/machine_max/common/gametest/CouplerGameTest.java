@@ -40,6 +40,7 @@ public final class CouplerGameTest {
     private static final String HINGE_SIMPLE = "connector.machine_max.axis";
     private static final String HINGE_ADVANCED = "connector.machine_max.left_front_door_axis";
     private static final String LOCK = "connector.machine_max.left_front_door_lock";
+    private static final String DOOR_LOCK = "connector.machine_max.lock";
     private static final String COUPLER = "subsystem.machine_max.left_front_door_coupler";
     private static final String INTERACT_BOX = "interact.machine_max.left_front_door";
 
@@ -219,7 +220,7 @@ public final class CouplerGameTest {
         RegularPart door = createPart(helper, DOOR, "left_front");
         VehicleCore vehicle = new VehicleCore(helper.getLevel(), hull);
         AdvancedConnector lock = (AdvancedConnector) connector(helper, hull, LOCK);
-        SimpleConnector passive = (SimpleConnector) connector(helper, door, LOCK);
+        SimpleConnector passive = (SimpleConnector) connector(helper, door, DOOR_LOCK);
         try {
             vehicle.addPart(door);
             helper.assertTrue(vehicle.attachConnector(lock, passive, null), "唯一锁扣边应能建立");
@@ -280,7 +281,7 @@ public final class CouplerGameTest {
             helper.assertTrue(restored.getPartNet().edgesConnecting(hull, door).size() == 2,
                     "门轴边与锁扣边都应由原连接记录重建");
             helper.assertTrue(connector(helper, hull, LOCK).hasPart()
-                            && connector(helper, door, LOCK).hasPart(),
+                            && connector(helper, door, DOOR_LOCK).hasPart(),
                     "锁扣双端引用应随连接记录恢复");
         } finally {
             restored.onRemoveFromLevel();
@@ -531,7 +532,7 @@ public final class CouplerGameTest {
         }
 
         SimpleConnector passiveLock() {
-            return (SimpleConnector) connector(helper, door, LOCK);
+            return (SimpleConnector) connector(helper, door, DOOR_LOCK);
         }
     }
 
