@@ -1712,10 +1712,108 @@ public enum MMLanguageRegistry {
             en_us, "Show the welcome screen when entering the title screen for the first time after launch. Default: true"
     )),
     CONFIGURATION_SCREEN_SPACE_LIGHT_SHADOW_RANGE("machine_max.configuration.screen_space_light_shadow_range", ImmutableMap.of(
-            zh_cn, "屏幕空间光照遮挡范围（米）"
+            zh_cn, "屏幕空间光照遮挡范围（米）",
+            en_us, "Screen Space Light Shadow Range (m)"
     )),
     CONFIGURATION_SCREEN_SPACE_LIGHT_SHADOW_RANGE_TOOLTIP("machine_max.configuration.screen_space_light_shadow_range.tooltip", ImmutableMap.of(
-            zh_cn, "仅对距离光源小于此值的表面计算遮挡，范围内检查到光源的完整路径。最后25%的距离平滑减弱阴影，范围外跳过遮挡查询。0关闭此遮挡，光照仍正常计算。默认8米，可设16米以覆盖更大范围。范围：0～64米。"
+            zh_cn, "仅对距离光源小于此值的表面计算遮挡，范围内检查到光源的完整路径。最后25%的距离平滑减弱阴影，范围外跳过遮挡查询。0关闭此遮挡，光照仍正常计算。默认8米，可设16米以覆盖更大范围。范围：0～64米。",
+            en_us, "Shadow queries are only traced for surfaces closer to the light than this distance (m), and the full path to the light is checked. Shadows fade out over the last 25% of the range; surfaces at or beyond it skip the query. 0 disables surface shadows while lighting, glow and glare stay on. Default: 8; use 16 for a larger shadowed region. Range: 0 ~ 64."
+    )),
+    CONFIGURATION_BLAST_DISTORTION_ENABLED("machine_max.configuration.blast_distortion_enabled", ImmutableMap.of(
+            zh_cn, "爆炸波前扭曲",
+            en_us, "Blast Front Distortion"
+    )),
+    CONFIGURATION_BLAST_DISTORTION_ENABLED_TOOLTIP("machine_max.configuration.blast_distortion_enabled.tooltip", ImmutableMap.of(
+            zh_cn, "是否开启爆炸波前扭曲，即爆炸波前沿的屏幕空间折射环。默认值：true",
+            en_us, "Whether to enable the blast front distortion effect, a screen-space refraction ring around an explosion wavefront. Default: true"
+    )),
+    CONFIGURATION_BLAST_DISTORTION_INTENSITY("machine_max.configuration.blast_distortion_intensity", ImmutableMap.of(
+            zh_cn, "爆炸波前扭曲强度",
+            en_us, "Blast Front Distortion Intensity"
+    )),
+    CONFIGURATION_BLAST_DISTORTION_INTENSITY_TOOLTIP("machine_max.configuration.blast_distortion_intensity.tooltip", ImmutableMap.of(
+            zh_cn, "爆炸波前扭曲的强度倍率。默认值：1.0。范围：0.0 ~ 2.0",
+            en_us, "Intensity multiplier for the blast front distortion. Default: 1.0. Range: 0.0 ~ 2.0"
+    )),
+    CONFIGURATION_TRACER_LIGHT_ENABLED("machine_max.configuration.tracer_light_enabled", ImmutableMap.of(
+            zh_cn, "曳光弹光照",
+            en_us, "Tracer Light"
+    )),
+    CONFIGURATION_TRACER_LIGHT_ENABLED_TOOLTIP("machine_max.configuration.tracer_light_enabled.tooltip", ImmutableMap.of(
+            zh_cn, "是否开启弹丸曳光的光照，曳光会把光投到附近表面上。默认值：true",
+            en_us, "Whether projectile tracers cast screen-space light onto nearby surfaces. Default: true"
+    )),
+    CONFIGURATION_TRACER_LIGHT_INTENSITY("machine_max.configuration.tracer_light_intensity", ImmutableMap.of(
+            zh_cn, "曳光弹光照强度",
+            en_us, "Tracer Light Intensity"
+    )),
+    CONFIGURATION_TRACER_LIGHT_INTENSITY_TOOLTIP("machine_max.configuration.tracer_light_intensity.tooltip", ImmutableMap.of(
+            zh_cn, "弹丸曳光光照的强度倍率。默认值：1.0。范围：0.0 ~ 2.0",
+            en_us, "Intensity multiplier for projectile tracer light. Default: 1.0. Range: 0.0 ~ 2.0"
+    )),
+    CONFIGURATION_SCREEN_SPACE_LIGHT_ENABLED("machine_max.configuration.screen_space_light_enabled", ImmutableMap.of(
+            zh_cn, "屏幕空间光照",
+            en_us, "Screen Space Light"
+    )),
+    CONFIGURATION_SCREEN_SPACE_LIGHT_ENABLED_TOOLTIP("machine_max.configuration.screen_space_light_enabled.tooltip", ImmutableMap.of(
+            zh_cn, "所有屏幕空间表面光照（曳光、爆炸、枪口焰）的总开关。关闭后跳过全部光照收集与光照通道，瞬时光照的存活时间仍会推进。默认值：true",
+            en_us, "Master switch for every screen-space surface light (tracer, explosion, muzzle flash). Turning it off skips all light collection and the lighting pass; transient light lifetimes still advance. Default: true"
+    )),
+    CONFIGURATION_SCREEN_SPACE_LIGHT_INTENSITY("machine_max.configuration.screen_space_light_intensity", ImmutableMap.of(
+            zh_cn, "屏幕空间光照强度",
+            en_us, "Screen Space Light Intensity"
+    )),
+    CONFIGURATION_SCREEN_SPACE_LIGHT_INTENSITY_TOOLTIP("machine_max.configuration.screen_space_light_intensity.tooltip", ImmutableMap.of(
+            zh_cn, "屏幕空间光照的全局强度倍率，在每一类光照自己的倍率之上再乘一次。默认值：1.0。范围：0.0 ~ 2.0",
+            en_us, "Global screen-space lighting intensity multiplier, applied once per light on top of its category multiplier. Default: 1.0. Range: 0.0 ~ 2.0"
+    )),
+    CONFIGURATION_EXPLOSION_LIGHT_ENABLED("machine_max.configuration.explosion_light_enabled", ImmutableMap.of(
+            zh_cn, "爆炸光照",
+            en_us, "Explosion Light"
+    )),
+    CONFIGURATION_EXPLOSION_LIGHT_ENABLED_TOOLTIP("machine_max.configuration.explosion_light_enabled.tooltip", ImmutableMap.of(
+            zh_cn, "是否开启爆炸闪光的光照，爆炸会把光投到附近表面上。默认值：true",
+            en_us, "Whether explosion flashes cast screen-space light onto nearby surfaces. Default: true"
+    )),
+    CONFIGURATION_EXPLOSION_LIGHT_INTENSITY("machine_max.configuration.explosion_light_intensity", ImmutableMap.of(
+            zh_cn, "爆炸光照强度",
+            en_us, "Explosion Light Intensity"
+    )),
+    CONFIGURATION_EXPLOSION_LIGHT_INTENSITY_TOOLTIP("machine_max.configuration.explosion_light_intensity.tooltip", ImmutableMap.of(
+            zh_cn, "爆炸光照的强度倍率。默认值：1.0。范围：0.0 ~ 2.0",
+            en_us, "Intensity multiplier for explosion light. Default: 1.0. Range: 0.0 ~ 2.0"
+    )),
+    CONFIGURATION_MUZZLE_FLASH_LIGHT_ENABLED("machine_max.configuration.muzzle_flash_light_enabled", ImmutableMap.of(
+            zh_cn, "枪口焰光照",
+            en_us, "Muzzle Flash Light"
+    )),
+    CONFIGURATION_MUZZLE_FLASH_LIGHT_ENABLED_TOOLTIP("machine_max.configuration.muzzle_flash_light_enabled.tooltip", ImmutableMap.of(
+            zh_cn, "是否开启发射时枪口焰的光照。半径、颜色、强度与时长由内容包弹种的 visual.muzzle_flash 决定。默认值：true",
+            en_us, "Whether a launcher's muzzle flash casts screen-space light when it fires. Radius, color, intensity and duration come from the content pack's visual.muzzle_flash block. Default: true"
+    )),
+    CONFIGURATION_MUZZLE_FLASH_LIGHT_INTENSITY("machine_max.configuration.muzzle_flash_light_intensity", ImmutableMap.of(
+            zh_cn, "枪口焰光照强度",
+            en_us, "Muzzle Flash Light Intensity"
+    )),
+    CONFIGURATION_MUZZLE_FLASH_LIGHT_INTENSITY_TOOLTIP("machine_max.configuration.muzzle_flash_light_intensity.tooltip", ImmutableMap.of(
+            zh_cn, "枪口焰光照的强度倍率。默认值：1.0。范围：0.0 ~ 2.0",
+            en_us, "Intensity multiplier for muzzle flash light. Default: 1.0. Range: 0.0 ~ 2.0"
+    )),
+    CONFIGURATION_SCREEN_SPACE_LIGHT_NORMAL_WEIGHT("machine_max.configuration.screen_space_light_normal_weight", ImmutableMap.of(
+            zh_cn, "表面朝向权重",
+            en_us, "Surface Orientation Weight"
+    )),
+    CONFIGURATION_SCREEN_SPACE_LIGHT_NORMAL_WEIGHT_TOOLTIP("machine_max.configuration.screen_space_light_normal_weight.tooltip", ImmutableMap.of(
+            zh_cn, "屏幕空间光照对表面朝向（朗伯余弦）的响应权重，系数为 (1-w)+w·cos 并截到 0。0 表示没有法线项，同一距离的地板与墙壁受光相同；1 表示只用朗伯项，背向光源的表面完全变暗；0.5 是常见的包裹光照。默认值：0.5。范围：0.0 ~ 1.0",
+            en_us, "Surface orientation (Lambert cos) weight for every screen-space light; the coefficient is (1 - w) + w*cos clamped to 0. 0 drops the normal term, so a floor and a wall at the same distance receive the same light; 1 keeps full Lambert, so surfaces facing away stay dark; 0.5 is standard wrap lighting. Default: 0.5. Range: 0.0 ~ 1.0"
+    )),
+    CONFIGURATION_DAMAGE_LAYER("machine_max.configuration.damage_layer", ImmutableMap.of(
+            zh_cn, "座位图耐久着色",
+            en_us, "Seat Map Damage Layer"
+    )),
+    CONFIGURATION_DAMAGE_LAYER_TOOLTIP("machine_max.configuration.damage_layer.tooltip", ImmutableMap.of(
+            zh_cn, "在座位图里给受损的子零件着色，仅在耐久低于 50% 或已损毁时。默认值：true",
+            en_us, "Tint damaged sub-parts in the seat map, only below 50% durability or when destroyed. Default: true"
     )),
     // 后处理视觉特效配置
     CONFIGURATION_VISUAL_EFFECTS("machine_max.configuration.visual_effects", ImmutableMap.of(
@@ -1876,6 +1974,86 @@ public enum MMLanguageRegistry {
     CONFIGURATION_SUBPART_DESTROY_ADVANCE_FLOOR_TICKS_TOOLTIP("machine_max.configuration.subpart_destroy_advance_floor_ticks.tooltip", ImmutableMap.of(
             zh_cn, "已销毁零件受到追加伤害时，倒计时最多被推进到该Tick数，不会更低。默认值：100（5秒）。范围：0 ~ 100000；0 表示不设下限",
             en_us, "Lowest destroy timer value that additional damage may advance an already destroyed sub-part to. Default: 100 (5 seconds). Range: 0 ~ 100000; 0 disables the floor"
+    )),
+    CONFIGURATION_EXPLOSION_BLOCK_DAMAGE("machine_max.configuration.explosion_block_damage", ImmutableMap.of(
+            zh_cn, "允许爆炸破坏方块",
+            en_us, "Allow Explosion Destroy Blocks"
+    )),
+    CONFIGURATION_EXPLOSION_BLOCK_DAMAGE_TOOLTIP("machine_max.configuration.explosion_block_damage.tooltip", ImmutableMap.of(
+            zh_cn, "爆炸地形破坏的总开关。关闭后爆炸仍按掩体折减射线能量，但不会摧毁方块。默认值：true",
+            en_us, "Global switch for explosion terrain destruction. When false, explosions still reduce ray energy through cover but never destroy blocks. Default: true"
+    )),
+    CONFIGURATION_EXPLOSION_TERRAIN_DAMAGE_MULTIPLIER("machine_max.configuration.explosion_terrain_damage_multiplier", ImmutableMap.of(
+            zh_cn, "爆炸地形伤害倍率",
+            en_us, "Explosion Terrain Damage Multiplier"
+    )),
+    CONFIGURATION_EXPLOSION_TERRAIN_DAMAGE_MULTIPLIER_TOOLTIP("machine_max.configuration.explosion_terrain_damage_multiplier.tooltip", ImmutableMap.of(
+            zh_cn, "判定方块破坏时对爆炸伤害施加的倍率。0.0 表示保留掩体效果但永不破坏地形。默认值：1.0。范围：0.0 ~ 1000.0",
+            en_us, "Multiplier applied to explosion damage when judging block destruction. 0.0 keeps cover effects but never destroys terrain. Default: 1.0. Range: 0.0 ~ 1000.0"
+    )),
+    CONFIGURATION_EXPLOSION_MAX_ACTIVE_INSTANCES("machine_max.configuration.explosion_max_active_instances", ImmutableMap.of(
+            zh_cn, "爆炸实例上限",
+            en_us, "Explosion Max Active Instances"
+    )),
+    CONFIGURATION_EXPLOSION_MAX_ACTIVE_INSTANCES_TOOLTIP("machine_max.configuration.explosion_max_active_instances.tooltip", ImmutableMap.of(
+            zh_cn, "每维度同时活跃的爆炸实例上限，用于殉爆链的环路保护。默认值：32。范围：1 ~ 4096",
+            en_us, "Maximum number of simultaneously active explosion instances per dimension, as loop protection for chain detonations. Default: 32. Range: 1 ~ 4096"
+    )),
+    CONFIGURATION_EXPLOSION_FRONT_SPEED_DEFAULT("machine_max.configuration.explosion_front_speed_default", ImmutableMap.of(
+            zh_cn, "爆炸波前速度",
+            en_us, "Explosion Front Speed"
+    )),
+    CONFIGURATION_EXPLOSION_FRONT_SPEED_DEFAULT_TOOLTIP("machine_max.configuration.explosion_front_speed_default.tooltip", ImmutableMap.of(
+            zh_cn, "爆轰波前的默认速度（m/s），内容包 JSON 可按单次爆炸覆盖。默认值：20.0。范围：0.1 ~ 1000.0",
+            en_us, "Default blast front speed in m/s; content pack JSON can override it per explosion. Default: 20.0. Range: 0.1 ~ 1000.0"
+    )),
+    CONFIGURATION_EXPLOSION_INTERACTION_CUTOFF("machine_max.configuration.explosion_interaction_cutoff", ImmutableMap.of(
+            zh_cn, "爆炸射线失活阈值",
+            en_us, "Explosion Interaction Cutoff"
+    )),
+    CONFIGURATION_EXPLOSION_INTERACTION_CUTOFF_TOOLTIP("machine_max.configuration.explosion_interaction_cutoff.tooltip", ImmutableMap.of(
+            zh_cn, "按剩余能量比例判定射线失活的阈值，纯性能旋钮，不影响平衡。默认值：0.01。范围：0.0 ~ 1.0",
+            en_us, "Ray deactivation threshold on residual energy ratio. Pure performance knob, does not affect balance. Default: 0.01. Range: 0.0 ~ 1.0"
+    )),
+    CONFIGURATION_EXPLOSION_ARMOR_K("machine_max.configuration.explosion_armor_k", ImmutableMap.of(
+            zh_cn, "爆炸方块护甲系数",
+            en_us, "Explosion Armor Scale"
+    )),
+    CONFIGURATION_EXPLOSION_ARMOR_K_TOOLTIP("machine_max.configuration.explosion_armor_k.tooltip", ImmutableMap.of(
+            zh_cn, "把方块护甲的材料因子换算成爆炸方块护甲的系数。标定目标：中等当量炸开石头、泥土被贯穿。默认值：0.4。范围：0.0 ~ 10.0",
+            en_us, "Scale factor converting the material factor of block armor into blast block armor. Calibration target: a medium charge shatters stone while dirt is penetrated. Default: 0.4. Range: 0.0 ~ 10.0"
+    )),
+    CONFIGURATION_EXPLOSION_BLOCK_DAMAGE_FACTOR("machine_max.configuration.explosion_block_damage_factor", ImmutableMap.of(
+            zh_cn, "爆炸方块伤害系数",
+            en_us, "Explosion Block Damage Factor"
+    )),
+    CONFIGURATION_EXPLOSION_BLOCK_DAMAGE_FACTOR_TOOLTIP("machine_max.configuration.explosion_block_damage_factor.tooltip", ImmutableMap.of(
+            zh_cn, "判定地形破坏时把爆炸伤害点数换算成方块耐久单位的系数。方块耐久门槛约为 100×(0.01+硬度)（石头约 151、泥土约 102），该系数因此决定弹坑半径。默认值：8.0。范围：0.0 ~ 1000.0",
+            en_us, "Converts explosion damage points into block durability units when judging terrain destruction. Block thresholds are about 100 * (0.01 + hardness) (stone ~151, dirt ~102), so this factor sets the crater radius. Default: 8.0. Range: 0.0 ~ 1000.0"
+    )),
+    CONFIGURATION_COLLISION_APPROACH_EPSILON("machine_max.configuration.collision_approach_epsilon", ImmutableMap.of(
+            zh_cn, "撞击速度阈值",
+            en_us, "Collision Approach Epsilon"
+    )),
+    CONFIGURATION_COLLISION_APPROACH_EPSILON_TOOLTIP("machine_max.configuration.collision_approach_epsilon.tooltip", ImmutableMap.of(
+            zh_cn, "撞击资格门的下限，也是单点即时破坏唯一的速度门槛（m/s）。低于该值的接触按静止处理。默认值：0.05。范围：0.0 ~ 10.0",
+            en_us, "Lower bound of the normal-approach speed (m/s) used as the impact gate and the sole speed threshold of the single-point instant-break branch. Below it a contact counts as resting. Default: 0.05. Range: 0.0 ~ 10.0"
+    )),
+    CONFIGURATION_COLLISION_IMPULSE_PER_DURABILITY("machine_max.configuration.collision_impulse_per_durability", ImmutableMap.of(
+            zh_cn, "撞击冲量系数",
+            en_us, "Collision Impulse Per Durability"
+    )),
+    CONFIGURATION_COLLISION_IMPULSE_PER_DURABILITY_TOOLTIP("machine_max.configuration.collision_impulse_per_durability.tooltip", ImmutableMap.of(
+            zh_cn, "C_J：撞碎一点方块耐久所需的法向冲量（N·s/耐久点）。默认值：100.0。范围：0.0001 ~ 1000000.0",
+            en_us, "C_J: normal impulse (N*s) needed to break one point of block durability. Default: 100.0. Range: 0.0001 ~ 1000000.0"
+    )),
+    CONFIGURATION_COLLISION_DAMAGE_PER_IMPULSE("machine_max.configuration.collision_damage_per_impulse", ImmutableMap.of(
+            zh_cn, "撞击伤害系数",
+            en_us, "Collision Damage Per Impulse"
+    )),
+    CONFIGURATION_COLLISION_DAMAGE_PER_IMPULSE_TOOLTIP("machine_max.configuration.collision_damage_per_impulse.tooltip", ImmutableMap.of(
+            zh_cn, "C_D：部件自承冲量换算成碰撞伤害的比例（HP per N·s）。默认值：0.003。范围：0.0 ~ 10.0",
+            en_us, "C_D: collision damage (HP) per N*s of the part's own impulse share in ordinary impacts. Default: 0.003. Range: 0.0 ~ 10.0"
     )),
     CONFIGURATION_IMPACT_IMPULSE_PER_DAMAGE_RATIO("machine_max.configuration.impact_impulse_per_damage_ratio", ImmutableMap.of(
             zh_cn, "命中冲量：弹丸",
