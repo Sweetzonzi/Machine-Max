@@ -1,0 +1,11 @@
+{
+  "$schema": "../docs/zh_cn/schemas/part/subpart/connector/connector_static_attr.schema.json",
+  "type": "Advanced", // 刚性固定连接点：默认六个轴全部锁止，用于需要承力的固定对接面
+  "direction": "xp", // 默认法线方向，按实际安装方向用 overwrite.direction 覆写
+  "integrity": 15.0,
+  "impact_absorption": 0.30,
+  "impact_reduction": 2.0,
+  "impact_multiplier": 1.0
+  // 不配置 joint_attrs：New6Dof 默认平动锁止、转动自由，AbstractConnector#adjustJoint
+  // 再把三个转动轴锁到 0，得到六轴刚性的关节
+}

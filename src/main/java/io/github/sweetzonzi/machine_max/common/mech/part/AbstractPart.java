@@ -127,6 +127,8 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
     private final Map<String, AnimInstance> autoLoopInstances = new HashMap<>();
     /** {@link #autoLoopInstances} 建实例时所用的动画集；当前动画集与此不同即说明旧实例引用的片段已作废。 */
     private OAnimationSet autoLoopSet;
+    /** 无约束子零件告警是否已发过；载具随区块反复入世时不重复刷日志。 */
+    private boolean unconstrainedWarned;
     /** AbstractPart 级 Molang 求值上下文（同时供动画、HitBox 条件与 HUD 使用） */
     private MechMolangContext molangContext;
     /** 当前使用的纹理索引（用于切换纹理） */
@@ -828,6 +830,28 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
     }
 
     /**
+     * 在同一个 {@code Part} 内建立一条运行时动态连接（两个不同 {@code SubPart} 之间）。
+     *
+     * <p>两端都必须不是内部连接点：内部连接点在部件构造期按模型自动配对，是永久结构。
+     * 这条配对由装配体在 {@code partNet} 里写成自环边，因此能随存档持久化；本方法只建立
+     * Connector 配对与物理关节。</p>
+     *
+     * @param advancedConnector 主动高级连接点
+     * @param simpleConnector   被动简单连接点
+     * @return 连接是否成功建立
+     * @throws IllegalStateException 两端不属于本部件或位于同一个子零件时抛出
+     */
+    public boolean attachSamePartDynamic(AbstractConnector advancedConnector, SimpleConnector simpleConnector) {
+        if (advancedConnector.subPart.part != this || simpleConnector.subPart.part != this) {
+            throw new IllegalStateException("同件动态连接的两端必须属于同一个部件");
+        }
+        if (advancedConnector.subPart == simpleConnector.subPart) {
+            throw new IllegalStateException("同件动态连接的两端必须位于不同子零件");
+        }
+        return advancedConnector.attach(simpleConnector);
+    }
+
+    /**
      * 计算子零件沿三轴的投影面积，供阻力等计算使用。
      *
      * <p>逐轴优先使用配置的正数面积；缺省轴由碰撞形状的轴对齐包围盒估算。</p>
@@ -971,6 +995,34 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
     }
 
     /**
+     * 检查非根子零件是否被至少一条连接约束住。
+     *
+     * <p>构造期唯一会建立的约束是内部连接点的自动配对。一个没有任何已连接连接点的非根
+     * 子零件在入世后是自由刚体，会直接掉出载具；这里只告警，内容检查负责在构建期拦下。</p>
+     */
+    private void warnUnconstrainedSubParts(@Nullable SubPart rootSubPart) {
+        if (unconstrainedWarned) return;
+        List<String> loose = new ArrayList<>();
+        for (SubPart subPart : subParts.values()) {
+            if (subPart == rootSubPart) continue;
+            boolean constrained = false;
+            for (AbstractConnector connector : subPart.connectors.values()) {
+                if (connector.hasPart()) {
+                    constrained = true;
+                    break;
+                }
+            }
+            if (!constrained) loose.add(subPart.name);
+        }
+        if (loose.isEmpty()) return;
+        unconstrainedWarned = true;
+        MachineMax.LOGGER.warn(
+                "部件{}({})的子零件没有任何内部连接点约束，入世后会作为自由刚体掉落: {}；"
+                        + "可开件用 internal 铰链 + 非 internal 锁扣，可分离件自成 Part",
+                this.name, this.uuid, String.join(", ", loose));
+    }
+
+    /**
      * 构造子零件、连接器、子系统和命中框，再布放并连接内部关节。
      * <p>依赖有效且非空的变体定义。先选根子零件作为相对布放锚点，初始化根耐久，再设置其他子零件耐久；
      * 这期间会调用具体种类的耐久策略，子类字段必须已经就绪。</p>
@@ -1108,6 +1160,7 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
      */
     public void addToLevel() {
         for (SubPart subPart : subParts.values()) subPart.addToLevel();
+        warnUnconstrainedSubParts(subParts.get(variant.getRootSubPartName()));
     }
 
     /**

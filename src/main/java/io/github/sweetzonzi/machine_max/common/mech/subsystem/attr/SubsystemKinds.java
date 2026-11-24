@@ -10,6 +10,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.BatterySubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.CameraSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.CarControllerSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.CouplerSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.EngineSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.GearboxSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.ItemStorageSubsystemAttr;
@@ -36,6 +37,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.B
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.BatterySubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.CameraSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.CarControllerSubsystemStaticAttr;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.CouplerSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.EngineSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.GearboxSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.ItemStorageSubsystemStaticAttr;
@@ -69,7 +71,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * {@code type} 分派到安装属性，子系统型号 JSON 的 {@code type} 分派到静态属性，两侧因此
  * 不可能出现"安装侧叫 A、静态侧叫 B"的错配。</p>
  *
- * <p>内建 23 条登记在静态初始化里完成；另有两个仍在开发中的类型（{@code scriptable}、
+ * <p>内建 24 条登记在静态初始化里完成；另有两个仍在开发中的类型（{@code scriptable}、
  * {@code battery}）的登记被注释掉，内容包无法引用它们，见静态初始化的说明。
  * 下游在自己的模组初始化阶段调用 {@link #register(ResourceLocation, Kind)}，必须早于内容包装载；
  * 内容包装载开始时 {@link #seal()} 封表，此后的登记立即失败。</p>
@@ -125,6 +127,7 @@ public final class SubsystemKinds {
         register("gearbox", GearboxSubsystemAttr.CODEC, GearboxSubsystemStaticAttr.CODEC);
         register("transmission", TransmissionSubsystemAttr.CODEC, TransmissionSubsystemStaticAttr.CODEC);
         register("joint_driver", JointDriverSubsystemAttr.CODEC, JointDriverSubsystemStaticAttr.CODEC);
+        register("coupler", CouplerSubsystemAttr.CODEC, CouplerSubsystemStaticAttr.CODEC);
         register("wheel_driver", WheelDriverSubsystemAttr.CODEC, WheelDriverSubsystemStaticAttr.CODEC);
         register("turret_driver", TurretDriverSubsystemAttr.CODEC, TurretDriverSubsystemStaticAttr.CODEC);
         // WIP：以下两个类型的字段契约尚未定稿（两侧属性类均标 @ApiStatus.Experimental）。

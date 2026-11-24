@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/coupler_dynamic_attr.json",
+  "title": "锁扣动态属性",
+  "description": "绑定本子零件上的一个高级连接点作为主动端。被动端不配置：运行时在同一载具内按距离与双向安装条件发现最近的兼容简单端。",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:coupler",
+      "description": "子系统类型。"
+    },
+    "definition": {
+      "type": "string",
+      "description": "锁扣型号的资源地址。"
+    },
+    "connector": {
+      "type": "string",
+      "description": "主动高级连接点名称；同一个子零件最多安装一个锁扣。"
+    }
+  },
+  "required": ["type", "definition", "connector"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:coupler",
+      "definition": "machine_max:santana_door_latch",
+      "connector": "connector.machine_max.left_front_door_lock"
+    }
+  ]
+}

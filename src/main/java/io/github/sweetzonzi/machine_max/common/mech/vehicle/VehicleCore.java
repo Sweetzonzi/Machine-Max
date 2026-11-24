@@ -33,6 +33,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLinkData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.CouplerSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.EngineSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.LauncherSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
@@ -75,7 +76,8 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
     private static final float COMBO_ATTACH_MAX_DIRECTION_ERROR = ConnectorAlignmentHelper.DEFAULT_MAX_DIRECTION_ERROR;//约1e-4°以内视为方向对齐（locator 严格对齐场景）
 
     //存储所有部件与连接关系
-    public final MutableNetwork<RegularPart, Pair<AbstractConnector, SimpleConnector>> partNet = NetworkBuilder.undirected().allowsParallelEdges(true).build();
+    public final MutableNetwork<RegularPart, Pair<AbstractConnector, SimpleConnector>> partNet =
+            NetworkBuilder.undirected().allowsParallelEdges(true).allowsSelfLoops(true).build();
     //存储所有部件
     public final ConcurrentMap<UUID, RegularPart> partMap = new java.util.concurrent.ConcurrentHashMap<>();
     /** 履带列表。履带是载具级关系 + 状态对象，没有独立刚体；列表项本身即身份。 */
@@ -934,19 +936,17 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
      * @param connector2 接口2
      * @param newPart    新安装的部件，可为null
      */
-    public void attachConnector(AbstractConnector connector1, AbstractConnector connector2, @Nullable RegularPart newPart) {
+    public boolean attachConnector(AbstractConnector connector1, AbstractConnector connector2, @Nullable RegularPart newPart) {
         IPartAssembly assembly1 = connector1.subPart.part.assembly;
         IPartAssembly assembly2 = connector2.subPart.part.assembly;
         if (assembly1 == null && assembly2 == null) {
             MachineMax.LOGGER.error("连接失败：连接点所属部件未绑定装配体");
-            return;
+            return false;
         }
         if (assembly1 != this && assembly2 != this) {
             MachineMax.LOGGER.error("连接失败：连接点{}与{}都不属于装配体{}", connector1.name, connector2.name, this.uuid);
-            return;
+            return false;
         }
-        if (connector1.subPart.part == connector2.subPart.part)
-            throw new UnsupportedOperationException("不能连接同一个部件内的接口");
 
         AbstractConnector advancedConnector;
         SimpleConnector simpleConnector;
@@ -960,28 +960,98 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
 
         requireRegular(advancedConnector.subPart.part);
         requireRegular(simpleConnector.subPart.part);
+        // 幂等路径：两端已经互指时不再重复接合，只补齐可能缺失的图边。
+        // 巡检修复与重发的接合包都靠这一条收敛，不会因为「已经连着」而报占用错误。
+        // 同件配对也有一条自环边，所以这一段必须放在同件分支之前。
+        if (advancedConnector.getAttachedConnector() == simpleConnector
+                && simpleConnector.getAttachedConnector() == advancedConnector) {
+            if (ensureConnectionEdge(advancedConnector, simpleConnector) && isInLevel()) {
+                onStructureChanged(VehicleStructureChangeEvent.Reason.ATTACH);
+                this.activate();
+            }
+            return true;
+        }
+        if (advancedConnector.subPart.part == simpleConnector.subPart.part) {
+            return attachSamePartDynamic(advancedConnector, simpleConnector);
+        }
         IPartAssembly advAssembly = advancedConnector.subPart.part.assembly;
         IPartAssembly simpAssembly = simpleConnector.subPart.part.assembly;
 
         if (advAssembly == simpAssembly || (advAssembly == null || simpAssembly == null)) {
-            attachConnectorInSameVehicle(advancedConnector, simpleConnector, newPart);
+            return attachConnectorInSameVehicle(advancedConnector, simpleConnector, newPart);
         } else {
             // 跨装配体合并：双方都必须是 VehicleCore
             if (!(advAssembly instanceof VehicleCore advVeh) || !(simpAssembly instanceof VehicleCore simpVeh)) {
                 MachineMax.LOGGER.error("连接失败：跨装配体合并仅支持 VehicleCore");
-                return;
+                return false;
             }
             if (advVeh.level != simpVeh.level || this.level != advVeh.level) {
                 MachineMax.LOGGER.error("连接失败：跨维度载具不可连接");
-                return;
+                return false;
             }
             if (newPart != null) {
                 MachineMax.LOGGER.error("连接失败：跨载具合并不支持newPart参数");
-                return;
+                return false;
             }
             VehicleCore donorVehicle = advVeh == this ? simpVeh : advVeh;
-            attachConnectorAcrossVehicles(advancedConnector, simpleConnector, donorVehicle);
+            return attachConnectorAcrossVehicles(advancedConnector, simpleConnector, donorVehicle);
         }
+    }
+
+    /**
+     * 补入一条已经成立、但拓扑里缺失的连接边。
+     *
+     * <p>只用于稳定边界巡检：Connector 双端引用已经互指时，图边是唯一可能落后的事实。
+     * 同 {@code Part} 的动态配对写成自环边，两端是同一个节点。</p>
+     *
+     * @return 是否真的补入了一条边
+     */
+    private boolean ensureConnectionEdge(AbstractConnector advancedConnector, SimpleConnector simpleConnector) {
+        RegularPart partA = requireRegular(advancedConnector.subPart.part);
+        RegularPart partB = requireRegular(simpleConnector.subPart.part);
+        Pair<AbstractConnector, SimpleConnector> edge = Pair.of(advancedConnector, simpleConnector);
+        if (partNet.edgesConnecting(partA, partB).contains(edge)) return false;
+        partNet.addEdge(partA, partB, edge);
+        return true;
+    }
+
+    /**
+     * 同一个 {@code Part} 内两个 {@code SubPart} 之间的运行时动态连接。
+     *
+     * <p>两端都必须不是内部连接点：内部连接点是模型定义的永久结构，在部件构造期由
+     * {@link AbstractPart#autoAttachInternalConnectors()} 自动配对，不走运行时入口。</p>
+     *
+     * <p>配对写成 {@code partNet} 的自环边（两端是同一个节点），因此随 {@code ConnectionData}
+     * 一起持久化，读档时按保存的安装姿态重建。客户端经
+     * {@link io.github.sweetzonzi.machine_max.network.payload.assembly.ConnectorAttachPayload}
+     * 走到同一条路径，因此两端看到同一对 Connector。</p>
+     *
+     * @return 连接是否成功建立
+     */
+    private boolean attachSamePartDynamic(AbstractConnector advancedConnector, SimpleConnector simpleConnector) {
+        if (advancedConnector.internal || simpleConnector.internal) {
+            MachineMax.LOGGER.error("同件动态连接的两端不得是内部连接点：{} <-> {}",
+                    advancedConnector.getName(), simpleConnector.getName());
+            return false;
+        }
+        RegularPart part = requireRegular(advancedConnector.subPart.part);
+        boolean attached = part.attachSamePartDynamic(advancedConnector, simpleConnector);
+        if (!attached) return false;
+        ensureConnectionEdge(advancedConnector, simpleConnector);
+        if (isInLevel()) {
+            advancedConnector.addToLevel();
+            onStructureChanged(VehicleStructureChangeEvent.Reason.ATTACH);
+            this.activate();
+            if (!level.isClientSide()) {
+                PacketDistributor.sendToPlayersInDimension((ServerLevel) this.level, new ConnectorAttachPayload(
+                        this.uuid,
+                        List.of(new ConnectionData(advancedConnector, simpleConnector)),
+                        false,
+                        null
+                ));
+            }
+        }
+        return true;
     }
 
     /**
@@ -992,14 +1062,14 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
         return regular;
     }
 
-    private void attachConnectorInSameVehicle(AbstractConnector advancedConnector, SimpleConnector simpleConnector, @Nullable RegularPart newPart) {
+    private boolean attachConnectorInSameVehicle(AbstractConnector advancedConnector, SimpleConnector simpleConnector, @Nullable RegularPart newPart) {
         if (newPart != null && !partMap.containsKey(newPart.uuid) && (advancedConnector.subPart.part == newPart || simpleConnector.subPart.part == newPart)) {
             this.addPart(newPart);
             recalculateMaxHp(HpRecalcMode.GROW_WITH_MAX_DELTA);
         }
         List<ConnectionData> comboList = new java.util.ArrayList<>(1);
         boolean attached = advancedConnector.attach(simpleConnector);//连接部件
-        if (!attached) return;
+        if (!attached) return false;
 
         this.partNet.addEdge(//添加连接关系
                 requireRegular(advancedConnector.subPart.part),
@@ -1028,11 +1098,12 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
                 ));
             }
         }
+        return true;
     }
 
-    private void attachConnectorAcrossVehicles(AbstractConnector advancedConnector, SimpleConnector simpleConnector, VehicleCore donorVehicle) {
+    private boolean attachConnectorAcrossVehicles(AbstractConnector advancedConnector, SimpleConnector simpleConnector, VehicleCore donorVehicle) {
         boolean attached = advancedConnector.attach(simpleConnector);
-        if (!attached) return;
+        if (!attached) return false;
 
         float mergedHp = this.getHp() + donorVehicle.getHp();
         this.absorbVehicle(donorVehicle);
@@ -1052,13 +1123,14 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
         if (!level.isClientSide()) {
             if (!ObjectManager.removeMergedVehicle(donorVehicle)) {
                 MachineMax.LOGGER.error("载具{}合并后无法移除被吸收载具{}", this.uuid, donorVehicle.uuid);
-                return;
+                return false;
             }
             PacketDistributor.sendToPlayersInDimension(
                     (ServerLevel) this.level,
                     new VehicleMergePayload(this.uuid, donorVehicle.uuid, newConnections)
             );
         }
+        return true;
     }
 
     private void absorbVehicle(VehicleCore donorVehicle) {
@@ -1173,6 +1245,10 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
                                         COMBO_ATTACH_MAX_POS_ERROR,
                                         COMBO_ATTACH_MAX_DIRECTION_ERROR
                                 )) {//若位置与方向误差均小于阈值，则尝试连接
+                                    // 锁扣主动端由运行时按距离与状态机自行捕获，自动补接会把
+                                    // 一次几何对齐直接变成永久连接并绕开锁扣状态。
+                                    if (CouplerSubsystem.isActiveConnector(advancedConnector)
+                                            || CouplerSubsystem.isActiveConnector(simpleConnector)) continue;
                                     advancedConnector.alignActualTransformForJoint(simpleConnector);//连接前校正 actualTransform，避免关节初始应力异常
                                     boolean attached = advancedConnector.attach(simpleConnector);//先连接，成功后再写入拓扑，避免产生伪连接
                                     if (attached) {
@@ -1228,15 +1304,52 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
     public void detachConnections(List<Pair<AbstractConnector, SimpleConnector>> connections, Map<UUID, UUID> spiltVehicles) {
         List<ConnectionData> connectionsToRemove = new ArrayList<>();
         float hpBeforeSplit = getHp();
+        boolean changed = false;
         for (Pair<AbstractConnector, SimpleConnector> connection : connections) {
-            connection.getFirst().detach(false);
+            AbstractConnector advancedConnector = connection.getFirst();
+            SimpleConnector simpleConnector = connection.getSecond();
+            boolean wasAttached = advancedConnector.hasPart();
+            // 先让 Connector 判定这次断开是否成立（内部连接、预事件否决、已断开都不可作为成功），
+            // 只有成立了才改图：否则会出现「否决了断开但图边已删除」，两端连接事实从此分叉。
+            boolean detached = advancedConnector.detach(false);
+            if (!detached && wasAttached) continue; // 预事件否决或内部永久连接
+            boolean samePart = advancedConnector.subPart.part == simpleConnector.subPart.part;
+            // 同件配对同样有图边（自环）；配对可能没有对应图边（例如连接记录之外的恢复路径），按已断开处理。
+            boolean edgeRemoved = partNet.removeEdge(connection);
+            // 已经断开、也没有图边可删：这条请求什么都不改，不进入收尾与发包。
+            if (!detached && !edgeRemoved) continue;
+            changed = true;
             this.activate();
-            boolean removed = partNet.removeEdge(connection);
-            if (!removed && connection.getFirst() instanceof SimpleConnector simpleConnector)
-                removed = partNet.removeEdge(Pair.of(connection.getSecond(), simpleConnector));
-            if (removed && !level.isClientSide()) connectionsToRemove.add(new ConnectionData(connection));
-            if (!removed) MachineMax.LOGGER.error("载具{}中未找到连接关系{}，无法移除", this.name, connection);
+            if (!samePart && !edgeRemoved) {
+                MachineMax.LOGGER.error("载具{}中未找到连接关系{}，无法移除", this.name, connection);
+            }
+            // 已断开的配对两端都要收到解扣，客户端据此清掉镜像。
+            if (!level.isClientSide()) connectionsToRemove.add(new ConnectionData(connection));
         }
+        if (!changed) return;
+        finishConnectionChange(connectionsToRemove, hpBeforeSplit, spiltVehicles);
+    }
+
+    /**
+     * 删掉一条已经失效、但仍留在图里的陈旧连接边。
+     *
+     * <p>只用于稳定边界巡检：Connector 双端引用已经不成立，图边却还在。删除后走与普通解扣
+     * 相同的收尾（连通性、分裂、同步），客户端收到解扣包时也能按“已断开的配对”删边。</p>
+     *
+     * @return 是否真的删掉了一条边
+     */
+    public boolean dropStaleConnectionEdge(AbstractConnector advancedConnector, SimpleConnector simpleConnector) {
+        if (!partNet.removeEdge(Pair.of(advancedConnector, simpleConnector))) return false;
+        List<ConnectionData> removed = level.isClientSide()
+                ? List.of()
+                : List.of(new ConnectionData(advancedConnector, simpleConnector));
+        finishConnectionChange(removed, getHp(), Map.of());
+        return true;
+    }
+
+    /** 一次连接变化之后的统一收尾：连通性、分裂、拆解包与结构事件。 */
+    private void finishConnectionChange(List<ConnectionData> connectionsToRemove, float hpBeforeSplit,
+                                        Map<UUID, UUID> spiltVehicles) {
         var spiltPartNets = partNetSpiltCheck();
         if (!level.isClientSide()) {//若是服务端，则向客户端发包通知拆解接口
             if (spiltPartNets.size() <= 1) {//未分裂为多个载具
@@ -1399,7 +1512,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
                     LinkedHashSet.newLinkedHashSet(components.size());
             for (List<RegularPart> componentNodes : components) {
                 MutableNetwork<RegularPart, Pair<AbstractConnector, SimpleConnector>> splitPartNet =
-                        NetworkBuilder.undirected().allowsParallelEdges(true).build();
+                        NetworkBuilder.undirected().allowsParallelEdges(true).allowsSelfLoops(true).build();
                 // 先按序加入全部节点
                 for (RegularPart node : componentNodes) splitPartNet.addNode(node);
                 // 再加边，端点此时都已存在，不会再改变节点序

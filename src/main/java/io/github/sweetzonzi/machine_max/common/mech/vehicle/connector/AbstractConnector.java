@@ -230,6 +230,15 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
             MachineMax.LOGGER.error("零件安装失败，连接点{}已被占用！", targetConnector.getName());
             return false;
         }
+        // 内部连接点是部件内部的永久结构：只能与同一部件内的内部连接点配对。
+        // 与非内部端配对会让「永久」与「可解扣」两种语义同时落在一条关节上，从哪一侧解都不成立。
+        if ((this.internal || targetConnector.internal)
+                && !(this.internal && targetConnector.internal
+                        && this.subPart.part == targetConnector.subPart.part)) {
+            MachineMax.LOGGER.error("连接失败：内部连接点只能与同一部件内的内部连接点配对（{} <-> {}）",
+                    getName(), targetConnector.getName());
+            return false;
+        }
         if ((!conditionCheck(targetConnector.subPart.part) || !targetConnector.conditionCheck(this.subPart.part) && !force)) {
             MachineMax.LOGGER.error("零件安装失败，零件不符合连接点安装条件！");
             return false;
@@ -378,36 +387,51 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     /**
      * 将此连接点连接的零件从此连接点拆下
      * 特别地，部件内零件之间的内部连接点不允许被断开连接
+     *
+     * @param destroy 是否跳过解扣预事件与内部连接保护（部件销毁路径）
+     * @return 连接是否真的被解除；内部连接、未连接、预事件否决时返回 {@code false}，
+     *         此时双端引用、关节与调用方持有的拓扑都不应被改动
      */
-    public void detach(boolean destroy) {
-        if ((destroy || !internal) && hasPart()) {
-            AbstractConnector attachedConnector = this.attachedConnector;
-            AbstractConnector advancedConnector = this instanceof SimpleConnector ? attachedConnector : this;
-            SimpleConnector simpleConnector = this == advancedConnector ? (SimpleConnector) attachedConnector : (SimpleConnector) this;
-            if (destroy || !NeoForge.EVENT_BUS.post(new ConnectorDetachEvent.Pre(advancedConnector, simpleConnector)).isCanceled()) {
-                if (this.mechanicalEnergyPort != null) {
-                    this.mechanicalEnergyPort.onConnectorDetach();
-                }
-                if (attachedConnector != null && attachedConnector.mechanicalEnergyPort != null) {
-                    attachedConnector.mechanicalEnergyPort.onConnectorDetach();
-                }
-                detachJoint();
-                //重置安装姿态变换
-                this.actualTransform = this.offsetFromMassCenter.clone();
-                this.attachedConnector.actualTransform = this.attachedConnector.offsetFromMassCenter.clone();
-                //重置安装状态
-                this.attachedConnector.attachedConnector = null;
-                this.attachedConnector = null;
-                NeoForge.EVENT_BUS.post(new ConnectorDetachEvent.Post(advancedConnector, simpleConnector));
-            }
+    public boolean detach(boolean destroy) {
+        if (!(destroy || !internal) || !hasPart()) return false;
+        AbstractConnector attachedConnector = this.attachedConnector;
+        AbstractConnector advancedConnector = this instanceof SimpleConnector ? attachedConnector : this;
+        SimpleConnector simpleConnector = this == advancedConnector ? (SimpleConnector) attachedConnector : (SimpleConnector) this;
+        if (!destroy && NeoForge.EVENT_BUS.post(new ConnectorDetachEvent.Pre(advancedConnector, simpleConnector)).isCanceled()) {
+            return false;
         }
+        if (this.mechanicalEnergyPort != null) {
+            this.mechanicalEnergyPort.onConnectorDetach();
+        }
+        if (attachedConnector != null && attachedConnector.mechanicalEnergyPort != null) {
+            attachedConnector.mechanicalEnergyPort.onConnectorDetach();
+        }
+        detachJoint();
+        //重置安装姿态变换
+        this.actualTransform = this.offsetFromMassCenter.clone();
+        this.attachedConnector.actualTransform = this.attachedConnector.offsetFromMassCenter.clone();
+        //重置安装状态
+        this.attachedConnector.attachedConnector = null;
+        this.attachedConnector = null;
+        NeoForge.EVENT_BUS.post(new ConnectorDetachEvent.Post(advancedConnector, simpleConnector));
+        return true;
+    }
+
+    /**
+     * 普通解扣的结果入口；语义与 {@link #detach(boolean) detach(false)} 相同。
+     *
+     * @return 连接是否真的被解除
+     */
+    public boolean tryDetach() {
+        return detach(false);
     }
 
     protected void detachJoint() {
         if (attachedConnector != null)
             attachedConnector.joint = null;
         getPhysicsLevel().submitImmediateTask(PPhase.ALL, () -> {
-            if (this.joint.getPhysicsSpace() != null) getPhysicsLevel().getWorld().removeJoint(joint);
+            New6Dof joint = this.joint;
+            if (joint != null && joint.getPhysicsSpace() != null) getPhysicsLevel().getWorld().removeJoint(joint);
             this.joint = null;
             return null;
         });
@@ -603,6 +627,22 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
             VisualEffectHelper.attachPoints.remove(this);
         getPhysicsLevel().submitImmediateTask(PPhase.ALL, () -> {
             removeAttachPointBody();
+            return null;
+        });
+    }
+
+    /**
+     * 移除本连接点自己创建、已经没有任何配对引用的关节。
+     *
+     * <p>只用于稳定边界的巡检收尾：{@link #joint} 只在 {@link #attachJoint} 里被本连接点写入，
+     * 因此它不可能指向铰链等别人的约束。正常解扣走 {@link #detach(boolean)}。</p>
+     */
+    public void discardOrphanJoint() {
+        New6Dof orphan = this.joint;
+        this.joint = null;
+        if (orphan == null) return;
+        getPhysicsLevel().submitImmediateTask(PPhase.ALL, () -> {
+            if (orphan.getPhysicsSpace() != null) getPhysicsLevel().getWorld().removeJoint(orphan);
             return null;
         });
     }

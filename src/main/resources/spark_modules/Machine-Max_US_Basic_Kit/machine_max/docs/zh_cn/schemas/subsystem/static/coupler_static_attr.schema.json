@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/coupler_static_attr.json",
+  "title": "锁扣静态属性",
+  "description": "距离单位为米，力单位为牛顿，角度单位为度，速度单位为米/秒。重武装距离 = max(capture_distance, rearm_distance_multiplier × lock_distance)。",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema 引用路径。",
+      "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:coupler"
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20
+    },
+    "pass_damage": {
+      "type": "boolean",
+      "default": true
+    },
+    "limit_damage": {
+      "type": "boolean",
+      "default": false
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false
+    },
+    "capture_distance": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "吸合范围：端点距离不超过此值时允许施加合拢力。"
+    },
+    "lock_distance": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "锁止窗口：端点距离不超过此值时提交连接；必须不大于 capture_distance。"
+    },
+    "max_capture_force": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0,
+      "description": "合拢力上限（N）。0 表示只靠已有作动器或外力合拢。"
+    },
+    "lock_angle_tolerance": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 90,
+      "description": "允许的相向法线误差（度）。"
+    },
+    "max_lock_speed": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0.5,
+      "description": "锁止时允许的端点相对速率（m/s）。"
+    },
+    "rearm_distance_multiplier": {
+      "type": "number",
+      "exclusiveMinimum": 1,
+      "default": 2,
+      "description": "重武装距离倍率；乘积必须有限。"
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_deactivate": { "$ref": "../../base/sound_event.schema.json" },
+        "on_destroyed": { "$ref": "../../base/sound_event.schema.json" },
+        "on_activate": { "$ref": "../../base/sound_event.schema.json" },
+        "on_attach": { "$ref": "../../base/sound_event.schema.json" },
+        "on_detach": { "$ref": "../../base/sound_event.schema.json" }
+      },
+      "additionalProperties": false,
+      "description": "基础生命周期音效加一次连接／断开音；未写时使用原版绊线挂接事件。"
+    }
+  },
+  "required": ["type", "capture_distance", "lock_distance", "lock_angle_tolerance"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:coupler",
+      "capture_distance": 0.04,
+      "lock_distance": 0.015,
+      "max_capture_force": 0,
+      "lock_angle_tolerance": 3.0,
+      "max_lock_speed": 0.25,
+      "rearm_distance_multiplier": 2.0
+    }
+  ]
+}

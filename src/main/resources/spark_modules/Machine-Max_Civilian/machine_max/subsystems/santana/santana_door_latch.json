@@ -1,0 +1,19 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:coupler",
+  "basic_durability": 20,
+  "capture_distance": 0.04,
+  "lock_distance": 0.015,
+  "max_capture_force": 0,
+  "lock_angle_tolerance": 3.0,
+  "max_lock_speed": 0.25,
+  "rearm_distance_multiplier": 2.0,
+  "sounds": {
+    "on_attach": {
+      "sound_id": "minecraft:block.tripwire.attach"
+    },
+    "on_detach": {
+      "sound_id": "minecraft:block.tripwire.attach"
+    }
+  }
+}
