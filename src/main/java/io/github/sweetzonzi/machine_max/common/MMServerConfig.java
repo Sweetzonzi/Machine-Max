@@ -29,6 +29,14 @@ public class MMServerConfig {
     private static final ModConfigSpec.DoubleValue COLLISION_IMPULSE_PER_DURABILITY;
     private static final ModConfigSpec.DoubleValue COLLISION_DAMAGE_PER_IMPULSE;
 
+    // ==================== 命中冲量 ====================
+
+    private static final ModConfigSpec.DoubleValue IMPACT_IMPULSE_PER_DAMAGE_RATIO;
+    private static final ModConfigSpec.DoubleValue MELEE_IMPULSE_PER_DAMAGE_RATIO;
+    private static final ModConfigSpec.DoubleValue IMPACT_MAX_SPEED;
+    private static final ModConfigSpec.DoubleValue BLAST_IMPULSE_PER_DAMAGE_RATIO;
+    private static final ModConfigSpec.DoubleValue BLAST_MAX_SPEED;
+
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
 
@@ -107,6 +115,45 @@ public class MMServerConfig {
         COLLISION_DAMAGE_PER_IMPULSE = builder
                 .comment("C_D: collision damage (HP) per N*s of the part's own impulse share in ordinary impacts. Linear first version.")
                 .defineInRange("collision_damage_per_impulse", 0.003, 0.0, 10.0);
+
+        // ==================== 命中冲量 ====================
+
+        IMPACT_IMPULSE_PER_DAMAGE_RATIO = builder
+                .comment("C_hit: impulse (N*s) per 1.0 of the damage-to-max-durability ratio for the default row",
+                        "(projectile hits and anything whose source type is not recognised as melee or explosion).",
+                        "Small hits stay linear in that ratio (C_hit * ratio), so ordering between attacks is preserved;",
+                        "the asymptote is impact_max_speed * part mass, so heavy parts always respond less than light ones.",
+                        "Calibration anchors: pistol on a 24 kg / 30 HP door ~= 1 N*s; 125 mm class round on the same door ~= 20 N*s;",
+                        "vanilla arrow on the same door ~= 0.8 N*s.")
+                .defineInRange("impact_impulse_per_damage_ratio", 6.0, 0.0, 1.0e6);
+
+        MELEE_IMPULSE_PER_DAMAGE_RATIO = builder
+                .comment("C_melee: impulse (N*s) per 1.0 of the damage-to-max-durability ratio for a melee strike.",
+                        "A swing brings body weight into the blow, so one point of durability damage stands for about an order of",
+                        "magnitude more momentum than a projectile does; sharing the projectile slope leaves a sword hit on a car",
+                        "door invisible (1 degree of hinge swing at most).",
+                        "Only the slope differs: the asymptote stays impact_max_speed, because a swing cannot push anything faster.",
+                        "Calibration anchors on a 24 kg / 30 HP door: bare hand ~= 2.6 N*s (0.7 deg); plain iron sword ~= 14 N*s (3.7 deg);",
+                        "fully buffed critical axe ~= 43 N*s (11 deg), which stays just below the joint driver's 180 deg/s.")
+                .defineInRange("melee_impulse_per_damage_ratio", 80.0, 0.0, 1.0e7);
+
+        IMPACT_MAX_SPEED = builder
+                .comment("V_hit: the speed (m/s) that one ordinary hit approaches asymptotically, scaled by the part's mass.",
+                        "Shared by the default row and the melee row.",
+                        "The asymptote is never reached, so the ceiling itself stays inside the damage law instead of clipping it.")
+                .defineInRange("impact_max_speed", 5.0, 0.0, 1000.0);
+
+        BLAST_IMPULSE_PER_DAMAGE_RATIO = builder
+                .comment("C_blast: impulse (N*s) per 1.0 of the damage-to-max-durability ratio for an explosion.",
+                        "Same law and same asymptote shape as the other rows, only a much steeper slope:",
+                        "a detonation spreads its momentum over a wide frontal area and a longer time, about 500 times more",
+                        "impulse per point of durability than a bullet (and about 38 times more than a sword blow).",
+                        "Calibration anchor: vanilla TNT (~40 points) on a 550 kg / 200 HP hull ~= 575 N*s (1.05 m/s).")
+                .defineInRange("blast_impulse_per_damage_ratio", 3000.0, 0.0, 1.0e9);
+
+        BLAST_MAX_SPEED = builder
+                .comment("V_blast: the speed (m/s) that one explosion approaches asymptotically, scaled by the part's mass.")
+                .defineInRange("blast_max_speed", 25.0, 0.0, 1000.0);
 
         SERVER_SPEC = builder.build();
     }
@@ -192,5 +239,32 @@ public class MMServerConfig {
     /** C_D：部件自承冲量到碰撞伤害的换算（HP / (N·s)）。 */
     public static float collisionDamagePerImpulse() {
         return COLLISION_DAMAGE_PER_IMPULSE.get().floatValue();
+    }
+
+    // ==================== 命中冲量 ====================
+
+    /** C_hit：普通命中每 1.0 伤害/耐久比对应的冲量（N·s）。 */
+    public static float impactImpulsePerDamageRatio() {
+        return IMPACT_IMPULSE_PER_DAMAGE_RATIO.get().floatValue();
+    }
+
+    /** V_hit：一次普通命中能推到的速度渐近线（m/s），按零件质量缩放。 */
+    public static float impactMaxSpeed() {
+        return IMPACT_MAX_SPEED.get().floatValue();
+    }
+
+    /** C_melee：近战命中每 1.0 伤害/耐久比对应的冲量（N·s）。 */
+    public static float meleeImpulsePerDamageRatio() {
+        return MELEE_IMPULSE_PER_DAMAGE_RATIO.get().floatValue();
+    }
+
+    /** C_blast：爆炸每 1.0 伤害/耐久比对应的冲量（N·s）。 */
+    public static float blastImpulsePerDamageRatio() {
+        return BLAST_IMPULSE_PER_DAMAGE_RATIO.get().floatValue();
+    }
+
+    /** V_blast：一次爆炸能推到的速度渐近线（m/s），按零件质量缩放。 */
+    public static float blastMaxSpeed() {
+        return BLAST_MAX_SPEED.get().floatValue();
     }
 }

@@ -1877,6 +1877,46 @@ public enum MMLanguageRegistry {
             zh_cn, "已销毁零件受到追加伤害时，倒计时最多被推进到该Tick数，不会更低。默认值：100（5秒）。范围：0 ~ 100000；0 表示不设下限",
             en_us, "Lowest destroy timer value that additional damage may advance an already destroyed sub-part to. Default: 100 (5 seconds). Range: 0 ~ 100000; 0 disables the floor"
     )),
+    CONFIGURATION_IMPACT_IMPULSE_PER_DAMAGE_RATIO("machine_max.configuration.impact_impulse_per_damage_ratio", ImmutableMap.of(
+            zh_cn, "命中冲量：弹丸",
+            en_us, "Impact Impulse: Projectile"
+    )),
+    CONFIGURATION_IMPACT_IMPULSE_PER_DAMAGE_RATIO_TOOLTIP("machine_max.configuration.impact_impulse_per_damage_ratio.tooltip", ImmutableMap.of(
+            zh_cn, "弹丸以及未能识别为近战或爆炸的来源，每 1.0 点“伤害/最大耐久”比对应的冲量（N·s）。默认值：6.0。范围：0.0 ~ 1000000.0",
+            en_us, "Impulse (N*s) per 1.0 of the damage-to-max-durability ratio for projectile hits and any source not recognised as melee or explosion. Default: 6.0. Range: 0.0 ~ 1000000.0"
+    )),
+    CONFIGURATION_MELEE_IMPULSE_PER_DAMAGE_RATIO("machine_max.configuration.melee_impulse_per_damage_ratio", ImmutableMap.of(
+            zh_cn, "命中冲量：近战",
+            en_us, "Impact Impulse: Melee"
+    )),
+    CONFIGURATION_MELEE_IMPULSE_PER_DAMAGE_RATIO_TOOLTIP("machine_max.configuration.melee_impulse_per_damage_ratio.tooltip", ImmutableMap.of(
+            zh_cn, "近战命中每 1.0 点“伤害/最大耐久”比对应的冲量（N·s）。挥砍把体重带进这一击，因此比弹丸高一个数量级。默认值：80.0。范围：0.0 ~ 10000000.0",
+            en_us, "Impulse (N*s) per 1.0 of the damage-to-max-durability ratio for a melee strike. A swing brings body weight into the blow, hence an order of magnitude above a projectile. Default: 80.0. Range: 0.0 ~ 10000000.0"
+    )),
+    CONFIGURATION_IMPACT_MAX_SPEED("machine_max.configuration.impact_max_speed", ImmutableMap.of(
+            zh_cn, "命中速度上限",
+            en_us, "Impact Max Speed"
+    )),
+    CONFIGURATION_IMPACT_MAX_SPEED_TOOLTIP("machine_max.configuration.impact_max_speed.tooltip", ImmutableMap.of(
+            zh_cn, "一次弹丸或近战命中能把零件推到的速度渐近线（m/s），实际按零件质量缩放且永远达不到。默认值：5.0。范围：0.0 ~ 1000.0",
+            en_us, "Speed (m/s) that one projectile or melee hit approaches asymptotically, scaled by the part's mass and never reached. Default: 5.0. Range: 0.0 ~ 1000.0"
+    )),
+    CONFIGURATION_BLAST_IMPULSE_PER_DAMAGE_RATIO("machine_max.configuration.blast_impulse_per_damage_ratio", ImmutableMap.of(
+            zh_cn, "命中冲量：爆炸",
+            en_us, "Impact Impulse: Explosion"
+    )),
+    CONFIGURATION_BLAST_IMPULSE_PER_DAMAGE_RATIO_TOOLTIP("machine_max.configuration.blast_impulse_per_damage_ratio.tooltip", ImmutableMap.of(
+            zh_cn, "爆炸每 1.0 点“伤害/最大耐久”比对应的冲量（N·s）。爆轰把动量铺在很大的迎流面积与更长的时间上，因此远高于弹丸。默认值：3000.0。范围：0.0 ~ 1000000000.0",
+            en_us, "Impulse (N*s) per 1.0 of the damage-to-max-durability ratio for an explosion. A detonation spreads its momentum over a wide frontal area and a longer time, hence far above a projectile. Default: 3000.0. Range: 0.0 ~ 1000000000.0"
+    )),
+    CONFIGURATION_BLAST_MAX_SPEED("machine_max.configuration.blast_max_speed", ImmutableMap.of(
+            zh_cn, "爆炸速度上限",
+            en_us, "Blast Max Speed"
+    )),
+    CONFIGURATION_BLAST_MAX_SPEED_TOOLTIP("machine_max.configuration.blast_max_speed.tooltip", ImmutableMap.of(
+            zh_cn, "一次爆炸能把零件推到的速度渐近线（m/s），实际按零件质量缩放且永远达不到。默认值：25.0。范围：0.0 ~ 1000.0",
+            en_us, "Speed (m/s) that one explosion approaches asymptotically, scaled by the part's mass and never reached. Default: 25.0. Range: 0.0 ~ 1000.0"
+    )),
     // 伤害类型死亡信息（键为 death.attack.<MMDamageTypes 的 message_id>）
     DEATH_ATTACK_PROJECTILE("death.attack.machine_max.projectile", ImmutableMap.of(
             zh_cn, "%1$s 被炮弹撕成碎片",

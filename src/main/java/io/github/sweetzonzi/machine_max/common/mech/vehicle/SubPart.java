@@ -1371,11 +1371,14 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     /**
      * 把一次命中的物理冲量收进 Level 级主线程列表。
      *
-     * <p>显式提供 {@code BFDamageExtensions.IMPULSE}（包括显式 0）时按该值处理，不进入击退回退公式；
-     * 未提供时按零件公共击退回退规则计算；普通碰撞（{@link MMDamageTypes#PART_COLLISION}）不施加额外冲量，
-     * 由物理引擎自身的接触响应负责。入口取消与履带吸收的命中不施加冲量。</p>
+     * <p>显式提供 {@code BFDamageExtensions.IMPULSE}（包括显式 0）时按该值处理，不进入伤害启发式——
+     * 弹道框架自己算过动量时，任何再推导都是重复施加。未提供时按 {@link HitImpulseModel} 的
+     * 伤害/耐久比规律推导：弹丸、近战与爆炸共用同一条规律，各自只换斜率，爆炸另换速度渐近线。
+     * 普通碰撞（{@link MMDamageTypes#PART_COLLISION}）不施加额外冲量，由物理引擎自身的接触响应负责。
+     * 入口取消与履带吸收的命中不施加冲量。</p>
      *
-     * <p>冲量方向取命中速度方向，作用点取命中点，两者一起表达线冲量与角冲量。命令在物理线程的
+     * <p>冲量方向取命中速度方向，作用点取命中点，两者一起表达线冲量与角冲量。没有命中速度就没有
+     * 方向可言，因此无几何命中的来源（{@code /kill}、虚空、溺水等）不产生冲量。命令在物理线程的
      * {@code PPhase.PRE} 阶段统一应用，主线程不直接操作刚体。</p>
      *
      * <p><b>调用线程：</b>主线程（统一结算阶段）。</p>
@@ -1385,29 +1388,36 @@ public class SubPart extends DestroyableRigidObject implements ISubsystemHost {
     private void queuePhysicsImpulse(SubPartDamageEvent.Pre event) {
         BFDamageContext ctx = event.getCtx();
         if (event.isCanceled() || event.isTrackAbsorbed()) return;
+        Vector3f direction = PhysicsHelperKt.toBVector3f(ctx.hitVelocity());
+        if (direction.lengthSquared() <= 1e-6f) return;
         DamageSource source = ctx.source();
-        boolean impulseProvided = ctx.extensions().contains(BFDamageExtensions.IMPULSE);
         float knockBack;
-        if (impulseProvided) {
+        if (ctx.extensions().contains(BFDamageExtensions.IMPULSE)) {
             // 弹道框架显式提供了冲量（N·s），直接取用（可能为 0 表示明确不击退）
             knockBack = ctx.extensions().get(BFDamageExtensions.IMPULSE);
-        } else if (!source.is(MMDamageTypes.PART_COLLISION)) {
-            // 未提供 IMPULSE：回退到伤害基公式
-            Vector3f contactSpeed = PhysicsHelperKt.toBVector3f(ctx.hitVelocity());
-            if (contactSpeed.lengthSquared() <= 1e-6f) return;
-            if (getMaxDurability() <= 0f) return;
-            knockBack = (float) (Math.log10(Math.max(1.01, 10 * Math.sqrt(event.getDamageAmount() / getMaxDurability()))) * 250f);
+        } else if (source.is(MMDamageTypes.PART_COLLISION)) {
+            // 一般碰撞伤害不需要额外冲量，物理引擎负责处理
+            return;
+        } else {
+            // 未提供 IMPULSE：由伤害启发式推导。取穿甲与减伤之前的原始伤害，
+            // 否则装甲把伤害削到零时冲量跟着消失，未击穿的重击就不会再把车体打得晃动。
+            // 三档共用同一条曲线，只有斜率不同：挥砍把体重带进这一击，同一点伤害代表的动量比弹丸高一个数量级；
+            // 爆炸连速度渐近线都更高。近战与弹丸只能按来源类型区分——两者的伤害值本身是重叠的。
+            float impulsePerRatio = MMServerConfig.impactImpulsePerDamageRatio();
+            float maxSpeed = MMServerConfig.impactMaxSpeed();
+            if (source.is(DamageTypeTags.IS_EXPLOSION)) {
+                impulsePerRatio = MMServerConfig.blastImpulsePerDamageRatio();
+                maxSpeed = MMServerConfig.blastMaxSpeed();
+            } else if (source.getDirectEntity() instanceof LivingEntity) {
+                impulsePerRatio = MMServerConfig.meleeImpulsePerDamageRatio();
+            }
+            knockBack = HitImpulseModel.impulse(
+                    ctx.baseDamage(), getMaxDurability(), body.getMass(), impulsePerRatio, maxSpeed);
             if (source.getDirectEntity() != null && source.getWeaponItem() != null) {
                 knockBack *= EnchantmentHelper.modifyKnockback((ServerLevel) level, source.getWeaponItem(), source.getDirectEntity(), source, 1.0f);
             }
-            if (source.is(DamageTypeTags.IS_EXPLOSION)) knockBack *= 10.0f;
-        } else {
-            // 一般碰撞伤害不需要额外冲量，物理引擎负责处理
-            return;
         }
         if (!Float.isFinite(knockBack) || knockBack <= 1e-6f) return;
-        Vector3f direction = PhysicsHelperKt.toBVector3f(ctx.hitVelocity());
-        if (direction.lengthSquared() <= 1e-6f) return;
         Vector3f impulse = direction.normalize().mult(knockBack);
         if (part.assembly != null) part.assembly.activatePhysics();
         ObjectManager.queueImpulse(level, new SubPartImpulse(this, impulse, PhysicsHelperKt.toBVector3f(ctx.hitPoint())));
