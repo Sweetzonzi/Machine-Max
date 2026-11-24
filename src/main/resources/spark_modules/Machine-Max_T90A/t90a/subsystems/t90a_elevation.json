@@ -4,7 +4,7 @@
   "basic_durability": 70,
   "pitch": {
     "max_force": 85000,
-    "max_speed": 20
+    "max_speed": 7.8 // WT RB, Ace crew, Reference modification
   },
   "control_inputs": [
     "weapon_control"

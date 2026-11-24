@@ -120,7 +120,15 @@
               "locator": "turret_gun_axis",
               "definition": "machine_max:turret_elevation_axis",
               "internal": true,
-              "overwrite": {}
+              "overwrite": {
+                "joint_attrs": {
+                  "xr": {
+                    "lower_limit": -10,
+                    "upper_limit": 20,
+                    "damping": 1.523087
+                  }
+                }
+              }
             }
           },
           "subsystems": {
@@ -170,12 +178,12 @@
             },
             "subsystem.machine_max.azimuth_driver": {
               "type": "machine_max:turret_driver",
-              "definition": "machine_max:basic_manual_azimuth_driver",
+              "definition": "sdkfz234:sdkfz234_azimuth_driver",
               "connector": "connector.machine_max.turret_hull_axis"
             },
             "subsystem.machine_max.elevation_driver": {
               "type": "machine_max:turret_driver",
-              "definition": "machine_max:basic_manual_elevation_driver",
+              "definition": "sdkfz234:sdkfz234_elevation_driver",
               "connector": "connector.machine_max.turret_gun_axis"
             },
             "subsystem.machine_max.main_controller": {

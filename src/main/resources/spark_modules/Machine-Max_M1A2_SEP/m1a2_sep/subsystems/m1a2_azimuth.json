@@ -4,7 +4,7 @@
   "basic_durability": 70,
   "yaw": {
     "max_force": 180000,
-    "max_speed": 35
+    "max_speed": 54.4 // WT RB, Ace crew, Reference modification
   },
   "control_inputs": [
     "weapon_control"

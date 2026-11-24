@@ -287,7 +287,7 @@
               "overwrite": {
                 "joint_attrs": {
                   "xr": {
-                    "lower_limit": -6,
+                    "lower_limit": -4,
                     "upper_limit": 14,
                     "damping": 2
                   }

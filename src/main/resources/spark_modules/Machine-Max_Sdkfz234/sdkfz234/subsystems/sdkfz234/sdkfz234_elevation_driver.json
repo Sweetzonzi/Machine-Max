@@ -1,0 +1,17 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:turret_driver",
+  "basic_durability": 30,
+  "pass_damage": false,
+  "pitch": {
+    "max_force": 35000,
+    "max_speed": 9.0 // WT RB, Ace crew, Reference modification
+  },
+  "control_inputs": ["weapon_control"],
+  "sounds": {
+    "fmod": {
+      "bank": "machine_max:basic_vehicle_sounds",
+      "vertical": "event:/Default_Vehicles/Armament/Turret/vertical_manual"
+    }
+  }
+}

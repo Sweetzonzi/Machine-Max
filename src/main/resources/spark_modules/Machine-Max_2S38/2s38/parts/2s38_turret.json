@@ -139,7 +139,15 @@
               "locator": "turret_gun_axis",
               "definition": "machine_max:turret_elevation_axis",
               "internal": true,
-              "overwrite": {}
+              "overwrite": {
+                "joint_attrs": {
+                  "xr": {
+                    "lower_limit": -5,
+                    "upper_limit": 75,
+                    "damping": 1.523087
+                  }
+                }
+              }
             },
             "connector.2s38.turret_coax_axis": {
               "locator": "turret_pktm_axis",

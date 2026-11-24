@@ -257,7 +257,7 @@
                 "joint_attrs": {
                   "xr": {
                     "lower_limit": -10,
-                    "upper_limit": 22,
+                    "upper_limit": 20,
                     "damping": 2
                   }
                 }

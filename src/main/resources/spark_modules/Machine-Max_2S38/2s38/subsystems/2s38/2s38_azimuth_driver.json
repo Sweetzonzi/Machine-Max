@@ -5,7 +5,7 @@
   "pass_damage": false, //(可选, 默认true)是否将子系统受到的伤害传递给零件
   "yaw": {
     "max_force": 160000,
-    "max_speed": 90.0
+    "max_speed": 81.6 // WT RB, Ace crew, Reference modification
   },
   "control_inputs": ["weapon_control"],
   "sounds": {
