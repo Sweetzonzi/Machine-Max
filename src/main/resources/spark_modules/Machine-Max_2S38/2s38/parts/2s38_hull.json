@@ -465,7 +465,7 @@
             "LeftWheel_1_HitBox": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 5
             }
           },
@@ -505,7 +505,7 @@
             "LeftWheel_2_HitBox": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 5
             }
           },
@@ -545,7 +545,7 @@
             "LeftWheel_3_HitBox": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 5
             }
           },
@@ -585,7 +585,7 @@
             "LeftWheel_4_HitBox": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 5
             }
           },
@@ -625,7 +625,7 @@
             "LeftWheel_5_HitBox": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 5
             }
           },
@@ -665,7 +665,7 @@
             "LeftWheel_6_HitBox": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 5
             }
           },
@@ -705,7 +705,7 @@
             "LeftWheel_7_HitBox": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 5
             }
           },
@@ -745,7 +745,7 @@
             "LeftWheel_8_HitBox": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 5
             }
           },
@@ -785,7 +785,7 @@
             "RightWheel_1_HitBox": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 5
             }
           },
@@ -825,7 +825,7 @@
             "RightWheel_2_HitBox": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 5
             }
           },
@@ -865,7 +865,7 @@
             "RightWheel_3_HitBox": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 5
             }
           },
@@ -905,7 +905,7 @@
             "RightWheel_4_HitBox": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 5
             }
           },
@@ -945,7 +945,7 @@
             "RightWheel_5_HitBox": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 5
             }
           },
@@ -985,7 +985,7 @@
             "RightWheel_6_HitBox": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 5
             }
           },
@@ -1025,7 +1025,7 @@
             "RightWheel_7_HitBox": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 5
             }
           },
@@ -1065,7 +1065,7 @@
             "RightWheel_8_HitBox": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 5
             }
           },

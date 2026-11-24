@@ -583,7 +583,7 @@
             "MM_Hit_left_idler": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 20
             }
           },
@@ -616,7 +616,7 @@
             "MM_Hit_left_road_1": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 20
             }
           },
@@ -649,7 +649,7 @@
             "MM_Hit_left_road_2": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 20
             }
           },
@@ -682,7 +682,7 @@
             "MM_Hit_left_road_3": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 20
             }
           },
@@ -715,7 +715,7 @@
             "MM_Hit_left_road_4": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 20
             }
           },
@@ -748,7 +748,7 @@
             "MM_Hit_left_road_5": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 20
             }
           },
@@ -781,7 +781,7 @@
             "MM_Hit_left_road_6": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 20
             }
           },
@@ -814,7 +814,7 @@
             "MM_Hit_left_sprocket": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 20
             }
           },
@@ -847,7 +847,7 @@
             "MM_Hit_right_idler": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 20
             }
           },
@@ -880,7 +880,7 @@
             "MM_Hit_right_road_1": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 20
             }
           },
@@ -913,7 +913,7 @@
             "MM_Hit_right_road_2": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 20
             }
           },
@@ -946,7 +946,7 @@
             "MM_Hit_right_road_3": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 20
             }
           },
@@ -979,7 +979,7 @@
             "MM_Hit_right_road_4": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 20
             }
           },
@@ -1012,7 +1012,7 @@
             "MM_Hit_right_road_5": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 20
             }
           },
@@ -1045,7 +1045,7 @@
             "MM_Hit_right_road_6": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 20
             }
           },
@@ -1078,7 +1078,7 @@
             "MM_Hit_right_sprocket": {
               "id": "part",
               "type": "wheel",
-              "material": "machine_max:off_road_tire",
+              "material": "machine_max:track_wheel",
               "thickness": 20
             }
           },
