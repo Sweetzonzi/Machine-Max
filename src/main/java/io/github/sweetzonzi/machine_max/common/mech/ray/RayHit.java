@@ -3,10 +3,13 @@ package io.github.sweetzonzi.machine_max.common.mech.ray;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * 一次物理射线查询中的单条解析结果。
+ * 一次射线查询中的单条解析结果。
  *
  * <p>所有命中都提供沿射线的比例、世界坐标命中点与世界空间法线；消费方再按具体结果
- * 类型读取目标身份（SubPart / HitBox、连接器、交互判定区、地形区块或实体）。</p>
+ * 类型读取目标身份（SubPart / HitBox、连接器、交互判定区、方块地形或实体）。</p>
+ *
+ * <p>一次查询可以同时包含物理快照与方块地形两个来源的命中，两者共用同一条线段，
+ * 因此 {@link #fraction()} 可以直接跨来源比较。</p>
  *
  * <p>线程：由 {@link RayHitResolver#resolve} 在查询发起方所在线程构造，构造后不可变。</p>
  */

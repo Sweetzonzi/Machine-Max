@@ -2,7 +2,6 @@ package io.github.sweetzonzi.machine_max.common.mech.ray;
 
 import cn.solarmoon.spark_core.physics.PhysicsHost;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
-import cn.solarmoon.spark_core.physics.terrain.PhysicsChunkSection;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsRayTestResult;
 import com.jme3.math.Vector3f;
@@ -23,8 +22,8 @@ import java.util.List;
  * 公用射线解析核心：把已经执行的物理射线结果按 owner 解析成不同命中类型，
  * 完成子零件有效性过滤并准备各类型需要的数据。
  *
- * <p>射线本身由调用方选择实际世界或只读快照发射；本类只读 {@code rawHits}，
- * 不发射射线、不应用观察者排除、不写投射物字段、不触发伤害。</p>
+ * <p>射线由调用方发射：刚体走只读物理快照，方块地形走 {@link BlockRayHit#clip}。本类只合并
+ * 两者交来的结果，不发射射线、不应用观察者排除、不写投射物字段、不触发伤害。</p>
  *
  * <p>每条命中都带世界坐标命中点与世界空间法线；目标身份由具体结果类型给出。
  * SubPart 的可拾取判定走 {@link SubPart#findPickableHitBox(int)}，交互判定区映射走
@@ -41,55 +40,59 @@ public final class RayHitResolver {
     }
 
     /**
-     * 解析一份物理射线结果。
+     * 解析一次查询的命中：方块地形与物理射线合并成一份列表。
      *
-     * @param rawHits 物理引擎返回的原始命中结果，调用期间只读
-     * @param from    本次射线起点（世界坐标）
-     * @param to      本次射线终点（世界坐标）
+     * <p>两个来源共用同一段射线，因此 {@link RayHit#fraction()} 在同一条线段上可直接比较，
+     * 合并后按 fraction 升序排列即为由近到远。</p>
+     *
+     * @param rawHits  物理引擎返回的原始命中结果，调用期间只读；物理世界不可用时传 null 或空列表
+     * @param from     本次射线起点（世界坐标）
+     * @param to       本次射线终点（世界坐标）
+     * @param blockHit 同一条射线上的方块命中，可为 null
      * @return 按 fraction 升序排列的不可变结果列表；没有有效结果时返回空列表
      */
-    public static List<RayHit> resolve(List<PhysicsRayTestResult> rawHits, Vec3 from, Vec3 to) {
-        if (rawHits == null || rawHits.isEmpty() || from == null || to == null) {
-            return List.of();
-        }
+    public static List<RayHit> resolve(@Nullable List<PhysicsRayTestResult> rawHits, Vec3 from, Vec3 to,
+                                       @Nullable BlockRayHit blockHit) {
+        if (from == null || to == null) return List.of();
         if (!isFinite(from) || !isFinite(to)) return List.of();
         double dx = to.x - from.x;
         double dy = to.y - from.y;
         double dz = to.z - from.z;
         if (dx == 0.0 && dy == 0.0 && dz == 0.0) return List.of();
 
-        List<RayHit> hits = new ArrayList<>(rawHits.size());
-        for (PhysicsRayTestResult result : rawHits) {
-            if (result == null) continue;
-            double fraction = result.getHitFraction();
-            if (!Double.isFinite(fraction) || fraction < 0.0 || fraction > 1.0) continue;
+        List<RayHit> hits = new ArrayList<>((rawHits == null ? 0 : rawHits.size()) + 1);
+        if (blockHit != null) hits.add(blockHit);
+        if (rawHits != null) {
+            for (PhysicsRayTestResult result : rawHits) {
+                if (result == null) continue;
+                double fraction = result.getHitFraction();
+                if (!Double.isFinite(fraction) || fraction < 0.0 || fraction > 1.0) continue;
 
-            PhysicsCollisionObject object = result.getCollisionObject();
-            if (object == null) continue;
-            PhysicsHost owner = PhysicsBodyExtensionKt.getOwner(object);
-            if (owner == null) continue;
+                PhysicsCollisionObject object = result.getCollisionObject();
+                if (object == null) continue;
+                PhysicsHost owner = PhysicsBodyExtensionKt.getOwner(object);
+                if (owner == null) continue;
 
-            Vec3 point = pointAt(from, dx, dy, dz, fraction);
-            Vec3 normal = normalOf(result);
-            if (point == null || normal == null) continue;
+                Vec3 point = pointAt(from, dx, dy, dz, fraction);
+                Vec3 normal = normalOf(result);
+                if (point == null || normal == null) continue;
 
-            if (owner instanceof SubPart subPart) {
-                HitBox hitBox = subPart.findPickableHitBox(result.triangleIndex());
-                // 无效形状直接跳过，不转成 OtherRayHit 绕过过滤
-                if (hitBox == null) continue;
-                hits.add(new SubPartRayHit(fraction, subPart, hitBox, point, normal));
-            } else if (owner instanceof AbstractConnector connector) {
-                hits.add(new ConnectorRayHit(fraction, connector, point, normal));
-            } else if (owner instanceof InteractBoxes interactBoxes) {
-                InteractBox interactBox = interactBoxes.findInteractBox(result.triangleIndex());
-                if (interactBox == null) continue;
-                hits.add(new InteractBoxRayHit(fraction, interactBox, point, normal));
-            } else if (owner instanceof PhysicsChunkSection section) {
-                hits.add(new TerrainRayHit(fraction, section, point, normal));
-            } else if (owner instanceof Entity entity) {
-                hits.add(new EntityRayHit(fraction, entity, point, normal));
-            } else {
-                hits.add(new OtherRayHit(fraction, owner, point, normal));
+                if (owner instanceof SubPart subPart) {
+                    HitBox hitBox = subPart.findPickableHitBox(result.triangleIndex());
+                    // 无效形状直接跳过，不转成 OtherRayHit 绕过过滤
+                    if (hitBox == null) continue;
+                    hits.add(new SubPartRayHit(fraction, subPart, hitBox, point, normal));
+                } else if (owner instanceof AbstractConnector connector) {
+                    hits.add(new ConnectorRayHit(fraction, connector, point, normal));
+                } else if (owner instanceof InteractBoxes interactBoxes) {
+                    InteractBox interactBox = interactBoxes.findInteractBox(result.triangleIndex());
+                    if (interactBox == null) continue;
+                    hits.add(new InteractBoxRayHit(fraction, interactBox, point, normal));
+                } else if (owner instanceof Entity entity) {
+                    hits.add(new EntityRayHit(fraction, entity, point, normal));
+                } else {
+                    hits.add(new OtherRayHit(fraction, owner, point, normal));
+                }
             }
         }
         if (hits.isEmpty()) return List.of();

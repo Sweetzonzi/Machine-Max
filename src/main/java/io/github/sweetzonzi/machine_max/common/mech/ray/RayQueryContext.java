@@ -31,6 +31,9 @@ import java.util.function.Predicate;
  * <p>解析结果包含 {@link RayHitResolver} 产出的全部命中类型；准星与投射物适配层只消费其中
  * 的 {@link SubPartRayHit}，其余类型留给调用方按需读取。</p>
  *
+ * <p>物理快照只覆盖刚体与投射物，方块地形默认不在结果里；需要地形遮挡的查询在首次解析前调用
+ * {@link #withTerrain()}，由 {@link BlockRayHit#clip} 在主线程补上一条方块命中并与物理命中合并。</p>
+ *
  * <p>返回给投射物的 {@link EntityHitResult} 通过 {@link #rememberResult} 与本上下文按实例身份
  * 关联，{@link io.github.sweetzonzi.machine_max.common.entity.PartHitHandler} 在实际命中事件中
  * {@link #consume} 它，用同一输入做一次独立复核。该关联使用后立即移除；未被消费的关联在
@@ -55,6 +58,7 @@ public final class RayQueryContext {
 
     private volatile List<RayHit> hits;
     private volatile Map<SubPart, SubPartRayHit> nearestBySubPart;
+    private boolean terrain;
 
     private RayQueryContext(Level level, @Nullable Entity source, Vec3 from, Vec3 to, @Nullable Predicate<Entity> filter) {
         this.gameTime = level.getGameTime();
@@ -83,6 +87,22 @@ public final class RayQueryContext {
             PENDING.entrySet().removeIf(entry -> entry.getValue().gameTime < now);
         }
         return context;
+    }
+
+    /**
+     * 让本次查询同时覆盖方块地形。
+     *
+     * <p>解析时会沿同一条线段调用 {@link BlockRayHit#clip}，把方块命中并入结果，因此
+     * {@link #nearestHit()} 会在一堵墙挡住目标时给出墙而不是墙后面的部件。</p>
+     *
+     * <p>只能在本上下文首次解析之前调用；已经解析过的上下文忽略本次调用。地形来自
+     * {@code Level.clip}，要求解析发生在主线程。</p>
+     *
+     * @return 本上下文，便于链式调用
+     */
+    public RayQueryContext withTerrain() {
+        if (hits == null) terrain = true;
+        return this;
     }
 
     @Nullable
@@ -129,6 +149,20 @@ public final class RayQueryContext {
     }
 
     /**
+     * 本次查询由近到远的第一条命中，不论类型。
+     *
+     * <p>调用方比较的是「射线最先撞上什么」：要判断目标前方有无遮挡，就问这一条是不是目标；
+     * 要取地形命中点，就判断它是不是 {@link BlockRayHit}。</p>
+     *
+     * @return 最近的一条命中；没有任何命中时返回 null
+     */
+    @Nullable
+    public RayHit nearestHit() {
+        List<RayHit> resolved = hits();
+        return resolved.isEmpty() ? null : resolved.get(0);
+    }
+
+    /**
      * 把本次原版查询返回的结果与上下文关联，供实际命中事件按结果实例取回输入。
      *
      * <p>只有投射物发起的查询才需要关联；准星等普通实体查询不产生投射物命中事件。</p>
@@ -154,37 +188,45 @@ public final class RayQueryContext {
     /**
      * 本次查询解析出的全部命中，按 fraction 升序。
      *
-     * <p>首次调用时向只读物理快照发射一次射线并解析，之后返回同一结果。</p>
+     * <p>首次调用时向只读物理快照发射一次射线、按需补一条方块命中并解析，之后返回同一结果。
+     * 需要跳过自家几何、或按类型取第二条命中的调用方读这一份；只要「最先撞上什么」的调用方
+     * 用 {@link #nearestHit()}。</p>
      *
      * @return 不可变结果列表
      */
-    private List<RayHit> hits() {
+    public List<RayHit> hits() {
         List<RayHit> current = hits;
         if (current != null) return current;
-        List<RayHit> resolved = resolveFromSnapshot();
+        List<RayHit> resolved = resolveFromSnapshot(terrain ? BlockRayHit.clip(level, source, from, to) : null);
         nearestBySubPart = buildSubPartIndex(resolved);
         hits = resolved;
         return resolved;
     }
 
     /**
-     * 向只读物理快照发射一次双精度端点射线并解析。
+     * 向只读物理快照发射一次双精度端点射线，并与已得的方块命中合并。
+     *
+     * <p>物理世界不可用时只保留方块命中：地形不依赖物理世界，没有理由跟着一起失效。</p>
      */
-    private List<RayHit> resolveFromSnapshot() {
+    private List<RayHit> resolveFromSnapshot(@Nullable BlockRayHit blockHit) {
+        List<PhysicsRayTestResult> raw;
         try {
             PhysicsLevel physicsLevel = SparkLevel.getPhysicsLevelOrNull(level);
-            if (physicsLevel == null) return List.of();
-            WorldSnapshot snapshot = physicsLevel.getWorld().getWorldSnapshot();
-            List<PhysicsRayTestResult> raw = snapshot.rayTestDp(
-                    new Vec3d(from.x, from.y, from.z),
-                    new Vec3d(to.x, to.y, to.z),
-                    new ArrayList<>(16));
-            return RayHitResolver.resolve(raw, from, to);
+            if (physicsLevel == null) {
+                raw = List.of();
+            } else {
+                WorldSnapshot snapshot = physicsLevel.getWorld().getWorldSnapshot();
+                raw = snapshot.rayTestDp(
+                        new Vec3d(from.x, from.y, from.z),
+                        new Vec3d(to.x, to.y, to.z),
+                        new ArrayList<>(16));
+            }
         } catch (RuntimeException e) {
-            // 物理世界尚未初始化（首 tick、维度切换、卸载中）时本次不生成部件命中
-            MachineMax.LOGGER.debug("物理快照射线查询不可用，本次不生成部件命中: {}", e.getMessage());
-            return List.of();
+            // 物理世界尚未初始化（首 tick、维度切换、卸载中）时本次不生成刚体命中
+            MachineMax.LOGGER.debug("物理快照射线查询不可用，本次不生成刚体命中: {}", e.getMessage());
+            raw = List.of();
         }
+        return RayHitResolver.resolve(raw, from, to, blockHit);
     }
 
     /**

@@ -19,6 +19,12 @@ import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager
 import io.github.sweetzonzi.machine_max.common.mech.ammo.AmmoBelt;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.type.BallisticProjectileType;
+import io.github.sweetzonzi.machine_max.common.mech.ray.ConnectorRayHit;
+import io.github.sweetzonzi.machine_max.common.mech.ray.InteractBoxRayHit;
+import io.github.sweetzonzi.machine_max.common.mech.ray.RayHit;
+import io.github.sweetzonzi.machine_max.common.mech.ray.RayQueryContext;
+import io.github.sweetzonzi.machine_max.common.mech.ray.SubPartRayHit;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.IPartAssembly;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.subpart.SubPartDamageEvent;
@@ -2761,6 +2767,45 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         Quaternion rot = tf.getRotation();
         Vector3f forward = MyQuaternion.rotate(rot, new Vector3f(0, 0, -1), null);
         return new Vec3(forward.x, forward.y, forward.z).normalize();
+    }
+
+    /**
+     * 沿本管的发射点与管轴打一条射线，取最近的、不属于本装配体的命中。
+     *
+     * <p>地形与载具一并参与，调用方拿到的是「这一管此刻会打到什么」，而不是管轴上的某个远点；
+     * 命中点由结果自己的 {@code point()} 给出，距离等于 {@code fraction() × maxDistance}。</p>
+     *
+     * <p>本装配体的几何跳过：内容把发射点放进炮管或导弹管的命中箱内部时，下一格就是自己的盒壁，
+     * 不跳过会让落点贴在炮口上。开火归属（谁打的这一发）是武器控制器的职责，本方法不做投射物归属判定。</p>
+     *
+     * <p>线程：主线程。地形判定读区块数据；物理快照与地形必须在同一线程解析。</p>
+     *
+     * @param maxDistance 射线长度，米；必须为正
+     * @return 最近的一条有效命中；没有命中或长度非正时返回 null
+     */
+    @Nullable
+    public RayHit findAimHit(double maxDistance) {
+        if (!(maxDistance > 0)) return null;
+        Vec3 from = getMuzzleWorldPosition();
+        Vec3 to = from.add(getMuzzleDirection().scale(maxDistance));
+        IPartAssembly assembly = getSubPart().part.assembly;
+        for (RayHit hit : RayQueryContext.begin(getLevel(), null, from, to, null).withTerrain().hits()) {
+            if (belongsTo(hit, assembly)) continue;
+            return hit;
+        }
+        return null;
+    }
+
+    /** 命中是否来自本装配体。 */
+    private static boolean belongsTo(RayHit hit, @Nullable IPartAssembly assembly) {
+        if (assembly == null) return false;
+        SubPart hitPart = switch (hit) {
+            case SubPartRayHit part -> part.subPart();
+            case ConnectorRayHit connector -> connector.connector().subPart;
+            case InteractBoxRayHit box -> box.interactBox().subPart;
+            default -> null;
+        };
+        return hitPart != null && hitPart.part.assembly == assembly;
     }
 
     /**

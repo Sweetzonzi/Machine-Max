@@ -37,7 +37,7 @@
 | [研究台界面-研发分组与蓝图库统一重构计划](已实现/研究台界面-研发分组与蓝图库统一重构计划.md) | 提交 `87615e1e`；研究台树形界面与研发分组已在 AUI 上实现 |
 | [蓝图库-玩家设计保存与取用设计](已实现/蓝图库-玩家设计保存与取用设计.md) | `BlueprintLibraryClient` 与客户端 `saved_blueprints/*.json` 已落地 |
 | [观瞄系统-炮镜HUD自定义分划设计](已实现/观瞄系统-炮镜HUD自定义分划设计.md) | 分划行为与炮镜跟随语义已落地；资源形态为 `huds/*.json` 样式 + `hud_layouts/*.json` 布局，由 `HudModule` / `HudLayoutModule` 载入，客户端 `CustomHud` 渲染 |
-| [观瞄系统-主武器管轴HUD](已实现/观瞄系统-主武器管轴HUD.md) | `SightHud#render` 在 `sight_hud` 层绘制期望目标大环与每个有效发射器的管轴小环；`ScreenProjectionUtil#worldDirectionToScreenOffset` 按当前相机与视场投影；JUnit 与 `ViewpointGameTest` 的相关用例通过，实机画面验收待完成 |
+| [观瞄系统-主武器落点HUD](已实现/观瞄系统-主武器落点HUD.md) | `SightHud#render` 在 `sight_hud` 层绘制期望目标大环与每根有效发射器的落点小环；落点由 `LauncherSubsystem#findAimHit` 沿发射点与管轴同时查询物理快照与方块地形，`ScreenProjectionUtil#worldToScreenOffset` 按当前相机与视场投影；离线 `compileJava` 与 `test` 通过，实机画面验收待完成 |
 | [载具下车位置选择-实现计划](已实现/载具下车位置选择-实现计划.md) | 零件 JSON 的下车 locator 与上车位置缓存均已接入乘客落点选择 |
 | [内容包诊断-SparkCore适配实现](已实现/内容包诊断-SparkCore适配实现.md) | Spark-Core `e526385d`（v1.4）；`MMDynamicRes` 只留注册表与索引，14 个模块去 catch、JSON 解码走 `PackCodec`，配方/研发经 `SparkPackIssues.report` 上报，领域层抛 `PackContentException`；构建、`runData`、`runServer` 与坏文件探针已验证 |
 | [界面-内容包AUI页面加载可行性调查](已实现/界面-内容包AUI页面加载可行性调查.md) | `DocumentModule` 在客户端把内容包 `documents/` 写入 `CLIENT_PACK`（`apricityui:apricity/<key>`），HUD/手册/PDA 共用，`LOCAL_ONLY` 不参与服务端同步；AUI 自动重载并在 `onFinish` 补一次 `HTML.scan()`；客户端实机验收待完成 |
@@ -82,7 +82,7 @@
 | [武器系统-投射物曳光光照设计](进行中/武器系统-投射物曳光光照设计.md) | S1（逐像素光照）、S2（光源级遮挡）与 S4（法线响应，随共享着色器）已落地，待游戏内实测标定；S3 表面项已在共享着色器落地（多距离验收待做）。F1（爆炸波前折射的遮挡修复）已落地并实测通过；曳光链已并入通用 `screen_space_light` 通路 |
 | [武器系统-投射物模型渲染设计](进行中/武器系统-投射物模型渲染设计.md) | `visual.model` / `visual.texture` 两个字段已落地（`9m133_kornet` 解析到 `Machine-Max_Soviet_Basic_Kit` 的弹体模型 `models/projectile/9m133.geo.json`，待游戏内验收）；朝向修正、缩放（`model_scale` / `model_rotation` / `model_lod_distance`）与投射物动画驱动未实现 |
 | [碰撞系统-撞碎与压溃实现计划](进行中/碰撞系统-撞碎与压溃实现计划.md) | P0（纯函数/材质门/服务端系数）、P1（Level 收集与诊断）、P2（即时与聚合判定、共享耐久、部件伤害投递、删块与快照补偿）代码已接入并通过离线测试，等待游戏内验收；P3 标定与兼容待做。每 Level 每子步一轮 Post 接触聚合，撞击资格取材质 `impact_min_speed`，`C_J/C_D/approachEpsilon` 在服务端配置；已移除方块的后续接触在 Conceived 与 Processed 两处禁用，可爬方块清单与局部高度场共用同一判据；压溃与零件间、生物路径迁移不排期 |
-| [交互-部件精确准星拾取与渲染包围盒设计](进行中/交互-部件精确准星拾取与渲染包围盒设计.md) | P0–P2 已落地：`common/mech/ray/` 的 `RayHit`／六个结果 record／`RayHitResolver`／`RayQueryContext`，`SubPart.findPickableHitBox` 与 `InteractBoxes.findInteractBox` 的严格子形状索引，`ProjectileUtilMixin` 与 `PartHitHandler` 的统一求交与同输入复核，`MMPartEntity` 完整 AABB 与 `TrackRenderer.cullingAabb` 的主动轮履带剔除；离线 `compileJava` 与 `test` 通过。P3 客户端/多人运行期验收与 Eyesight 结果发布修正待做 |
+| [交互-部件精确准星拾取与渲染包围盒设计](进行中/交互-部件精确准星拾取与渲染包围盒设计.md) | P0–P2 已落地：`common/mech/ray/` 的 `RayHit`／六个结果 record／`RayHitResolver`／`RayQueryContext`，`BlockRayHit` 让方块地形与物理快照按 fraction 合并进同一次查询（`RayQueryContext.withTerrain()`），`SubPart.findPickableHitBox` 与 `InteractBoxes.findInteractBox` 的严格子形状索引，`ProjectileUtilMixin` 与 `PartHitHandler` 的统一求交与同输入复核，`MMPartEntity` 完整 AABB 与 `TrackRenderer.cullingAabb` 的主动轮履带剔除；离线 `compileJava` 与 `test` 通过。P3 客户端/多人运行期验收与 Eyesight 结果发布修正待做 |
 | [载具系统-殉爆机制设计](进行中/载具系统-殉爆机制设计.md) | 第十三版；`cookoff` 贡献字段与 Codec、装弹机库存与发射器膛内单发的摧毁触发、实际库存合成、命中事件化结算、连接点主线程应用、Level 级冲量统一发布与波前末段裁剪均已接入；`CookoffComposition` / `CookoffContribution` 附单元测试，模块伤害与膛内单发殉爆走 GameTest；剩余数值标定与运行期验收见 §8 |
 | [动画系统-事件触发动画设计](进行中/动画系统-事件触发动画设计.md) | 事件触发动画的当前接口已落地，Spark-Core 状态机侧已接入；§6 的后续待办未实现 |
 | [动画系统-Part动画资源绑定实施计划](进行中/动画系统-Part动画资源绑定实施计划.md) | 独立动画集/控制器集键、绑定生命周期、Variant 的 `animations`/`controllers` 配置与桑塔纳接入已落地并通过离线构建与内容检查；实机验收待用户启动客户端 |
@@ -118,6 +118,7 @@
 | [信号系统-控制组终端直投备忘](计划中/信号系统-控制组终端直投备忘.md) | 待细化方向：控制组加一个默认空的 `terminal_targets`，按频道直达 `(part UUID, 子系统名)` 的终端，用于精细武器选择；追加/覆盖语义、与发现的一致性、权限与 schema 暴露面未定；依赖 Part 级名字解析先落地 |
 | [信号系统-事件车道设计](计划中/信号系统-事件车道设计.md) | 设计稿、待审阅，代码中尚无事件车道；`onSignalEvent` / `emitSignal` / `broadcastEvent`、`resolveTargets` 的布尔重载与交互区改造均未落地。P1：车道、事件会话、交互区两个地址经 emit；P2：投递点发现、端口事件转发、`acceptAllRoutingInput` 修正与内容检查。车道只在单端内投递，跨端一致由消费方自己同步，不做镜像。见该文 §9、§10.5 |
 | [载具系统-锁扣分离冲量设计](计划中/载具系统-锁扣分离冲量设计.md) | 设计定稿、未实现：锁扣型号静态属性新增四个平铺字段（`separation_impulse` 默认 8 N·s、`separation_direction`、`separation_command_only`、`separation_apply_on_center`），在交互解扣与意外脱锁两条路径上各施加一次零件冲量；复用现成的 `SubPartImpulse` 批次，`PPhase.ALL` 摘关节先于冲量的 `PPhase.PRE`，无需新载荷、事件或连接点字段。含平铺与块的取舍、默认值锚点、影响面与 T1—T6／G1—G2 验收 |
+| [载具系统-车门与舱盖开合适配实施计划](计划中/载具系统-车门与舱盖开合适配实施计划.md) | 计划中，未实施：把桑塔纳的门件模式推广到 Kluo、Wine Fox、Van、Senna GTR 共 15 处可开合部件。只加两份型号（`door_latch`、`translation_joint_driver`）、每车两段片段与一台控制器，不改子系统代码；模板与存档保留锁扣对，生成即扣合且不播捕获声。P0 量取、P1 共用资产、P2–P4 逐车、P5 桑塔纳模板与回归，逐车 K1–K7 人工验收 |
 | [载具系统-锁扣子系统实施计划](计划中/载具系统-锁扣子系统实施计划.md) | 进行中；主动高级端在同一载具内按距离发现并按现有双向条件检查扣合简单端；同件配对写成 `partNet` 自环边随 `ConnectionData` 持久化，`connected` 同步镜像逻辑配对；音效跟随标记变化。首版经 `onInteract(entity)` 解扣，不依赖事件车道。P1–P3 代码、桑塔纳左前门内容与作者文档已落地，T1–T5、T6（同步脏值）、T7、T8（重扣门控与物理施力）、T11（半截引用、缺边补入与陈旧边删除）、T12、T13 通过；T6 客户端声音基线、T9 铰链叠加探针与 G1–G5 客户端人工验收未完成。 |
 
 ## 未纳入本目录

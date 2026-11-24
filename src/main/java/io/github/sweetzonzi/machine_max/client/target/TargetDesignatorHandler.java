@@ -5,6 +5,8 @@ import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.item.prop.TargetDesignatorItem;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.part.AbstractPart;
+import io.github.sweetzonzi.machine_max.common.mech.ray.BlockRayHit;
+import io.github.sweetzonzi.machine_max.common.mech.ray.RayHit;
 import io.github.sweetzonzi.machine_max.common.mech.ray.RayQueryContext;
 import io.github.sweetzonzi.machine_max.common.mech.ray.SubPartRayHit;
 import io.github.sweetzonzi.machine_max.common.mech.target.Target;
@@ -15,9 +17,6 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -41,7 +40,8 @@ import java.util.Map;
  * 现算，不接收增删通知，因此不会与真相不一致。碰撞箱之外的实体不进候选——原版区块索引已经做了
  * 空间查询，等实体现身时各消费者按自己的 AABB 现查。</p>
  *
- * <p>遮挡判定只处理地形：{@code level.clip} 打在目标点之前就丢弃这一项。载具互挡不在这里处理。</p>
+ * <p>遮挡判定只处理地形：{@link BlockRayHit#clip} 在射线到达目标点之前命中方块就丢弃这一项。
+ * 载具互挡不在这里处理。</p>
  */
 @OnlyIn(Dist.CLIENT)
 @EventBusSubscriber(modid = MachineMax.MOD_ID, value = Dist.CLIENT)
@@ -91,18 +91,18 @@ public final class TargetDesignatorHandler {
     }
 
     /**
-     * 右键：准星命中的可锁碰撞箱成为锁定；命中的是没声明 {@code lockable} 的部位时改锁整辆载具；
-     * 再次右键同一目标取消；射线没打到载具时锁定不变。
+     * 右键：射线最近的一条命中是可锁碰撞箱时成为锁定；命中的是没声明 {@code lockable} 的部位时改锁整辆载具；
+     * 再次右键同一目标取消；最近的一条命中是地形（或根本不是载具）时锁定不变。
      */
     public static void onUse(Player player) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
         Vec3 eye = player.getEyePosition();
         Vec3 end = eye.add(player.getViewVector(1f).scale(LOCK_RANGE));
-        SubPartRayHit hit = RayQueryContext.begin(mc.level, player, eye, end, null)
-                .nearestSubPartHitMatching(null);
-        if (hit == null) return;
-        if (blockedByTerrain(mc.level, player, eye, hit.point())) return;
+        RayHit nearest = RayQueryContext.begin(mc.level, player, eye, end, null)
+                .withTerrain()
+                .nearestHit();
+        if (!(nearest instanceof SubPartRayHit hit)) return;
         Target picked = pick(hit);
         if (picked == null) return;
         lock = lock == picked ? null : picked;
@@ -141,7 +141,7 @@ public final class TargetDesignatorHandler {
             if (vehicle == riding || !vehicle.isLockable()) continue;
             Vec3 center = vehicle.point(1);
             if (center.distanceToSqr(eye) > rangeSqr) continue;
-            if (blockedByTerrain(mc.level, player, eye, center)) continue;
+            if (BlockRayHit.clip(mc.level, player, eye, center) != null) continue;
             CANDIDATES.add(vehicle);
             for (RegularPart part : vehicle.partMap.values()) {
                 for (SubPart subPart : part.subParts.values()) {
@@ -150,7 +150,7 @@ public final class TargetDesignatorHandler {
                         if (!hitBox.isLockable()) continue;
                         Vec3 point = hitBox.point(1);
                         if (point.distanceToSqr(eye) > rangeSqr) continue;
-                        if (blockedByTerrain(mc.level, player, eye, point)) continue;
+                        if (BlockRayHit.clip(mc.level, player, eye, point) != null) continue;
                         CANDIDATES.add(hitBox);
                     }
                 }
@@ -163,14 +163,5 @@ public final class TargetDesignatorHandler {
     private static VehicleCore ridingVehicle(Player player) {
         return player.getVehicle() instanceof MMPartEntity part && part.subPart != null
                 && part.subPart.part.assembly instanceof VehicleCore vehicle ? vehicle : null;
-    }
-
-    private static boolean blockedByTerrain(net.minecraft.world.level.Level level, Player player,
-                                            Vec3 eye, Vec3 point) {
-        BlockHitResult hit = level.clip(new ClipContext(eye, point,
-                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
-        // 射线终点就是目标点本身，所以「打到点上方」等于「没被挡住」
-        return hit.getType() != HitResult.Type.MISS
-                && hit.getLocation().distanceToSqr(eye) < point.distanceToSqr(eye) - 1.0e-6;
     }
 }
