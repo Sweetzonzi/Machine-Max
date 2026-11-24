@@ -227,6 +227,8 @@ public final class CouplerSamePartGameTest {
         CouplerSubsystemStaticAttr staticAttr = new CouplerSubsystemStaticAttr(
                 new BasicSubsystemStaticAttr.BasicAttr(20f, true, false, false),
                 0.04f, 0.001f, 100f, 3f, 0.25f, 2f,
+                // 本用例只测合拢力，从不解扣；分离冲量取默认值
+                CouplerSubsystemStaticAttr.DEFAULT_SEPARATION_IMPULSE, null, false, false,
                 CouplerSubsystemStaticAttr.CouplerSoundAttr.DEFAULT);
         MMDynamicRes.STATIC_SUBSYSTEM_ATTRS.put(model, staticAttr);
         MMDynamicRes.SERVER_STATIC_SUBSYSTEM_ATTRS.put(model, staticAttr);

@@ -3,18 +3,30 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.sweetzonzi.machine_max.util.data.Axis;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 
+import javax.annotation.Nullable;
+import java.util.Optional;
+
 /**
  * 锁扣子系统型号参数。
  *
- * <p>距离单位是米，力单位是 N，角度单位是度，速度单位是 m/s。所有数值在构造期收敛成有限的
- * 合法值，内容错误在装载期抛出，不在物理步才暴露。</p>
+ * <p>距离单位是米，力单位是 N，冲量单位是 N·s，角度单位是度，速度单位是 m/s。所有数值在构造期
+ * 收敛成有限的合法值，内容错误在装载期抛出，不在物理步才暴露。</p>
  */
 @Getter
 public class CouplerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
+
+    /**
+     * 默认分离冲量（N·s）：落在空手一击与铁剑一击之间，在 24 kg 车门上约 0.33 m/s。
+     *
+     * <p>默认非零是有意的：不写这个字段的型号也在分离时给出一点看得见的初速度，避免“没写就不生效”
+     * 这种静默坑。不需要分离运动的型号显式写 {@code 0}。</p>
+     */
+    public static final float DEFAULT_SEPARATION_IMPULSE = 8f;
 
     /** 吸合范围：端点距离不超过此值时允许施加合拢力。 */
     public final float captureDistance;
@@ -28,6 +40,23 @@ public class CouplerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     public final float maxLockSpeed;
     /** 重武装距离倍率；重武装距离 = max(capture_distance, n * lock_distance)。 */
     public final float rearmDistanceMultiplier;
+    /**
+     * 分离冲量（N·s）：解扣或意外脱锁时施加给离开的那一个子零件；{@code 0} 关闭。
+     *
+     * <p>冲量对质量是盲的，默认值只对轻件有意义，重件必须自己给。</p>
+     */
+    public final float separationImpulse;
+    /**
+     * 分离方向：宿主子零件局部帧的方向轴；{@code null} 表示按“宿主质心指向分离点”自动取。
+     *
+     * <p>不从连接点法线推导：法线只保证两端相反，引擎盖与车门的实际取值并不都朝外。</p>
+     */
+    @Nullable
+    public final Axis separationDirection;
+    /** {@code true} 表示只有锁扣自己解开的那一次施加，意外脱锁不施加。 */
+    public final boolean separationCommandOnly;
+    /** {@code false} 施加在分离点（有力臂，产生初始自转），{@code true} 施加在质心（纯平移）。 */
+    public final boolean separationApplyOnCenter;
 
     public final CouplerSoundAttr sounds;
 
@@ -70,9 +99,20 @@ public class CouplerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
                     .forGetter(CouplerSubsystemStaticAttr::getMaxLockSpeed),
             Codec.FLOAT.optionalFieldOf("rearm_distance_multiplier", 2f)
                     .forGetter(CouplerSubsystemStaticAttr::getRearmDistanceMultiplier),
+            Codec.FLOAT.optionalFieldOf("separation_impulse", DEFAULT_SEPARATION_IMPULSE)
+                    .forGetter(CouplerSubsystemStaticAttr::getSeparationImpulse),
+            Axis.CODEC.optionalFieldOf("separation_direction")
+                    .forGetter(attr -> Optional.ofNullable(attr.separationDirection)),
+            Codec.BOOL.optionalFieldOf("separation_command_only", false)
+                    .forGetter(CouplerSubsystemStaticAttr::isSeparationCommandOnly),
+            Codec.BOOL.optionalFieldOf("separation_apply_on_center", false)
+                    .forGetter(CouplerSubsystemStaticAttr::isSeparationApplyOnCenter),
             CouplerSoundAttr.CODEC.optionalFieldOf("sounds", CouplerSoundAttr.DEFAULT)
                     .forGetter(CouplerSubsystemStaticAttr::getSounds)
-    ).apply(instance, CouplerSubsystemStaticAttr::new));
+    ).apply(instance, (basic, capture, lock, force, angle, speed, rearm, impulse, direction,
+                       commandOnly, onCenter, sounds) ->
+            new CouplerSubsystemStaticAttr(basic, capture, lock, force, angle, speed, rearm,
+                    impulse, direction.orElse(null), commandOnly, onCenter, sounds)));
 
     public CouplerSubsystemStaticAttr(
             BasicAttr basicAttr,
@@ -82,6 +122,10 @@ public class CouplerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             float lockAngleTolerance,
             float maxLockSpeed,
             float rearmDistanceMultiplier,
+            float separationImpulse,
+            @Nullable Axis separationDirection,
+            boolean separationCommandOnly,
+            boolean separationApplyOnCenter,
             CouplerSoundAttr sounds
     ) {
         super(basicAttr, sounds.basicSounds());
@@ -91,6 +135,7 @@ public class CouplerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         requireFinite("lock_angle_tolerance", lockAngleTolerance);
         requireFinite("max_lock_speed", maxLockSpeed);
         requireFinite("rearm_distance_multiplier", rearmDistanceMultiplier);
+        requireFinite("separation_impulse", separationImpulse);
         if (captureDistance <= 0f) throw new IllegalArgumentException("capture_distance must be > 0");
         if (lockDistance <= 0f) throw new IllegalArgumentException("lock_distance must be > 0");
         if (lockDistance > captureDistance) throw new IllegalArgumentException("lock_distance must not exceed capture_distance");
@@ -99,12 +144,19 @@ public class CouplerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             throw new IllegalArgumentException("lock_angle_tolerance must be in (0, 90]");
         if (maxLockSpeed < 0f) throw new IllegalArgumentException("max_lock_speed must be >= 0");
         if (rearmDistanceMultiplier <= 1f) throw new IllegalArgumentException("rearm_distance_multiplier must be > 1");
+        if (separationImpulse < 0f) throw new IllegalArgumentException("separation_impulse must be >= 0");
+        if (separationDirection != null && !separationDirection.isDirectional())
+            throw new IllegalArgumentException("separation_direction must be a directional axis: " + separationDirection);
         this.captureDistance = captureDistance;
         this.lockDistance = lockDistance;
         this.maxCaptureForce = maxCaptureForce;
         this.lockAngleTolerance = lockAngleTolerance;
         this.maxLockSpeed = maxLockSpeed;
         this.rearmDistanceMultiplier = rearmDistanceMultiplier;
+        this.separationImpulse = separationImpulse;
+        this.separationDirection = separationDirection;
+        this.separationCommandOnly = separationCommandOnly;
+        this.separationApplyOnCenter = separationApplyOnCenter;
         this.sounds = sounds;
     }
 

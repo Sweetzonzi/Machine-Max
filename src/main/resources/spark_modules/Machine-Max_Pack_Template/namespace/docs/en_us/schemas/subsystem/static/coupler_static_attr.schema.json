@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/subsystem/static/coupler_static_attr.json",
   "title": "Coupler Static Attributes",
-  "description": "Distances are in meters, forces in newtons, angles in degrees and speeds in meters per second. Rearm distance = max(capture_distance, rearm_distance_multiplier × lock_distance).",
+  "description": "Distances are in meters, forces in newtons, impulses in newton-seconds, angles in degrees and speeds in meters per second. Rearm distance = max(capture_distance, rearm_distance_multiplier × lock_distance).",
   "properties": {
     "$schema": {
       "type": "string",
@@ -51,6 +51,28 @@
       "default": 2,
       "description": "Rearm distance multiplier; the product must be finite."
     },
+    "separation_impulse": {
+      "type": "number",
+      "minimum": 0,
+      "default": 8,
+      "description": "Separation impulse in newton-seconds, applied to the part that leaves on release or on an unexpected decoupling. 0 switches it off. The impulse is blind to mass: 8 N·s is about 0.33 m/s on a 24 kg door, so heavy parts must set their own value."
+    },
+    "separation_direction": {
+      "allOf": [
+        { "$ref": "../../base/axis.schema.json" }
+      ],
+      "description": "Separation direction: a directional axis of the host subpart's local frame. Omitted uses the direction from the host mass center to the separation point; if the two coincide nothing is applied."
+    },
+    "separation_command_only": {
+      "type": "boolean",
+      "default": false,
+      "description": "true applies the impulse only when the coupler itself releases; false applies it on any separation."
+    },
+    "separation_apply_on_center": {
+      "type": "boolean",
+      "default": false,
+      "description": "false applies it at the separation point, lever arm included, so the part starts to rotate; true applies it at the center of mass for pure translation."
+    },
     "sounds": {
       "type": "object",
       "properties": {
@@ -74,7 +96,8 @@
       "max_capture_force": 0,
       "lock_angle_tolerance": 3.0,
       "max_lock_speed": 0.25,
-      "rearm_distance_multiplier": 2.0
+      "rearm_distance_multiplier": 2.0,
+      "separation_impulse": 8.0
     }
   ]
 }

@@ -7,10 +7,12 @@ import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.CouplerSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.CouplerSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPartImpulse;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AdvancedConnector;
@@ -20,6 +22,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.ConnectionData;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.ConnectorAttachPayload;
 import io.github.sweetzonzi.machine_max.util.MMMath;
+import io.github.sweetzonzi.machine_max.util.data.Axis;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -229,7 +232,11 @@ public class CouplerSubsystem extends BasicSubsystem {
         dropStaleGraphEdge();
         if (isConnected() && restoreAttempted) {
             // 运行时意外断开：留下真实对侧用于测量分离，等门离开重武装距离后才允许再捕获。
-            if (lastPaired instanceof SimpleConnector simple) lastCounterpart = simple;
+            if (lastPaired instanceof SimpleConnector simple) {
+                lastCounterpart = simple;
+                // 命令之外的分离只在型号允许时施加冲量；命令只解扣那一档已经在解扣处施加过。
+                if (!staticAttr.isSeparationCommandOnly()) applySeparationImpulse(simple);
+            }
             setConnected(false);
         }
         if (!isConnected() && connector.getJoint() != null
@@ -564,9 +571,65 @@ public class CouplerSubsystem extends BasicSubsystem {
         if (vehicle == null) return SignalResult.PASS;
         vehicle.detachConnections(List.of(Pair.of(connector, simple)), java.util.Map.of());
         if (connector.hasPart()) return SignalResult.PASS; // 预事件否决：引用、关节、图与标记都不变
+        applySeparationImpulse(simple);
         lastCounterpart = simple;
         setConnected(false);
         return SignalResult.CONSUME;
+    }
+
+    /**
+     * 分离时给离开的那一件一个初速度。
+     *
+     * <p>冲量只给对侧（{@code leaving} 所在的子零件），锁扣所在的基座侧不受反作用力。方向按型号的
+     * {@code separation_direction} 取宿主子零件局部帧换算到世界，省略时取“宿主质心指向分离点”；
+     * 作用点按 {@code separation_apply_on_center} 取分离点或目标质心。登记前唤醒装配体——休眠刚体
+     * 收到冲量只改速度不改位移，零件看起来不动。</p>
+     *
+     * <p>只挂在“这次配对刚刚结束”的两条边沿上（主动解扣、意外脱锁），因此一次分离只施一次。</p>
+     *
+     * <p><b>调用线程：</b>主线程。</p>
+     *
+     * @param leaving 离开的那一个简单连接端；其子零件是冲量的受力体
+     */
+    private void applySeparationImpulse(SimpleConnector leaving) {
+        float magnitude = staticAttr.getSeparationImpulse();
+        if (!(magnitude > 0f) || !isActive()) return;
+        SubPart target = leaving.getSubPart();
+        if (target.isRemoved()) return;
+        Vector3f separation = endpoint(leaving);
+        Vector3f direction = separationDirection(separation);
+        if (direction == null) return;
+        Vector3f point = staticAttr.isSeparationApplyOnCenter() ? centerOf(target) : separation;
+        if (target.part.assembly != null) target.part.assembly.activatePhysics();
+        ObjectManager.queueImpulse(getLevel(), new SubPartImpulse(target, direction.mult(magnitude), point));
+    }
+
+    /**
+     * 分离方向：配置了轴就取该轴在宿主子零件局部帧的方向，省略时取宿主质心指向分离点的方向。
+     *
+     * <p>两点重合时定不出方向，记一条诊断并放弃施加，不猜一个方向。绝不从连接点法线推导——
+     * 法线只保证两端相反，而引擎盖与四扇车门的手调取值并不都朝外。</p>
+     *
+     * @param separation 分离点的世界坐标
+     * @return 单位方向；定不出方向时返回 {@code null}
+     */
+    @Nullable
+    private Vector3f separationDirection(Vector3f separation) {
+        Axis axis = staticAttr.getSeparationDirection();
+        Quaternion rotation = connector.getSubPart().transform.getRotation();
+        if (axis != null) {
+            Vector3f local = Axis.axisToVector(axis);
+            Vector3f world = rotation == null ? local : MMMath.localVectorToWorldVector(local, rotation);
+            return world.lengthSquared() > 1e-8f ? world.normalize() : null;
+        }
+        Vector3f origin = connector.getSubPart().transform.getTranslation();
+        Vector3f delta = separation.subtract(origin);
+        float length = delta.length();
+        if (!isFinite(length) || length < 1e-4f) {
+            MachineMax.LOGGER.debug("锁扣 {} 的分离点与宿主质心重合，无法定出分离方向", getName());
+            return null;
+        }
+        return delta.multLocal(1f / length);
     }
 
     // ==================================================================
@@ -657,6 +720,11 @@ public class CouplerSubsystem extends BasicSubsystem {
         Vector3f local = connector.offsetFromMassCenter.getTranslation();
         Vector3f world = rotation == null ? local.clone() : MMMath.localVectorToWorldVector(local, rotation);
         return world.addLocal(pose.getTranslation());
+    }
+
+    /** 子零件的刚体原点（其质心）世界坐标；与 {@link #endpoint} 同一份位姿快照。 */
+    private static Vector3f centerOf(SubPart subPart) {
+        return subPart.transform.getTranslation().clone();
     }
 
     private static boolean isFinite(float value) {
