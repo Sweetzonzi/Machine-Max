@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/coupler_dynamic_attr.json",
+  "title": "Coupler Dynamic Attributes",
+  "description": "Binds an advanced connector on this subpart as the active end. The passive end is not configured here: at runtime the coupler discovers the nearest compatible simple connector in the same vehicle by distance and by both parts' installation conditions.",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:coupler",
+      "description": "Subsystem type."
+    },
+    "definition": {
+      "type": "string",
+      "description": "Resource location of the coupler definition."
+    },
+    "connector": {
+      "type": "string",
+      "description": "Name of the active advanced connector; one advanced connector holds at most one coupler."
+    }
+  },
+  "required": ["type", "definition", "connector"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:coupler",
+      "definition": "machine_max:santana_latch",
+      "connector": "connector.machine_max.left_front_door_lock"
+    }
+  ]
+}

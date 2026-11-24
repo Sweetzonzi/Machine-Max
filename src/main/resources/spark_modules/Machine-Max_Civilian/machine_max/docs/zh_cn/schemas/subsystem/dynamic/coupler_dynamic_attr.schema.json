@@ -15,7 +15,7 @@
     },
     "connector": {
       "type": "string",
-      "description": "主动高级连接点名称；同一个子零件最多安装一个锁扣。"
+      "description": "主动高级连接点名称；一个高级连接点最多挂一个锁扣。"
     }
   },
   "required": ["type", "definition", "connector"],
@@ -23,7 +23,7 @@
   "examples": [
     {
       "type": "machine_max:coupler",
-      "definition": "machine_max:santana_door_latch",
+      "definition": "machine_max:santana_latch",
       "connector": "connector.machine_max.left_front_door_lock"
     }
   ]

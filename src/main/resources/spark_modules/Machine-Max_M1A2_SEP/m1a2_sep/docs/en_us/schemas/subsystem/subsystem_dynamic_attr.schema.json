@@ -22,6 +22,7 @@
           "machine_max:gearbox",
           "machine_max:transmission",
           "machine_max:joint_driver",
+          "machine_max:coupler",
           "machine_max:wheel_driver",
           "machine_max:turret_driver",
           "machine_max:light",
@@ -191,6 +192,18 @@
       },
       "then": {
         "$ref": "dynamic/joint_driver_dynamic_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:coupler"
+          }
+        }
+      },
+      "then": {
+        "$ref": "dynamic/coupler_dynamic_attr.schema.json"
       }
     },
     {

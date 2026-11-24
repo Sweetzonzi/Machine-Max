@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/coupler_static_attr.json",
+  "title": "Coupler Static Attributes",
+  "description": "Distances are in meters, forces in newtons, angles in degrees and speeds in meters per second. Rearm distance = max(capture_distance, rearm_distance_multiplier × lock_distance).",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference path.",
+      "default": "../../docs/en_us/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:coupler"
+    },
+    "basic_durability": { "type": "number", "minimum": 0, "default": 20 },
+    "pass_damage": { "type": "boolean", "default": true },
+    "limit_damage": { "type": "boolean", "default": false },
+    "hidden": { "type": "boolean", "default": false },
+    "capture_distance": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Capture range: closure force is applied while the endpoint distance stays within it."
+    },
+    "lock_distance": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Lock window: the connection is committed while the endpoint distance stays within it; it must not exceed capture_distance."
+    },
+    "max_capture_force": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0,
+      "description": "Cap of the closure force in newtons. 0 closes only through existing actuators or outside forces."
+    },
+    "lock_angle_tolerance": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 90,
+      "description": "Allowed error between the two facing normals in degrees."
+    },
+    "max_lock_speed": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0.5,
+      "description": "Allowed relative speed of the two endpoints at lock time, in meters per second."
+    },
+    "rearm_distance_multiplier": {
+      "type": "number",
+      "exclusiveMinimum": 1,
+      "default": 2,
+      "description": "Rearm distance multiplier; the product must be finite."
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_deactivate": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "Sound played on deactivation." },
+        "on_destroyed": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "Sound played on destruction." },
+        "on_activate": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "Sound played on activation." },
+        "on_attach": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "Sound played once when the coupler latches." },
+        "on_detach": { "allOf": [{ "$ref": "../../base/sound_event.schema.json" }], "description": "Sound played once when the coupler releases." }
+      },
+      "additionalProperties": false,
+      "description": "Basic lifecycle sounds plus one latch sound and one release sound; both default to the vanilla tripwire attach event."
+    }
+  },
+  "required": ["type", "capture_distance", "lock_distance", "lock_angle_tolerance"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:coupler",
+      "capture_distance": 0.04,
+      "lock_distance": 0.015,
+      "max_capture_force": 0,
+      "lock_angle_tolerance": 3.0,
+      "max_lock_speed": 0.25,
+      "rearm_distance_multiplier": 2.0
+    }
+  ]
+}
