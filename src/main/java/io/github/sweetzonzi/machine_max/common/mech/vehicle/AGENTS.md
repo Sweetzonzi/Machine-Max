@@ -72,7 +72,7 @@ vehicle/
 | 任务 | 文件 | 说明 |
 |------|------|------|
 | 修改载具生命周期 | `VehicleCore.java` | 聚合根：创建、销毁、合并、分裂、物理世界注册 |
-| 修改拓扑图 | `VehicleCore.java` | `partNet`（Guava MutableNetwork），图连通性检测 |
+| 修改拓扑图 | `VehicleCore.java` | `partNet`（Guava MutableNetwork，允许平行边与自环；同件动态配对照写成自环边），图连通性检测 |
 | 修改零件物理体 | `SubPart.java` | 刚体、碰撞形状、空气阻力、浮力 |
 | 修改装配/耐久 | `RegularPart.java` | SubPart 容器、制造进度条、耐久度传递 |
 | 修改部件类型数据 | `RegularPartType.java` | JSON Codec + StreamCodec，注册名→数据查找 |

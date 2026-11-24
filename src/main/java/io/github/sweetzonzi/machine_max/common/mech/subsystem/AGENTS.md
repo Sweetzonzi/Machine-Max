@@ -1,6 +1,6 @@
 # subsystem/ — 子系统实现
 
-**范围**: 23 种已开放子系统类型（另有 2 个开发中未登记类型、1 个未登记占位）、属性体系、基类层级。
+**范围**: 24 种已开放子系统类型（另有 2 个开发中未登记类型、1 个未登记占位）、属性体系、基类层级。
 
 ## 结构
 
@@ -17,7 +17,7 @@ subsystem/
 │   ├── IAmmoTransporter.java           # 弹药运输者：本段时长、执行资源、推进量
 │   └── ITorqueProvider.java            # 扭矩提供接口
 ├── attr/
-│   ├── SubsystemKinds.java             # 类型登记表：23 条已开放登记、下游登记入口、封表
+│   ├── SubsystemKinds.java             # 类型登记表：24 条已开放登记、下游登记入口、封表
 │   ├── SubsystemCodecs.java            # 安装属性与静态属性的分派 Codec
 │   ├── WorkingState.java               # 工作状态枚举
 │   ├── static_attr/                    # 型号 JSON 驱动静态属性（每个已登记类型一份）
@@ -85,7 +85,7 @@ subsystem/
 
 ## 约定
 
-- **类型登记在模组初始化期，内容包装载开始时封表**：一条 `SubsystemKinds.Kind` 同时给出该类型的安装属性 Codec 与静态属性 Codec，两侧配对由登记项本身保证。内建 23 条随 `SubsystemKinds` 类初始化完成；下游在自己的模组初始化阶段调用 `SubsystemKinds.register(id, new SubsystemKinds.Kind(安装Codec, 静态Codec))`。`SubsystemModule.onStart` 首次执行时封表，此后的登记抛异常。
+- **类型登记在模组初始化期，内容包装载开始时封表**：一条 `SubsystemKinds.Kind` 同时给出该类型的安装属性 Codec 与静态属性 Codec，两侧配对由登记项本身保证。内建 24 条随 `SubsystemKinds` 类初始化完成；下游在自己的模组初始化阶段调用 `SubsystemKinds.register(id, new SubsystemKinds.Kind(安装Codec, 静态Codec))`。`SubsystemModule.onStart` 首次执行时封表，此后的登记抛异常。
 - **开发中的类型不登记**：`scriptable`、`battery` 的字段契约仍在定稿（属性类标 `@ApiStatus.Experimental`），`SubsystemKinds` 里对应的 `register` 被注释掉，解码按「未知类型」拒绝；schema 也不提供这两个类型。契约定稿后取消注释即可，两侧 Codec 与登记结构不用改。
 - **类型身份由登记项派生**：`getType()` 是基类的 final 方法，按 `codec()` 的实例身份反查登记 ID；具体属性类只声明自己的 `CODEC` 单例与 `createSubsystem` 工厂，不声明类型常量、也不覆写 `getType`。型号绑定比较两侧派生 ID 的值，发生在安装属性的解码构造器里（`getStaticAttr`）。
 - **继承链**：`AbstractSubsystem` → `AbstractControllableSubsystem` → 具体类型。
@@ -136,6 +136,7 @@ subsystem/
 - **全量补推不得改动同步状态**：快照取自 `AbstractSubsystem.forEachSyncedValue()`（只读遍历 `SynchedEntityData.itemsById`，该字段由 `META-INF/accesstransformer.cfg` 放宽为 public），经 `PacketDistributor.sendToPlayer` **定向**发送。不得改用 `SynchedEntityData.set(..., force=true)` 强制标脏：那会把脏标记留给下一次 `packDirty()`，让维度内其他玩家收到无谓的包。
 - **自定义同步数据序列化器**：注册在 `MMEntityDataSerializers`（NeoForge 的 `ENTITY_DATA_SERIALIZERS` 注册表，线号为 `256 + 注册表内 id`）。`SynchedEntityData.defineId` 在子系统静态初始化里执行，因此注册文件必须持有序列化器**实例**、注册时交出同一实例，不能从 `DeferredHolder` 取。装填作业的两支样本走的就是这条路（`optional_reload_job_spec`，值为 `Optional<ReloadJobSpec>`；`optional_reload_job_progress`，值为 `Optional<ReloadJobProgress>`；`reload_job_results`，值为 `ReloadJobResults`）。
 - **武器链路插桩**：`WeaponTrace` 默认关闭，`/mm debug weaponlog start|stop`（权限级 4）切换。打开后每条记录形如 `[WDBG][S|C][t=<游戏时间>] 事件 字段=值`，端别与游戏时间由 `WeaponTrace.log` 补齐，事件文本由调用点给出。覆盖的事件：开火 `fire-begin`／`fire-shot`（`ammo=` 记这一发实际打出的弹种，`n>1` 时只记第一发）／`fire-end`／`projectile`，路由 `route`，装填 `reload-start`／`reload-stage`／`reload-retime`／`reload-pause`／`reload-stall`／`reload-deliver`／`belt-release`／`belt-replace`／`reload-end`，客户端镜像 `reload-mirror`／`reload-mirror-skip`／`reload-mirror-stale`／`reload-mirror-stage`／`reload-rekey`／`reload-progress-mismatch`／`reload-retract`／`reload-local-deliver`／`reload-terminal-deliver`／`reload-result`／`sync-belt`／`sync-chamber`（`keep=local` 表示这条样本表达的是本端在途的那几发，按投影留在本端；`sync-belt` 的 `bound=` 是这一次比对的在途上界，`local=`／`synced=` 是两份余量读数，`head=` 是两端各自算出的下一发弹种，`rech=` 是各自回充的零碎进度与延迟 tick——头部弹种由余量按模式取模推出，而回充会在射击之外改余量、两端的回充又各由本端推进，因此`head=` 不同就意味着两份余量不同，而余量不同不一定换型（差额正好是模式总发数的整数倍时头部弹种不变），"下一发是哪一型"直接看 `head=`），客户端表现 `fx-fire`，以及武器控制器的扳机门 `trigger-down`／`trigger-up`／`trigger-aim`／`trigger-noaim`、控制输入的释放 `input-clear`（只记被丢弃的非空频道）。开关是进程内的静态量：单人游戏里客户端与服务端同进程，一条命令同时打开两端；专用服务器接独立客户端时，每一侧各自打开。关闭时不写日志，逐发路径上只多一次 volatile 读。
+- **关节与锁扣的力诊断**：门、盖一类动画关节的力来源只有两处——连接点的弹簧/阻尼与 `joint_driver` 写的伺服。执行器在片段走完后是否松手由片段的 `loop` 决定（`ONCE` 松手，保持末帧与循环持续给目标），见 `JointTargetSampler#hasDriveTarget`；锁扣的吸力由型号的 `max_capture_force` 决定，为 0 时不施加任何力。
 
 ## 反模式
 

@@ -5,7 +5,7 @@
 ## 概览
 
 基于 NeoForge 1.21.1 的 Minecraft 载具模组。Kotlin + Java 混合，Gradle 8.9（Groovy DSL），JDK 21。
-采用数据驱动的部件化载具组装、实时物理模拟（Bullet 物理引擎，通过 Spark-Core 集成）、23 种已开放子系统类型、内容包扩展机制。
+采用数据驱动的部件化载具组装、实时物理模拟（Bullet 物理引擎，通过 Spark-Core 集成）、24 种已开放子系统类型、内容包扩展机制。
 
 ## 依赖项目
 
@@ -31,9 +31,9 @@ io.github.sweetzonzi.machine_max/
 │   │   │   ├── data/                # VehicleData, PartData, SubPartData 序列化
 │   │   │   ├── event/               # ConnectorAttachEvent, VehicleSpiltEvent ...
 │   │   │   └── interact/            # HitBox, InteractBox, InteractBoxes
-│   │   ├── subsystem/               # 23 种已开放子系统实现 — 见 subsystem/AGENTS.md
+│   │   ├── subsystem/               # 24 种已开放子系统实现 — 见 subsystem/AGENTS.md
 │   │   │   └── attr/                # SubsystemKinds（类型登记表）、SubsystemCodecs（分派）、WorkingState
-│   │   │       ├── dynamic_attr/    # 运行时动态属性类（23 个已开放类型各一份，另有 2 个开发中与 1 个占位）
+│   │   │       ├── dynamic_attr/    # 运行时动态属性类（24 个已开放类型各一份，另有 2 个开发中与 1 个占位）
 │   │   │       └── static_attr/     # JSON 驱动静态属性类（与动态属性一一配对）
 │   │   ├── projectile/              # 数据驱动投射物系统（SoA 数组）— 见 projectile/AGENTS.md
 │   │   ├── signal/                  # 信号系统：Signal, SignalChannel, ISignalBus ... — 见 signal/AGENTS.md
