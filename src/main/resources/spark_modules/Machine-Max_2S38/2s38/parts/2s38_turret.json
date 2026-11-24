@@ -91,14 +91,17 @@
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.machine_max.main_ap_rack"
+              "subsystem": "subsystem.machine_max.main_ap_rack",
+              // 弹药架殉爆后连同碰撞一起消失，否则炮塔被掀离车体时这两块箱底仍插在车体内
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.main_ap_rack')"
             },
             "RightAmmoStorageHitBox": {
               "id": "2a90_he_ammo",
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.machine_max.main_he_rack"
+              "subsystem": "subsystem.machine_max.main_he_rack",
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.main_he_rack')"
             },
             "LeftAutoloaderHitBox": {
               "id": "part",
@@ -335,7 +338,8 @@
               "type": "box",
               "material": "machine_max:structural_steel",
               "thickness": 10,
-              "subsystem": "subsystem.machine_max.coax_rack"
+              "subsystem": "subsystem.machine_max.coax_rack",
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.coax_rack')"
             }
           },
           "connectors": {

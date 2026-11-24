@@ -203,14 +203,17 @@
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.machine_max.main_ap_rack"
+              "subsystem": "subsystem.machine_max.main_ap_rack",
+              // 转盘弹舱殉爆后连同碰撞一起消失，否则炮塔被掀离车体时这两块箱底仍插在车体内
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.main_ap_rack')"
             },
             "MM_AmmoCarouselRight": {
               "id": "2a46m_he_ammo",
               "type": "box",
               "material": "machine_max:internal_machinery",
               "thickness": 5,
-              "subsystem": "subsystem.machine_max.main_he_rack"
+              "subsystem": "subsystem.machine_max.main_he_rack",
+              "condition": "!local.subsystem_destroyed('subsystem.machine_max.main_he_rack')"
             },
             "MM_Autoloader": {
               "id": "2a46m_autoloader",

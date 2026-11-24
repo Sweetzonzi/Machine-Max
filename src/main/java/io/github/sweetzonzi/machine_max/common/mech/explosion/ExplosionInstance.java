@@ -469,6 +469,11 @@ public final class ExplosionInstance {
                 PenetrationResult result = subPart.resolvePenetration(ctx);
                 float effPen = subPart.modifyPenetration(ctx);
                 float rha = subPart.getRHA(ctx);
+                // 未击穿但命中箱材质声明了钝伤（{@code armor.unpen_power > 0}）：这一段被挡下的
+                // 能量全额沉积在这层材料上，由护甲侧的 SubPart#calculateFinalDamage 按
+                // (A_pen/RHA)^unpen_power 折算成残余伤害；没有钝伤的材质（rha、复合装甲等）
+                // 照旧一点不留，被它挡住的射线就地终止。
+                boolean blunt = result != PenetrationResult.PENETRATED && hit.hitBox.hasUnpenDamage();
 
                 BlastAccum acc = accumFor(hit.key);
                 acc.subPart = subPart;
@@ -481,6 +486,7 @@ public final class ExplosionInstance {
                     acc.deltaE += w;
                     ray.absorb(eta(effPen, rha));
                 } else {
+                    if (blunt) acc.deltaE += w;
                     ray.kill();
                 }
             }

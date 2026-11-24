@@ -406,11 +406,14 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     }
 
     /**
-     * 把一次受击记录解析成宿主当前的命中箱：从事件上下文取 {@code HIT_BOX} 扩展里的命中箱名，
-     * 再用该名向宿主取当前那一个。没有扩展时沿用 SubPart 的回退判定（最厚命中箱）。
+     * 把一次受击记录解析成宿主当前的命中箱：从事件上下文取 {@code HIT_BOX} 扩展里的命中箱，
+     * 再按它的<b>骨骼名</b>（{@link HitBox#getHitBoxKey()}，即 {@code SubPart#hitBoxes} 的键）
+     * 向宿主取当前那一个。没有扩展时沿用 SubPart 的回退判定（最厚命中箱）。
      * <p>
      * 只按名字解析，因此结构变化替换掉命中箱实例后不会指到旧几何；名字在宿主上已不存在时返回
-     * {@code null}，调用方按"没有可用来源"处理。
+     * {@code null}，调用方按"没有可用来源"处理。取键不能用 {@code HitBoxAttr#id}——那是
+     * "同一次攻击不重复命中"的伤害分组键，可以缺省为 {@code part}，也可以在同件内重复，
+     * 用它查表既查不到（键本来就是骨骼名）也指不准。
      *
      * @param event 受击记录，可为 {@code null}
      * @return 宿主当前的命中箱；无记录、无宿主或名字已失效时为 {@code null}
@@ -423,7 +426,7 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
                 ? null
                 : event.getCtx().extensions().get(MMDamageExtensions.HIT_BOX);
         if (hitBox == null) return host.findStrongestHitBox();
-        return host.hitBoxes.get(hitBox.getAttr().getId());
+        return host.hitBoxes.get(hitBox.getHitBoxKey());
     }
 
     /**
