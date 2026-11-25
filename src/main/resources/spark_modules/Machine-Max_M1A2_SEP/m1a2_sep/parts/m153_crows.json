@@ -90,6 +90,11 @@
                   "subsystem.m1a2_sep.rws_launcher"
                 ]
               },
+              "camera_discovery_targets": {
+                "sight_rws": [
+                  "subsystem.m1a2_sep.rws_sight"
+                ]
+              },
               "first_hud_layout": "m1a2_sep:m1a2_m2_feed",
               "third_hud_layout": "m1a2_sep:m1a2_m2_feed",
               "scope_hud_layout": "m1a2_sep:m1a2_m2_feed"

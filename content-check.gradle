@@ -58,7 +58,8 @@
 // 16. 视点发现表（座位与武器控制器的 camera_discovery_targets）的取值域与频道。这张表决定
 //     座位 / 火控能发现哪些视点：具名目标不走接收侧接受频道，名字写错或指向别的类型时发现
 //     结果为空、频道写错也照样命中；local / global 与连接点名要过视点的 discovery_inputs，
-//     写错时永远命中不了。两种情况都只表现为"少一个视角"，没有日志。
+//     写错时永远命中不了。两种情况都只表现为"少一个视角"，没有日志。反方向同样查：一台视点
+//     在模板拼出的装配体里既没有被具名引用、也没有接受任何广播频道时，它永远进不了候选。
 // 17. 非根子零件的内部连接点。同一 Part 内非 internal 的连接点只在运行时按需连接，构造期
 //     不会预连；一个只靠它连到别处的子零件在构造后没有任何关节约束，入世即成为自由刚体
 //     掉落（同装配体的碰撞过滤让它直接穿过车体）。判定按质量最大的子零件当根；可开件用
@@ -1342,6 +1343,8 @@ tasks.register('checkContent') {
         Map<String, String> nameDeclarations = [:]
         // 第 13 节用：每个变体的名字集合与它使用的动画名，同样在遍历 parts 时收集。
         List<Map> variantScopes = []
+        // 第 16 节反查用：每个「零件 id|变体」的发现频道、具名目标与视点，供按模板装配体核对。
+        Map<String, Map> viewpointScopes = [:]
         packs.each { pack ->
             File partsDir = new File(pack.dir, 'parts')
             if (!partsDir.isDirectory()) {
@@ -1612,6 +1615,50 @@ tasks.register('checkContent') {
                             }
                         }
                     }
+                    // 第 16 节反查用：本变体的发现频道、具名目标与视点，供按模板装配体核对
+                    // 「这面镜子在成车里有没有声明者」。跨 Part 的发现（座位在车体、镜在炮塔）
+                    // 是合法形态，因此不能只看本零件。
+                    Set<String> variantViewpointChannels = new LinkedHashSet<>()
+                    Set<String> variantViewpointNames = new LinkedHashSet<>()
+                    subsystems.each { Object discoveryOwnerName, Map discoveryOwner ->
+                        Object discoveryRaw = discoveryOwner.get('camera_discovery_targets')
+                        if (!(discoveryRaw instanceof Map)) {
+                            return
+                        }
+                        ((Map) discoveryRaw).each { Object channelRaw, Object namesRaw ->
+                            if (!(namesRaw instanceof List)) {
+                                return
+                            }
+                            ((List) namesRaw).each { Object targetRaw ->
+                                String target = targetRaw.toString()
+                                if (target == 'local' || target == 'global' || target.startsWith('connector.')) {
+                                    variantViewpointChannels << channelRaw.toString()
+                                } else if (target.startsWith('subsystem.')) {
+                                    variantViewpointNames << target
+                                }
+                            }
+                        }
+                    }
+                    List<Map> variantSights = []
+                    subsystems.each { Object sightName, Map sightInstall ->
+                        Object sightType = sightInstall.get('type')
+                        if (sightType == null) {
+                            return
+                        }
+                        String sightTypeName = sightType.toString()
+                        if (sightTypeName != 'machine_max:camera' && sightTypeName != 'machine_max:sight') {
+                            return
+                        }
+                        variantSights << [name: sightName.toString(),
+                                          accepted: acceptedChannelsOf(
+                                                  (Map) acceptedChannelFields[sightTypeName], sightInstall)]
+                    }
+                    viewpointScopes[pack.namespace + ':' +
+                            file.name.substring(0, file.name.length() - '.json'.length()) + '|' + variantName] = [
+                            label            : relative,
+                            channels         : variantViewpointChannels,
+                            names            : variantViewpointNames,
+                            sights           : variantSights]
                     // 14. 转向轮不能挤在同一根轴上
                     //
                     // CarControllerSubsystem 拿「非转向轮的平均位置」当转向中心（阿克曼几何），
@@ -1742,6 +1789,80 @@ tasks.register('checkContent') {
                         }
                     }
                 }
+            }
+        }
+
+        // 16. 视点必须有声明者（按模板装配体核对）
+        //
+        // 座位与武器控制器在 camera_discovery_targets 里声明「这台视点归谁」，视点自己的
+        // discovery_inputs 决定它能被哪条广播频道找到。两条都对不上时这面镜子在成车里永远不进
+        // 候选：切换键跳过它、提示不亮，日志里什么都没有。上一节查的是「写了发现表但指不到东西」，
+        // 这里查反方向。
+        //
+        // 判据按装配体：一辆车由多份零件拼成，座位在车体、镜在炮塔是常见形态，所以把模板里全部
+        // 零件的发现频道与具名目标并起来看。具名目标只在本零件内解析（resolveTargets 走 Part
+        // 作用域），广播与连接点名按接收侧的 discovery_inputs 到达。
+        //
+        // 因此「只在某个加装件里声明」会在这里报出来——加装件不在模板里时，成车缺那份声明。
+        templates.keySet().sort().each { String templateId ->
+            Map templateEntry = (Map) templates[templateId]
+            Object templateData = null
+            try {
+                templateData = readJsonc((File) templateEntry.file)
+            } catch (Exception ignored) {
+                return // 解析失败已由第 1 节报出
+            }
+            Object templatePartsRaw = templateData instanceof Map ? ((Map) templateData).get('parts') : null
+            if (!(templatePartsRaw instanceof Map)) {
+                return
+            }
+            Set<String> assemblyChannels = new LinkedHashSet<>()
+            Map<String, Set<String>> assemblyNamed = [:]
+            List<Map> assemblySights = []
+            ((Map) templatePartsRaw).each { Object ignoredPartUuid, Object templatePartRaw ->
+                if (!(templatePartRaw instanceof Map)) {
+                    return
+                }
+                Object registryRaw = ((Map) templatePartRaw).get('registry_key')
+                if (registryRaw == null) {
+                    return
+                }
+                String partId = registryRaw.toString()
+                Object variantRaw = ((Map) templatePartRaw).get('variant')
+                String variantName = variantRaw == null ? 'default' : variantRaw.toString()
+                Map scope = (Map) viewpointScopes[partId + '|' + variantName]
+                if (scope == null) {
+                    // 单变体零件在文件里没有变体名，模板可能写成任意名字：按零件 id 取唯一那一份
+                    scope = (Map) viewpointScopes.find { it.key.toString().startsWith(partId + '|') }?.value
+                }
+                if (scope == null) {
+                    return
+                }
+                assemblyChannels.addAll((Collection<String>) scope.channels)
+                Set<String> named = assemblyNamed.get(partId)
+                if (named == null) {
+                    named = new LinkedHashSet<String>()
+                    assemblyNamed[partId] = named
+                }
+                named.addAll((Collection<String>) scope.names)
+                ((List) scope.sights).each { Map sight ->
+                    assemblySights << [part: partId, label: scope.label,
+                                       name: sight.name, accepted: sight.accepted]
+                }
+            }
+            assemblySights.each { Map sight ->
+                if (assemblyNamed[sight.part]?.contains(sight.name)) {
+                    return
+                }
+                if (!((Set<String>) sight.accepted).intersect(assemblyChannels).isEmpty()) {
+                    return
+                }
+                problems << '模板 ' + templateId + ' 的视点 ' + sight.name + '（' + sight.label + '）' +
+                        '在装配体里没有声明者——没有任何座位或武器控制器在 camera_discovery_targets 里' +
+                        '到达它：具名目标写 subsystem.<命名空间>.<名字>（只在本零件内解析），' +
+                        '或让它接受一条装配体里已声明的广播频道。两条都落空时这面镜子永远不进候选'
+                details.append('    缺声明者  模板 ').append(templateId).append(' → ')
+                        .append(sight.label).append(' / ').append(sight.name).append('\n')
             }
         }
 

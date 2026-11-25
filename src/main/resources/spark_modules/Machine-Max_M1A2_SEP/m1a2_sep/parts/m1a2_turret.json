@@ -680,6 +680,11 @@
                   "subsystem.m1a2_sep.loader_mg_launcher"
                 ]
               },
+              "camera_discovery_targets": {
+                "sight_port_mg": [
+                  "subsystem.machine_max.loader_mg_sight"
+                ]
+              },
               "first_hud_layout": "m1a2_sep:m1a2_m240_feed",
               "third_hud_layout": "m1a2_sep:m1a2_m240_feed"
             },
@@ -841,6 +846,11 @@
                 ],
                 "weapon.mg.m2hb": [
                   "subsystem.machine_max.aa_launcher"
+                ]
+              },
+              "camera_discovery_targets": {
+                "sight_aft_mg": [
+                  "subsystem.machine_max.aa_sight"
                 ]
               },
               "first_hud_layout": "m1a2_sep:m1a2_m2_feed",
