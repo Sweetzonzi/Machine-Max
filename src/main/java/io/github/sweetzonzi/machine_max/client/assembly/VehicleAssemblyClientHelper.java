@@ -80,6 +80,7 @@ public class VehicleAssemblyClientHelper {
     private Vector3f offset = new Vector3f();
     /** 预览用：待安装连接点相对本部件质心的姿态 */
     private Quaternionf quaternion = new Quaternionf();
+    private String lastFailedAutoVariantKey;
 
     /**
      * 客户端每 tick 状态演化：解析手持装配物品 → 更新 partType/hand，清理失效状态，
@@ -90,10 +91,12 @@ public class VehicleAssemblyClientHelper {
         LocalPlayer player = Minecraft.getInstance().player;
         VehicleAssemblyClientHelper helper = INSTANCE;
         if (player == null) {
+            helper.resetAutoVariantFailure();
             helper.updateSelection(null, InteractionHand.MAIN_HAND);
             return;
         }
         if (!SeatSubsystem.canUseItems(player)) {
+            helper.resetAutoVariantFailure();
             helper.updateSelection(null, InteractionHand.MAIN_HAND);
             return;
         }
@@ -107,19 +110,35 @@ public class VehicleAssemblyClientHelper {
             hand = InteractionHand.OFF_HAND;
         }
         if (stack == null) {
+            helper.resetAutoVariantFailure();
             helper.updateSelection(null, InteractionHand.MAIN_HAND);
             return;
         }
         RegularPartType newPartType = PartAssemblyItem.partTypeOf(stack, player.level());
         helper.updateSelection(newPartType, hand);
-        if (newPartType == null) return;
+        if (newPartType == null) {
+            helper.resetAutoVariantFailure();
+            return;
+        }
         // 自动过滤：视线对准的接口不接受当前变体时，自动切换到可用变体
         AbstractConnector targetConnector = getClientEmptyConnector(player);
-        if (targetConnector != null && !targetConnector.hasPart() && helper.state.getConnector() != null
-                && helper.state.getVariantName() != null
-                && !targetConnector.conditionCheck(helper.state.getPartType(), helper.state.getVariantName())) {
-            helper.state.cycleVariants(targetConnector);
-            helper.reCalculateOffset();
+        if (targetConnector != null && !targetConnector.hasPart()) {
+            if (helper.isCurrentSelectionCompatible(targetConnector)) {
+                helper.resetAutoVariantFailure();
+            } else {
+                RegularPartType partType = helper.state.getPartType();
+                if (partType != null) {
+                    String autoKey = helper.autoVariantAttemptKey(partType, targetConnector);
+                    if (!Objects.equals(helper.lastFailedAutoVariantKey, autoKey)) {
+                        helper.state.selectCompatibleCombination(targetConnector);
+                        helper.reCalculateOffset();
+                        boolean compatible = helper.isCurrentSelectionCompatible(targetConnector);
+                        helper.lastFailedAutoVariantKey = compatible ? null : autoKey;
+                    }
+                }
+            }
+        } else {
+            helper.resetAutoVariantFailure();
         }
         // 预览姿态与瞄准提示：跟随本次解析出的手持物品（主手优先、副手兜底）
         try {
@@ -166,49 +185,60 @@ public class VehicleAssemblyClientHelper {
         } else {
             AbstractConnector targetConnector = eyesight.getEmptyConnector();
             if (targetConnector != null && connectorAttr != null) {
-                if (targetConnector.conditionCheck(partType, variantName)) {
-                    if (targetConnector instanceof SimpleConnector || connectorAttr.isSimpleConnector()) {
-                        message.append("目标接口:" + Component.translatable(targetConnector.name).getString() + " 部件接口:"
-                                + Component.translatable(state.getConnectorName().getFirst()).getString() + "-"
-                                + Component.translatable(state.getConnectorName().getSecond()).getString());
-                        if (!variantName.equals("default") && partType.variants.size() > 1)
-                            message.append(" 部件变体类型:" + Component.translatable(variantName).getString());
-                        if (VisualEffectHelper.partToPlace != null) {
-                            // 服务端 adjustTransform 以“待安装连接点所属 SubPart”为绝对锚点，预览需保持一致
-                            VisualEffectHelper.partToPlace.updateTransform(
-                                    targetConnector.mergeTransform(
-                                            targetConnector.calculateExtraTransform(
-                                                    connectorAttr.getDirection(),
-                                                    PhysicsHelperKt.toBVector3f(getOffset()),
-                                                    SparkMathKt.toBQuaternion(getQuaternion()),
-                                                    state.getAttachRotation()).invert()
-                                    ),
-                                    state.getConnectorName().getFirst()
-                            );
-                        }
-                    } else {
-                        message.append("无法连接两个高级连接点");
+                boolean targetAcceptsVariant = targetConnector.conditionCheck(partType, variantName);
+                boolean canAttach = !targetConnector.hasPart()
+                        && VehicleAssemblyHelper.partConnectorMatches(connectorAttr, targetConnector, partType, variantName);
+                if (canAttach) {
+                    message.append("目标接口:" + Component.translatable(targetConnector.name).getString() + " 部件接口:"
+                            + Component.translatable(state.getConnectorName().getFirst()).getString() + "-"
+                            + Component.translatable(state.getConnectorName().getSecond()).getString());
+                    if (!variantName.equals("default") && partType.variants.size() > 1)
+                        message.append(" 部件变体类型:" + Component.translatable(variantName).getString());
+                    if (VisualEffectHelper.partToPlace != null) {
+                        // Keep the preview anchor consistent with server-side attachment placement.
+                        VisualEffectHelper.partToPlace.updateTransform(
+                                targetConnector.mergeTransform(
+                                        targetConnector.calculateExtraTransform(
+                                                connectorAttr.getDirection(),
+                                                PhysicsHelperKt.toBVector3f(getOffset()),
+                                                SparkMathKt.toBQuaternion(getQuaternion()),
+                                                state.getAttachRotation()).invert()
+                                ),
+                                state.getConnectorName().getFirst()
+                        );
                     }
                 } else {
-                    message = Component.empty().append(" 连接点 " + Component.translatable(targetConnector.name).getString()
-                            + " 不接受部件 " + Component.translatable(partType.getRegistryKey().toLanguageKey()).getString()
-                            + " 的 " + Component.translatable(variantName).getString() + " 变体");
+                    if (targetConnector.hasPart()) {
+                        message.append("目标接口已占用");
+                    } else if (!targetAcceptsVariant) {
+                        message = Component.empty().append(" 连接点 " + Component.translatable(targetConnector.name).getString()
+                                + " 不接受部件 " + Component.translatable(partType.getRegistryKey().toLanguageKey()).getString()
+                                + " 的 " + Component.translatable(variantName).getString() + " 变体");
+                    } else if (!(targetConnector instanceof SimpleConnector || connectorAttr.isSimpleConnector())) {
+                        message.append("无法连接两个高级连接点");
+                    } else {
+                        message.append("所选部件连接点与目标接口不兼容");
+                    }
+                    updateFreePlacementPreview(player);
                 }
             } else {
                 message.append("未选中可用的部件接口，右键将直接放置零件");
-                if (VisualEffectHelper.partToPlace != null) {
-                    Quaternionf rotation = new Quaternionf().rotateY((float) Math.toRadians(state.getAttachRotation() - player.getYRot()));
-                    VisualEffectHelper.partToPlace.updateTransform(new Transform(
-                            PhysicsHelperKt.toBVector3f(player.level().clip(new ClipContext(
-                                    player.getEyePosition(),
-                                    player.getEyePosition().add(player.getViewVector(1).scale(player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
-                                    ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).getLocation()),
-                            SparkMathKt.toBQuaternion(rotation)
-                    ));
-                }
+                updateFreePlacementPreview(player);
             }
         }
         player.displayClientMessage(message, true);
+    }
+
+    private void updateFreePlacementPreview(LocalPlayer player) {
+        if (VisualEffectHelper.partToPlace == null) return;
+        Quaternionf rotation = new Quaternionf().rotateY((float) Math.toRadians(state.getAttachRotation() - player.getYRot()));
+        VisualEffectHelper.partToPlace.updateTransform(new Transform(
+                PhysicsHelperKt.toBVector3f(player.level().clip(new ClipContext(
+                        player.getEyePosition(),
+                        player.getEyePosition().add(player.getViewVector(1).scale(player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
+                        ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).getLocation()),
+                SparkMathKt.toBQuaternion(rotation)
+        ));
     }
 
     /**
@@ -266,6 +296,7 @@ public class VehicleAssemblyClientHelper {
      */
     public void cycleConnectors() {
         state.cycleConnectors(getClientEmptyConnector(Minecraft.getInstance().player));
+        resetAutoVariantFailure();
         reCalculateOffset();
     }
 
@@ -273,8 +304,29 @@ public class VehicleAssemblyClientHelper {
      * 循环选择变体，直到找到目标接口可接受的变体或达到迭代次数上限，随后再寻找可行的连接点。
      */
     public void cycleVariants() {
-        state.cycleVariants(getClientEmptyConnector(Minecraft.getInstance().player));
+        LocalPlayer player = Minecraft.getInstance().player;
+        AbstractConnector targetConnector = getClientEmptyConnector(player);
+        state.cycleVariants(targetConnector);
         reCalculateOffset();
+        resetAutoVariantFailure();
+    }
+
+    private void resetAutoVariantFailure() {
+        lastFailedAutoVariantKey = null;
+    }
+
+    private String autoVariantAttemptKey(RegularPartType partType, AbstractConnector targetConnector) {
+        SubPart targetSubPart = targetConnector.getSubPart();
+        return partType.getRegistryKey() + "/" + targetSubPart.part.uuid + "/"
+                + targetSubPart.name + "#" + targetSubPart.getId() + "/" + targetConnector.getName();
+    }
+
+    private boolean isCurrentSelectionCompatible(AbstractConnector targetConnector) {
+        RegularPartType partType = state.getPartType();
+        String variantName = state.getVariantName();
+        ConnectorAttr connector = state.getConnector();
+        return partType != null && variantName != null && connector != null
+                && VehicleAssemblyHelper.partConnectorMatches(connector, targetConnector, partType, variantName);
     }
 
     /**

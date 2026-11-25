@@ -30,7 +30,7 @@
     "max_capture_force": {
       "type": "number",
       "minimum": 0,
-      "default": 0,
+      "default": 5,
       "description": "Cap of the closure force in newtons. 0 closes only through existing actuators or outside forces."
     },
     "lock_angle_tolerance": {
@@ -93,7 +93,7 @@
       "type": "machine_max:coupler",
       "capture_distance": 0.04,
       "lock_distance": 0.015,
-      "max_capture_force": 0,
+      "max_capture_force": 5,
       "lock_angle_tolerance": 3.0,
       "max_lock_speed": 0.25,
       "rearm_distance_multiplier": 2.0,

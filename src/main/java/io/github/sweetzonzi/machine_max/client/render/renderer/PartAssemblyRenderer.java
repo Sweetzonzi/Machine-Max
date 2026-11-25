@@ -152,9 +152,11 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
             PhysicsRigidBody body = entry.getValue();
             if (body == null || !body.isInWorld()) {
                 iterator.remove();//保险措施，清理无效的物理体
-            } else if (!connector.hasPart() && connector.conditionCheck(partType, variant)) {
+            } else if (!connector.hasPart() && VehicleAssemblyHelper.getInstance().getConnector() != null
+                    && VehicleAssemblyHelper.partConnectorMatches(
+                            VehicleAssemblyHelper.getInstance().getConnector(), connector, partType, variant)) {
                 renderShape(body, camPos, Color.GREEN, poseStack, bufferSource, partialTick);
-            } else if (!connector.hasPart() && !connector.conditionCheck(partType, variant)) {
+            } else if (!connector.hasPart()) {
                 renderShape(body, camPos, Color.RED, poseStack, bufferSource, partialTick);
             }
         }

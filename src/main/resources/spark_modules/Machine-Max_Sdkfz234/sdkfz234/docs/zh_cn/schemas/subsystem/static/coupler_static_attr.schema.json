@@ -43,7 +43,7 @@
     "max_capture_force": {
       "type": "number",
       "minimum": 0,
-      "default": 0,
+      "default": 5,
       "description": "合拢力上限（N）。0 表示只靠已有作动器或外力合拢。"
     },
     "lock_angle_tolerance": {
@@ -106,7 +106,7 @@
       "type": "machine_max:coupler",
       "capture_distance": 0.04,
       "lock_distance": 0.015,
-      "max_capture_force": 0,
+      "max_capture_force": 5,
       "lock_angle_tolerance": 3.0,
       "max_lock_speed": 0.25,
       "rearm_distance_multiplier": 2.0,

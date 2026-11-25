@@ -33,7 +33,6 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.track.TrackLinkData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.CouplerSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.EngineSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.LauncherSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
@@ -1239,26 +1238,21 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
                                     simpleConnector = (SimpleConnector) connector1;
                                     advancedConnector = connector2;
                                 } else continue;//二者中存在AttachPointConnector时才可尝试连接
-                                if (ConnectorAlignmentHelper.isAlignedForAttach(
+                                if (!ConnectorAlignmentHelper.isAlignedForAttach(
                                         advancedConnector,
                                         simpleConnector,
                                         COMBO_ATTACH_MAX_POS_ERROR,
                                         COMBO_ATTACH_MAX_DIRECTION_ERROR
-                                )) {//若位置与方向误差均小于阈值，则尝试连接
-                                    // 锁扣主动端由运行时按距离与状态机自行捕获，自动补接会把
-                                    // 一次几何对齐直接变成永久连接并绕开锁扣状态。
-                                    if (CouplerSubsystem.isActiveConnector(advancedConnector)
-                                            || CouplerSubsystem.isActiveConnector(simpleConnector)) continue;
-                                    advancedConnector.alignActualTransformForJoint(simpleConnector);//连接前校正 actualTransform，避免关节初始应力异常
-                                    boolean attached = advancedConnector.attach(simpleConnector);//先连接，成功后再写入拓扑，避免产生伪连接
-                                    if (attached) {
-                                        this.partNet.addEdge(//添加连接关系
-                                                requireRegular(advancedConnector.subPart.part),
-                                                requireRegular(simpleConnector.subPart.part),
-                                                Pair.of(advancedConnector, simpleConnector)
-                                        );
-                                        result.add(new ConnectionData(advancedConnector, simpleConnector));//打包新增连接关系
-                                    }
+                                )) continue;
+                                advancedConnector.alignActualTransformForJoint(simpleConnector);//连接前校正 actualTransform，避免关节初始应力异常
+                                boolean attached = advancedConnector.attach(simpleConnector);//先连接，成功后再写入拓扑，避免产生伪连接
+                                if (attached) {
+                                    this.partNet.addEdge(//添加连接关系
+                                            requireRegular(advancedConnector.subPart.part),
+                                            requireRegular(simpleConnector.subPart.part),
+                                            Pair.of(advancedConnector, simpleConnector)
+                                    );
+                                    result.add(new ConnectionData(advancedConnector, simpleConnector));//打包新增连接关系
                                 }
                             }
                         }

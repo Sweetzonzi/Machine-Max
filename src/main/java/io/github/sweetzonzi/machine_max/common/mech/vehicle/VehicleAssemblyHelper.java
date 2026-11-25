@@ -16,6 +16,7 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Objects;
 
 /** 共通的手动零件装配选择状态与请求构造。 */
@@ -165,12 +166,56 @@ public class VehicleAssemblyHelper {
             VariantAttr next = getNextVariant();
             if (next == null) break;
             if (targetConnector == null || targetConnector.hasPart()
-                    || targetConnector.conditionCheck(partType, variantName)) {
+                    || hasCompatibleOutwardConnector(next, targetConnector, variantName)) {
                 matched = true;
                 break;
             }
         }
         if (matched) cycleConnectors(targetConnector);
+    }
+
+    /** Select the first compatible variant/connector pair without mutating state on failure. */
+    public boolean selectCompatibleCombination(@Nullable AbstractConnector targetConnector) {
+        if (partType == null || targetConnector == null || targetConnector.hasPart()) return false;
+
+        for (Map.Entry<String, VariantAttr> variantEntry : partType.getVariants().entrySet()) {
+            String candidateVariant = variantEntry.getKey();
+            if (!targetConnector.conditionCheck(partType, candidateVariant)) continue;
+
+            VariantAttr candidate = variantEntry.getValue();
+            for (Map.Entry<Pair<String, String>, ConnectorAttr> connectorEntry
+                    : candidate.getPartOutwardConnectors().entrySet()) {
+                if (!partConnectorMatches(connectorEntry.getValue(), targetConnector, partType, candidateVariant)) {
+                    continue;
+                }
+
+                variantName = candidateVariant;
+                variantIterator = iteratorAfter(partType.getVariantIterator(), candidateVariant);
+                connectorName = connectorEntry.getKey();
+                connectorIterator = iteratorAfter(candidate.getConnectorIterator(), connectorName);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Nullable
+    private static <T> Iterator<T> iteratorAfter(@Nullable Iterator<T> iterator, T selected) {
+        if (iterator == null) return null;
+        while (iterator.hasNext()) {
+            if (Objects.equals(iterator.next(), selected)) break;
+        }
+        return iterator;
+    }
+
+    /** The target tags and at least one outward part connector must both match. */
+    private boolean hasCompatibleOutwardConnector(VariantAttr variant, AbstractConnector targetConnector,
+                                                   String candidateVariant) {
+        if (!targetConnector.conditionCheck(partType, candidateVariant)) return false;
+        for (ConnectorAttr connector : variant.getPartOutwardConnectors().values()) {
+            if (partConnectorMatches(connector, targetConnector, partType, candidateVariant)) return true;
+        }
+        return false;
     }
 
     /** 根据当前选择状态构造放置请求；物品类型与当前选择不一致时不构造请求。 */
@@ -185,8 +230,7 @@ public class VehicleAssemblyHelper {
                 ? player.getData(MMAttachments.getENTITY_EYESIGHT()).getEmptyConnector()
                 : null;
         boolean attachToTarget = targetConnector != null && !targetConnector.hasPart() && connectorAttr != null
-                && targetConnector.conditionCheck(partType, variantName)
-                && (targetConnector instanceof SimpleConnector || connectorAttr.isSimpleConnector());
+                && partConnectorMatches(connectorAttr, targetConnector, partType, variantName);
         int targetSubPartId = attachToTarget ? targetConnector.subPart.getId() : 0;
         String targetConnectorName = attachToTarget ? targetConnector.name : null;
 

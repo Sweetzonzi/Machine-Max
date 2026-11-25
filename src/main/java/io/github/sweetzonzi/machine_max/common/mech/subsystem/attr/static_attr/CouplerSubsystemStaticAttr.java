@@ -91,7 +91,7 @@ public class CouplerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
             Codec.FLOAT.fieldOf("capture_distance").forGetter(CouplerSubsystemStaticAttr::getCaptureDistance),
             Codec.FLOAT.fieldOf("lock_distance").forGetter(CouplerSubsystemStaticAttr::getLockDistance),
-            Codec.FLOAT.optionalFieldOf("max_capture_force", 0f)
+            Codec.FLOAT.optionalFieldOf("max_capture_force", 5f)
                     .forGetter(CouplerSubsystemStaticAttr::getMaxCaptureForce),
             Codec.FLOAT.fieldOf("lock_angle_tolerance")
                     .forGetter(CouplerSubsystemStaticAttr::getLockAngleTolerance),
