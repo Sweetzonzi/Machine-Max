@@ -183,6 +183,46 @@ class TrackBeltLayoutTest {
     }
 
     @Test
+    void firstVisibleFrameAnchorsAtItsActualPoseAndKeepsThatAnchorOnTheNextTick() {
+        var phase = new TrackBeltPhase();
+        phase.advanceWheel(3, 0, false);
+        phase.advanceWheel(wrapAngle(3.8), .8, false);
+        assertFalse(phase.hasEntry());
+
+        phase.anchorEntry(wrapAngle(3.3), .7, .5f);
+        assertTrue(phase.hasEntry());
+        assertEquals(0, phase.label(wrapAngle(3.3), .7, .5f, 2, 1), 1e-12);
+        assertEquals(-.56, phase.label(wrapAngle(3.6), .72, .75f, 2, 1), 1e-12);
+
+        phase.advance(wrapAngle(4.1), .74, .3, false);
+        assertEquals(-1.52, phase.label(wrapAngle(4.1), .74, 1, 2, 1), 1e-12);
+    }
+
+    @Test
+    void offscreenWheelSamplesPreserveTransportThroughWrapReversalAndRepair() {
+        var phase = new TrackBeltPhase();
+        double wheel = 2.8;
+        phase.advance(wheel, 3, 0, false);
+
+        double[] steps = {3.7, 2.5, -4.8, -1.2, .8, -3.6, .65};
+        boolean[] frozen = {false, false, false, true, true, false, false};
+        for (int i = 0; i < steps.length - 1; i++) {
+            wheel += steps[i];
+            phase.advanceWheel(wrapAngle(wheel), frozen[i] ? 0 : steps[i], frozen[i]);
+        }
+        wheel += steps[steps.length - 1];
+        double entry = wrapAngle(3.7);
+        double beforeTick = phase.label(wrapAngle(wheel), entry, 1, 1, 1);
+        phase.advance(wrapAngle(wheel), entry, steps[steps.length - 1], false);
+        assertEquals(-1.35, beforeTick, 1e-12);
+        assertEquals(beforeTick, phase.label(wrapAngle(wheel), entry, 1, 1, 1), 1e-12);
+    }
+
+    private static double wrapAngle(double angle) {
+        return Math.atan2(Math.sin(angle), Math.cos(angle));
+    }
+
+    @Test
     void engagedLinkRotatesExactlyWithSprocket() {
         var a=BeltPath2D.build(wheels(-.6));
         double spin=.15;

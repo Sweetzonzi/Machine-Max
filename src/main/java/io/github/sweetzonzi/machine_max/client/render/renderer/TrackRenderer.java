@@ -11,7 +11,6 @@ import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.fitting.FittingVisual;
@@ -41,6 +40,7 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -55,7 +55,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p><b>节数与节距</b>：N 取 {@link TrackLink#linkCount()}（服务端推导后持久化的权威值），
  * 节距取型号的 {@link TrackAttr#lengthPerLink()}。两者都来自载具 / 型号
  * 数据，不随本端某一帧的包络变化（载具刚放出时成员位姿可能还没就绪，据此推导会把 N 锁在退化包络上）。
- * {@link #tick()}（20tps）按实际轮位姿展开角度，{@link TrackBeltPhase} 在渲染时对齐当帧位姿。
+ * {@link #tick()}（20tps）按实际轮位姿展开角度，仅为已登记渲染需求的履带求接触入口。
+ * {@link TrackBeltPhase} 在渲染时对齐当帧位姿。
  * {@link TrackLink} 本身只在创建 / 解散 / 断带 / 修复 / 成员变化时同步。</p>
  *
  * <p><b>两条绘制路径</b>：</p>
@@ -78,8 +79,8 @@ import java.util.concurrent.ConcurrentHashMap;
  *       写进阴影贴图。</li>
  * </ul>
  *
- * <p>线程：{@link #tick()} 在主线程，{@link #renderTrack} 在渲染线程；共享状态只有
- * {@link State} 的 volatile 相位快照，以及按型号缓存的模型与渲染类型。垂度及帧缓存由渲染线程持有。</p>
+ * <p>线程：客户端 tick 和各渲染阶段在客户端主线程串行运行。需求集合与相位由这两个阶段共用，
+ * 物理线程不访问；垂度及帧缓存只在渲染阶段读写。</p>
  */
 @EventBusSubscriber(modid = MachineMax.MOD_ID, value = Dist.CLIENT)
 public class TrackRenderer extends VisualEffectRenderer {
@@ -126,6 +127,8 @@ public class TrackRenderer extends VisualEffectRenderer {
 
     /** 按安装拓扑保留相位；全量同步重建 TrackLink 时，断带和修复承接相同状态。 */
     private static final Map<TrackKey, State> STATES = new ConcurrentHashMap<>();
+    /** 各渲染阶段登记的实例，由下一次客户端 tick 消费；不跨实例继承。 */
+    private static final Set<TrackLink> RENDER_REQUESTS = new HashSet<>();
     /** 型号模型资源按型号 id 缓存，避免每帧新建 {@link ModelPose}、切槽与渲染类型。 */
     private static final Map<ResourceLocation, LinkVisual> VISUALS = new ConcurrentHashMap<>();
     /** 已经报过「模型不可用」的型号，避免每帧刷日志；持有时该型号一律走程序化路径。 */
@@ -135,12 +138,17 @@ public class TrackRenderer extends VisualEffectRenderer {
         TrackKey(TrackLink link) {
             this(link.vehicle(), link.sprocket(), link.members(), link.typeId());
         }
+
+        boolean matches(TrackLink link) {
+            return vehicle == link.vehicle() && sprocket == link.sprocket()
+                    && members.equals(link.members()) && type.equals(link.typeId());
+        }
     }
 
-    /** 单条履带的主线程相位快照，以及渲染线程独占的路径、垂度历史和工作缓冲。 */
+    /** 单条履带的相位快照，以及渲染阶段独占的路径、垂度历史和工作缓冲。 */
     private static final class State {
-        /** 最近一次成功的角度快照；渲染线程只读。 */
-        private volatile TrackBeltPhase phase;
+        /** 已发布的快照只读；每次推进或首次建立接触入口时替换。 */
+        private TrackBeltPhase phase;
         private long sampleTick;
         private long cachedFrame = -1;
         private TrackEnvelope2D.Result frameEnvelope;
@@ -329,6 +337,7 @@ public class TrackRenderer extends VisualEffectRenderer {
         // 换世界时丢弃旧世界的履带历史，首帧从零时差起算。
         if (level != frameLevel) {
             STATES.keySet().removeIf(key -> key.vehicle().level != level);
+            RENDER_REQUESTS.removeIf(link -> link.vehicle().level != level);
             frameLevel = level;
             previousFrameTime = now;
         }
@@ -341,48 +350,63 @@ public class TrackRenderer extends VisualEffectRenderer {
         return -Math.expm1(-Math.clamp(seconds, 0, MAX_FRAME_SECONDS) / SAG_SECONDS);
     }
 
+    /** 客户端 tick：按需重算接触入口；有渲染历史的履带离屏后仍采样主动轮。 */
     @Override
     public void tick() {
-        if (Minecraft.getInstance().level == null) return;
-
-        for (VehicleCore vehicle : ObjectManager.clientAllVehicles.values()) {
-            for (TrackLink link : vehicle.trackLinks) {
-                if (link.isDisposed()) {
-                    continue;
-                }
-                State state = STATES.computeIfAbsent(new TrackKey(link), ignored -> new State());
-
-                TrackEnvelope2D.Result envelope =
-                        link.envelope(1f);
-                if (envelope == null) {
-                    continue;
-                }
-                noteFallback(state, link, envelope);
-                var contact = envelope.path().wheelContact(0);
-                if (contact == null || !new TrackBeltLayout(envelope.path(), contact,
-                        link.linkCount(), link.attr().lengthPerLink(), 0).isValid()) {
-                    if (!state.warned) MachineMax.LOGGER.warn("履带主动轮无有效啮合段，暂缓绘制：{}", link.typeId());
-                    state.warned = true;
-                    continue;
-                }
-                state.warned = false;
-                double wheel = wheelAngle(link, envelope, 1f);
-                long now = vehicle.level.getGameTime();
-                double elapsed = state.phase == null ? TICK_SECONDS : (now - state.sampleTick) * TICK_SECONDS;
-                TrackBeltPhase next = state.phase == null ? new TrackBeltPhase() : new TrackBeltPhase(state.phase);
-                // 未建造与断带都不推进节相位：骨架不随主动轮转动，断口位置也保持冻结
-                boolean frozen = !link.isBuilt() || link.isBroken();
-                next.advance(wheel, contact.startAngle() + wheel,
-                        frozen ? 0 : link.sprocketOmegaX() * elapsed, frozen);
-                state.sampleTick = now;
-                state.phase = next;
-            }
+        Level level = Minecraft.getInstance().level;
+        if (level == null) {
+            RENDER_REQUESTS.clear();
+            STATES.clear();
+            return;
         }
+        long now = level.getGameTime();
+        for (var entry : STATES.entrySet()) {
+            TrackKey key = entry.getKey();
+            State state = entry.getValue();
+            SubPart sprocket = key.sprocket();
+            TrackLink link = sprocket.trackLink;
+            if (link == null || link.isDisposed() || key.vehicle().level != level || !key.matches(link)) {
+                STATES.remove(key, state);
+                continue;
+            }
 
-        STATES.entrySet().removeIf(entry -> {
-            TrackLink link = entry.getKey().sprocket().trackLink;
-            return link == null || link.isDisposed() || !entry.getKey().equals(new TrackKey(link));
-        });
+            // 全量同步可以替换实例并保留相位；旧实例的需求不会让新实例额外求解。
+            TrackEnvelope2D.Result envelope = RENDER_REQUESTS.remove(link) ? link.envelope(1f) : null;
+            var contact = validTickContact(state, link, envelope);
+            Matrix4f wheelPose = envelope == null ? sprocket.getWorldPositionMatrix(1f) : envelope.sprocketWorld();
+            double wheel = wheelAngle(link, wheelPose, 1f);
+            double elapsed = state.phase == null ? TICK_SECONDS : (now - state.sampleTick) * TICK_SECONDS;
+            TrackBeltPhase next = state.phase == null ? new TrackBeltPhase() : new TrackBeltPhase(state.phase);
+            // 未建造与断带冻结输送角，继续跟踪实际轮角和冻结状态。
+            boolean frozen = !link.isBuilt() || link.isBroken();
+            double predicted = frozen ? 0 : link.sprocketOmegaX() * elapsed;
+            if (contact == null) {
+                next.advanceWheel(wheel, predicted, frozen);
+            } else {
+                next.advance(wheel, contact.startAngle() + wheel, predicted, frozen);
+            }
+            state.sampleTick = now;
+            state.phase = next;
+        }
+        // 丢弃未消费的旧实例需求；后续渲染会重新登记。
+        RENDER_REQUESTS.clear();
+    }
+
+    /** 客户端 tick：只从有效布局提取主动轮接触入口，供相位插值使用。 */
+    @Nullable
+    private static BeltPath2D.ArcContact validTickContact(State state, TrackLink link,
+                                                          @Nullable TrackEnvelope2D.Result envelope) {
+        if (envelope == null) return null;
+        noteFallback(state, link, envelope);
+        var contact = envelope.path().wheelContact(0);
+        if (contact != null && new TrackBeltLayout(envelope.path(), contact,
+                link.linkCount(), link.attr().lengthPerLink(), 0).isValid()) {
+            state.warned = false;
+            return contact;
+        }
+        if (!state.warned) MachineMax.LOGGER.warn("履带主动轮无有效啮合段，暂缓绘制：{}", link.typeId());
+        state.warned = true;
+        return null;
     }
 
     @Override
@@ -423,8 +447,9 @@ public class TrackRenderer extends VisualEffectRenderer {
         TrackLink link = subPart.trackLink;
         if (link == null || link.isDisposed() || !link.isSprocket(subPart)) return;
 
-        State state = STATES.get(new TrackKey(link));
-        if (state == null) return;
+        // 帧布局还未就绪时也登记；近景、远景和阴影的请求按实例去重。
+        RENDER_REQUESTS.add(link);
+        State state = STATES.computeIfAbsent(new TrackKey(link), ignored -> new State());
         if (state.cachedFrame != renderFrame) prepareFrame(state, link, partialTick);
         if (state.frameLayout == null) return;
 
@@ -437,7 +462,6 @@ public class TrackRenderer extends VisualEffectRenderer {
         state.cachedFrame = renderFrame;
         state.frameLayout = null;
         TrackBeltPhase phase = state.phase;
-        if (phase == null) return;
         TrackEnvelope2D.Result envelope = link.envelope(partialTick);
         if (envelope == null) {
             state.clearSag();
@@ -451,8 +475,11 @@ public class TrackRenderer extends VisualEffectRenderer {
         }
         int count = link.linkCount();
         double pitch = link.attr().lengthPerLink();
-        double wheel = wheelAngle(link, envelope, partialTick);
-        double label = phase.label(wheel, contact.startAngle() + wheel, partialTick,
+        double wheel = wheelAngle(link, envelope.sprocketWorld(), partialTick);
+        double entry = contact.startAngle() + wheel;
+        boolean needsAnchor = phase == null || !phase.hasEntry();
+        if (needsAnchor) phase = anchorFramePhase(link, phase, wheel, entry, partialTick);
+        double label = phase.label(wheel, entry, partialTick,
                 base.inputCircles().getFirst().radius() / pitch, Math.signum(contact.sweep()));
         // 断带时整条带的节相位改用服务端权威的 sector_phase（折算成节）：这样遍历索引就是材料节号，
         // 断口按节号画。客户端自己的积分相位在断带那一刻会跳一下，对称节模型看不出来
@@ -472,13 +499,32 @@ public class TrackRenderer extends VisualEffectRenderer {
             layout = new TrackBeltLayout(base, contact, count, pitch, label);
         }
         if (layout.isValid()) {
+            if (needsAnchor) {
+                if (state.phase == null) state.sampleTick = link.vehicle().level.getGameTime();
+                state.phase = phase;
+            }
             state.frameEnvelope = envelope;
             state.frameLayout = layout;
         }
     }
 
-    private static double wheelAngle(TrackLink link, TrackEnvelope2D.Result envelope, float partialTick) {
-        Matrix4f relative = link.sprocketReferencePose(partialTick).invert().mul(envelope.sprocketWorld());
+    /** 渲染阶段：首次入镜直接用当帧接触定位节序，轮角的两端仍对齐当前 tick。 */
+    private static TrackBeltPhase anchorFramePhase(TrackLink link, @Nullable TrackBeltPhase previous,
+                                                   double wheel, double entry, float partialTick) {
+        TrackBeltPhase phase = previous == null ? new TrackBeltPhase() : new TrackBeltPhase(previous);
+        if (previous == null) {
+            boolean frozen = !link.isBuilt() || link.isBroken();
+            SubPart sprocket = link.sprocket();
+            phase.advanceWheel(wheelAngle(link, sprocket.getWorldPositionMatrix(0f), 0f), 0, frozen);
+            phase.advanceWheel(wheelAngle(link, sprocket.getWorldPositionMatrix(1f), 1f),
+                    frozen ? 0 : link.sprocketOmegaX() * TICK_SECONDS, frozen);
+        }
+        phase.anchorEntry(wheel, entry, partialTick);
+        return phase;
+    }
+
+    private static double wheelAngle(TrackLink link, Matrix4f wheelPose, float partialTick) {
+        Matrix4f relative = link.sprocketReferencePose(partialTick).invert().mul(wheelPose);
         return Math.atan2(relative.m12(), relative.m11());
     }
 
