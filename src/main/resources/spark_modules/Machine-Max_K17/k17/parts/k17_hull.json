@@ -5,6 +5,7 @@
   "variants": {
     "model": "k17:k17.geo",
     "textures": "k17:textures/part/k17/k17.png",
+    "animations": "k17:k17",
     "tags": [
       "machine_max:category/structural",
       "machine_max:type/land",

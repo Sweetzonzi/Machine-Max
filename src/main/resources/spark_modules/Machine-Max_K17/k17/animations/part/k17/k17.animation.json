@@ -21,6 +21,387 @@
 					}
 				}
 			}
+		},
+		"parallel0": {
+			"loop": true,
+			"bones": {
+				"SuspensionLink_LeftUp_1": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle(math.atan2(-0.56684+local.connector_offset('connector.machine_max.hull_left_wheel_01', 1)*16,-8.97122)-math.atan2(-0.56684,-8.97122))"
+					]
+				},
+				"SuspensionLink_LeftDown_1": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_01', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))"
+					]
+				},
+				"DriveRod_Left_1": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle(math.atan2(-2.1062+local.connector_offset('connector.machine_max.hull_left_wheel_01', 1)*16,-9.9238)-math.atan2(-2.1062,-9.9238))"
+					]
+				},
+				"ShockAbsorber_LeftUp_1": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle((math.atan2(-((-4.0665+4.7915*math.cos((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_01', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))-0.02496*math.sin((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_01', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))))))),(14.225+4.7915*math.sin((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_01', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))+0.02496*math.cos((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_01', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))))))))-(-2.5))"
+					]
+				},
+				"ShockAbsorber_LeftDown_1": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle((math.atan2(-((-4.0665+4.7915*math.cos((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_01', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))-0.02496*math.sin((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_01', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))))))),(14.225+4.7915*math.sin((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_01', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))+0.02496*math.cos((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_01', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))))))))-(-2.5)-(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_01', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))))"
+					],
+					"scale": [
+						1,
+						"(math.sqrt(math.pow((-4.0665+4.7915*math.cos((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_01', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))-0.02496*math.sin((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_01', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))),2)+math.pow((14.225+4.7915*math.sin((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_01', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))+0.02496*math.cos((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_01', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))),2))/15.0955251902)",
+						1
+					]
+				},
+				"LeftWheel1": {
+					"rotation": [
+						0,
+						0,
+						"-math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_01', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))"
+					]
+				},
+				"SuspensionLink_LeftUp_2": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle(math.atan2(-0.56684+local.connector_offset('connector.machine_max.hull_left_wheel_02', 1)*16,-8.97122)-math.atan2(-0.56684,-8.97122))"
+					]
+				},
+				"SuspensionLink_LeftDown_2": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_02', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))"
+					]
+				},
+				"DriveRod_Left_2": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle(math.atan2(-2.1062+local.connector_offset('connector.machine_max.hull_left_wheel_02', 1)*16,-9.9238)-math.atan2(-2.1062,-9.9238))"
+					]
+				},
+				"ShockAbsorber_LeftUp_2": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle((math.atan2(-((-4.0665+4.7915*math.cos((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_02', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))-0.02496*math.sin((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_02', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))))))),(14.225+4.7915*math.sin((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_02', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))+0.02496*math.cos((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_02', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))))))))-(-2.5))"
+					]
+				},
+				"ShockAbsorber_LeftDown_2": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle((math.atan2(-((-4.0665+4.7915*math.cos((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_02', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))-0.02496*math.sin((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_02', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))))))),(14.225+4.7915*math.sin((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_02', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))+0.02496*math.cos((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_02', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))))))))-(-2.5)-(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_02', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))))"
+					],
+					"scale": [
+						1,
+						"(math.sqrt(math.pow((-4.0665+4.7915*math.cos((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_02', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))-0.02496*math.sin((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_02', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))),2)+math.pow((14.225+4.7915*math.sin((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_02', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))+0.02496*math.cos((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_02', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))),2))/15.0955251902)",
+						1
+					]
+				},
+				"LeftWheel2": {
+					"rotation": [
+						0,
+						0,
+						"-math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_02', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))"
+					]
+				},
+				"SuspensionLink_LeftUp_3": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle(math.atan2(-0.56684+local.connector_offset('connector.machine_max.hull_left_wheel_03', 1)*16,-8.97122)-math.atan2(-0.56684,-8.97122))"
+					]
+				},
+				"SuspensionLink_LeftDown_3": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_03', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))"
+					]
+				},
+				"DriveRod_Left_3": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle(math.atan2(-2.1062+local.connector_offset('connector.machine_max.hull_left_wheel_03', 1)*16,-9.9238)-math.atan2(-2.1062,-9.9238))"
+					]
+				},
+				"ShockAbsorber_LeftUp_3": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle((math.atan2(-((-4.0665+4.7915*math.cos((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_03', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))-0.02496*math.sin((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_03', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))))))),(14.225+4.7915*math.sin((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_03', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))+0.02496*math.cos((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_03', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))))))))-(-2.5))"
+					]
+				},
+				"ShockAbsorber_LeftDown_3": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle((math.atan2(-((-4.0665+4.7915*math.cos((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_03', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))-0.02496*math.sin((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_03', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))))))),(14.225+4.7915*math.sin((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_03', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))+0.02496*math.cos((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_03', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))))))))-(-2.5)-(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_03', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))))"
+					],
+					"scale": [
+						1,
+						"(math.sqrt(math.pow((-4.0665+4.7915*math.cos((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_03', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))-0.02496*math.sin((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_03', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))),2)+math.pow((14.225+4.7915*math.sin((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_03', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))+0.02496*math.cos((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_03', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))),2))/15.0955251902)",
+						1
+					]
+				},
+				"LeftWheel3": {
+					"rotation": [
+						0,
+						0,
+						"-math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_03', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))"
+					]
+				},
+				"SuspensionLink_LeftUp_4": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle(math.atan2(-0.56684+local.connector_offset('connector.machine_max.hull_left_wheel_04', 1)*16,-8.97122)-math.atan2(-0.56684,-8.97122))"
+					]
+				},
+				"SuspensionLink_LeftDown_4": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_04', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))"
+					]
+				},
+				"DriveRod_Left_4": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle(math.atan2(-2.1062+local.connector_offset('connector.machine_max.hull_left_wheel_04', 1)*16,-9.9238)-math.atan2(-2.1062,-9.9238))"
+					]
+				},
+				"ShockAbsorber_LeftUp_4": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle((math.atan2(-((-4.0665+4.7915*math.cos((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_04', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))-0.02496*math.sin((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_04', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))))))),(14.225+4.7915*math.sin((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_04', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))+0.02496*math.cos((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_04', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))))))))-(-2.5))"
+					]
+				},
+				"ShockAbsorber_LeftDown_4": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle((math.atan2(-((-4.0665+4.7915*math.cos((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_04', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))-0.02496*math.sin((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_04', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))))))),(14.225+4.7915*math.sin((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_04', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))+0.02496*math.cos((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_04', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))))))))-(-2.5)-(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_04', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))))"
+					],
+					"scale": [
+						1,
+						"(math.sqrt(math.pow((-4.0665+4.7915*math.cos((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_04', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))-0.02496*math.sin((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_04', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))),2)+math.pow((14.225+4.7915*math.sin((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_04', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))+0.02496*math.cos((10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_04', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452)))))),2))/15.0955251902)",
+						1
+					]
+				},
+				"LeftWheel4": {
+					"rotation": [
+						0,
+						0,
+						"-math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_left_wheel_04', 1)*16,-9.3452)-math.atan2(-0.195,-9.3452))"
+					]
+				},
+				"SuspensionLink_RightUp_1": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle(math.atan2(-0.56684+local.connector_offset('connector.machine_max.hull_right_wheel_01', 1)*16,8.97122)-math.atan2(-0.56684,8.97122))"
+					]
+				},
+				"SuspensionLink_RightDown_1": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_01', 1)*16,9.3452)-math.atan2(-0.195,9.3452))"
+					]
+				},
+				"DriveRod_Right_1": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle(math.atan2(-2.1062+local.connector_offset('connector.machine_max.hull_right_wheel_01', 1)*16,9.9238)-math.atan2(-2.1062,9.9238))"
+					]
+				},
+				"ShockAbsorber_RightUp_1": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle((math.atan2(-((4.0665-4.7915*math.cos((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_01', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))-0.02496*math.sin((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_01', 1)*16,9.3452)-math.atan2(-0.195,9.3452))))))),(14.225-4.7915*math.sin((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_01', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))+0.02496*math.cos((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_01', 1)*16,9.3452)-math.atan2(-0.195,9.3452))))))))-(2.5))"
+					]
+				},
+				"ShockAbsorber_RightDown_1": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle((math.atan2(-((4.0665-4.7915*math.cos((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_01', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))-0.02496*math.sin((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_01', 1)*16,9.3452)-math.atan2(-0.195,9.3452))))))),(14.225-4.7915*math.sin((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_01', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))+0.02496*math.cos((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_01', 1)*16,9.3452)-math.atan2(-0.195,9.3452))))))))-(2.5)-(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_01', 1)*16,9.3452)-math.atan2(-0.195,9.3452))))"
+					],
+					"scale": [
+						1,
+						"(math.sqrt(math.pow((4.0665-4.7915*math.cos((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_01', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))-0.02496*math.sin((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_01', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))),2)+math.pow((14.225-4.7915*math.sin((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_01', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))+0.02496*math.cos((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_01', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))),2))/15.0955251902)",
+						1
+					]
+				},
+				"RightWheel1": {
+					"rotation": [
+						0,
+						0,
+						"-math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_01', 1)*16,9.3452)-math.atan2(-0.195,9.3452))"
+					]
+				},
+				"SuspensionLink_RightUp_2": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle(math.atan2(-0.56684+local.connector_offset('connector.machine_max.hull_right_wheel_02', 1)*16,8.97122)-math.atan2(-0.56684,8.97122))"
+					]
+				},
+				"SuspensionLink_RightDown_2": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_02', 1)*16,9.3452)-math.atan2(-0.195,9.3452))"
+					]
+				},
+				"DriveRod_Right_2": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle(math.atan2(-2.1062+local.connector_offset('connector.machine_max.hull_right_wheel_02', 1)*16,9.9238)-math.atan2(-2.1062,9.9238))"
+					]
+				},
+				"ShockAbsorber_RightUp_2": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle((math.atan2(-((4.0665-4.7915*math.cos((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_02', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))-0.02496*math.sin((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_02', 1)*16,9.3452)-math.atan2(-0.195,9.3452))))))),(14.225-4.7915*math.sin((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_02', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))+0.02496*math.cos((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_02', 1)*16,9.3452)-math.atan2(-0.195,9.3452))))))))-(2.5))"
+					]
+				},
+				"ShockAbsorber_RightDown_2": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle((math.atan2(-((4.0665-4.7915*math.cos((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_02', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))-0.02496*math.sin((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_02', 1)*16,9.3452)-math.atan2(-0.195,9.3452))))))),(14.225-4.7915*math.sin((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_02', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))+0.02496*math.cos((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_02', 1)*16,9.3452)-math.atan2(-0.195,9.3452))))))))-(2.5)-(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_02', 1)*16,9.3452)-math.atan2(-0.195,9.3452))))"
+					],
+					"scale": [
+						1,
+						"(math.sqrt(math.pow((4.0665-4.7915*math.cos((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_02', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))-0.02496*math.sin((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_02', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))),2)+math.pow((14.225-4.7915*math.sin((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_02', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))+0.02496*math.cos((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_02', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))),2))/15.0955251902)",
+						1
+					]
+				},
+				"RightWheel2": {
+					"rotation": [
+						0,
+						0,
+						"-math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_02', 1)*16,9.3452)-math.atan2(-0.195,9.3452))"
+					]
+				},
+				"SuspensionLink_RightUp_3": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle(math.atan2(-0.56684+local.connector_offset('connector.machine_max.hull_right_wheel_03', 1)*16,8.97122)-math.atan2(-0.56684,8.97122))"
+					]
+				},
+				"SuspensionLink_RightDown_3": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_03', 1)*16,9.3452)-math.atan2(-0.195,9.3452))"
+					]
+				},
+				"DriveRod_Right_3": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle(math.atan2(-2.1062+local.connector_offset('connector.machine_max.hull_right_wheel_03', 1)*16,9.9238)-math.atan2(-2.1062,9.9238))"
+					]
+				},
+				"ShockAbsorber_RightUp_3": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle((math.atan2(-((4.0665-4.7915*math.cos((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_03', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))-0.02496*math.sin((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_03', 1)*16,9.3452)-math.atan2(-0.195,9.3452))))))),(14.225-4.7915*math.sin((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_03', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))+0.02496*math.cos((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_03', 1)*16,9.3452)-math.atan2(-0.195,9.3452))))))))-(2.5))"
+					]
+				},
+				"ShockAbsorber_RightDown_3": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle((math.atan2(-((4.0665-4.7915*math.cos((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_03', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))-0.02496*math.sin((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_03', 1)*16,9.3452)-math.atan2(-0.195,9.3452))))))),(14.225-4.7915*math.sin((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_03', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))+0.02496*math.cos((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_03', 1)*16,9.3452)-math.atan2(-0.195,9.3452))))))))-(2.5)-(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_03', 1)*16,9.3452)-math.atan2(-0.195,9.3452))))"
+					],
+					"scale": [
+						1,
+						"(math.sqrt(math.pow((4.0665-4.7915*math.cos((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_03', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))-0.02496*math.sin((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_03', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))),2)+math.pow((14.225-4.7915*math.sin((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_03', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))+0.02496*math.cos((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_03', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))),2))/15.0955251902)",
+						1
+					]
+				},
+				"RightWheel3": {
+					"rotation": [
+						0,
+						0,
+						"-math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_03', 1)*16,9.3452)-math.atan2(-0.195,9.3452))"
+					]
+				},
+				"SuspensionLink_RightUp_4": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle(math.atan2(-0.56684+local.connector_offset('connector.machine_max.hull_right_wheel_04', 1)*16,8.97122)-math.atan2(-0.56684,8.97122))"
+					]
+				},
+				"SuspensionLink_RightDown_4": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_04', 1)*16,9.3452)-math.atan2(-0.195,9.3452))"
+					]
+				},
+				"DriveRod_Right_4": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle(math.atan2(-2.1062+local.connector_offset('connector.machine_max.hull_right_wheel_04', 1)*16,9.9238)-math.atan2(-2.1062,9.9238))"
+					]
+				},
+				"ShockAbsorber_RightUp_4": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle((math.atan2(-((4.0665-4.7915*math.cos((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_04', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))-0.02496*math.sin((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_04', 1)*16,9.3452)-math.atan2(-0.195,9.3452))))))),(14.225-4.7915*math.sin((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_04', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))+0.02496*math.cos((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_04', 1)*16,9.3452)-math.atan2(-0.195,9.3452))))))))-(2.5))"
+					]
+				},
+				"ShockAbsorber_RightDown_4": {
+					"rotation": [
+						0,
+						0,
+						"math.min_angle((math.atan2(-((4.0665-4.7915*math.cos((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_04', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))-0.02496*math.sin((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_04', 1)*16,9.3452)-math.atan2(-0.195,9.3452))))))),(14.225-4.7915*math.sin((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_04', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))+0.02496*math.cos((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_04', 1)*16,9.3452)-math.atan2(-0.195,9.3452))))))))-(2.5)-(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_04', 1)*16,9.3452)-math.atan2(-0.195,9.3452))))"
+					],
+					"scale": [
+						1,
+						"(math.sqrt(math.pow((4.0665-4.7915*math.cos((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_04', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))-0.02496*math.sin((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_04', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))),2)+math.pow((14.225-4.7915*math.sin((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_04', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))+0.02496*math.cos((-10+(math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_04', 1)*16,9.3452)-math.atan2(-0.195,9.3452)))))),2))/15.0955251902)",
+						1
+					]
+				},
+				"RightWheel4": {
+					"rotation": [
+						0,
+						0,
+						"-math.min_angle(math.atan2(-0.195+local.connector_offset('connector.machine_max.hull_right_wheel_04', 1)*16,9.3452)-math.atan2(-0.195,9.3452))"
+					]
+				}
+			}
 		}
 	}
 }
