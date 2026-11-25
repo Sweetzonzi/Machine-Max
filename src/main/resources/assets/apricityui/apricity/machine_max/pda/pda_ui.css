@@ -74,10 +74,12 @@ body {
 }
 
 .pda-title {
+    flex: 0 0 auto;
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 1px;
     color: #E8E8F0;
+    white-space: nowrap;
 }
 
 .pda-counts {
@@ -103,6 +105,7 @@ body {
     font-size: 9px;
     letter-spacing: 1px;
     color: rgba(210, 210, 220, 0.55);
+    white-space: nowrap;
 }
 
 /* ================================================================
@@ -207,6 +210,11 @@ body {
 
 .pane-head .spacer {
     margin-left: auto;
+}
+
+.pane-head > span:first-child {
+    flex: 0 0 auto;
+    white-space: nowrap;
 }
 
 .toolbar-btn {

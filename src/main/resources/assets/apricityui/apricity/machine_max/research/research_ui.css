@@ -107,10 +107,12 @@ body {
 }
 
 .tab-name {
+    flex: 0 0 auto;
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 1px;
     color: #E8E8F0;
+    white-space: nowrap;
 }
 .tab-item.active .tab-name {
     color: #111111;
@@ -276,6 +278,9 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.14);
     cursor: pointer;
     transition: background-color 0.15s ease, color 0.15s ease;
+}
+.tree-toolbar .toolbar-btn {
+    white-space: nowrap;
 }
 .toolbar-btn:hover {
     background: rgba(255, 255, 255, 0.08);
