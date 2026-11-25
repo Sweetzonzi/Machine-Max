@@ -31,6 +31,8 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.subpart.SubPar
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
+import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
+import io.github.sweetzonzi.machine_max.common.mech.signal.Signal;
 import io.github.sweetzonzi.machine_max.common.registry.MMEntityDataSerializers;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
@@ -77,6 +79,13 @@ import java.util.function.Consumer;
 public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer, ISoundSpreader, IParticleAnchor {
 
     public final LauncherSubsystemAttr attr;
+
+    /** 仅由物理线程维护、相对当前 locator 朝向记录的修正偏角。 */
+    private final LauncherAimCorrection aimCorrection = new LauncherAimCorrection();
+
+    /** 最近一次物理步发布的世界空间出射方向，供主线程 HUD、射线查询与地形预加载读取。 */
+    @Nullable
+    private volatile Vec3 effectiveFireDirection;
 
     // ——— 射速相位（整数子 tick 单位） ———
 
@@ -377,26 +386,55 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     /** 客户端：{@link #humanSoundProgress} 对应的作业编号；换作业时游标从头建立 */
     private int humanSoundRound;
 
-    // ——— 信号化开火指令 ———
+    // ——— 信号化瞄准与开火控制 ———
 
     /**
-     * 发射控制指令：多控制器通过此 record 原子写入方向、修正角和开火指令。<br>
-     * 火控以信号值写入本发射器的控制输入槽，{@link #getActiveFireCommand} 按 controlInputs 优先级读取。
+     * 单个控制器对本管的瞄准点与持续开火意图。<br>
+     * 火控以信号值写入本发射器的控制输入槽，发射器先按信号优先级、controlInputs 档位和发送者身份
+     * 仲裁，再把胜出请求同时用于瞄准与开火，避免两个控制器分别控制这两项。
      * <p>
      * {@code shooter} 是这次开火的归属者，最终成为每发弹丸的 owner（见
      * {@link #fireSingle(BallisticProjectileType)}）。它随"开火权"一起下发：谁点的火与谁允许开火
      * 是同一份记录，不另建一条并行的归属通道。发射器与火控同处一辆载具，因此这里的引用只在
      * 服务端有值——客户端没有乘客实体，也不需要归属。
      */
-    public record FireCommand(
-        @Nullable Vector3f direction,   // null = 使用 locator 朝向
-        float correctionAngleDeg,       // 火控修正角（度），0 = 不修正
-        boolean firing,                 // 是否开火
-        @Nullable Entity shooter        // 本次开火的归属者（射手 / 操作者），null = 无归属
-    ) {
-        /** 无归属的发射指令：方向与修正角照常生效，弹丸不带 owner。 */
-        public FireCommand(@Nullable Vector3f direction, float correctionAngleDeg, boolean firing) {
-            this(direction, correctionAngleDeg, firing, null);
+    public static final class FireCommand extends Signal<Vec3> {
+        private final boolean firing;
+        @Nullable
+        private final Entity shooter;
+
+        /** 创建无显式越级优先级的瞄准与开火请求。 */
+        public FireCommand(Vec3 aimPoint, boolean firing, @Nullable Entity shooter) {
+            this(aimPoint, firing, shooter, 0);
+        }
+
+        /** 创建带显式越级优先级的瞄准与开火请求。 */
+        public FireCommand(Vec3 aimPoint, boolean firing, @Nullable Entity shooter, int priority) {
+            super(aimPoint, priority);
+            this.firing = firing;
+            this.shooter = shooter;
+        }
+
+        /** 返回该控制器请求的世界空间瞄准点。 */
+        public Vec3 aimPoint() {
+            return value;
+        }
+
+        /** 返回该请求是否同时要求开火。 */
+        public boolean firing() {
+            return firing;
+        }
+
+        /** 返回本请求所关联的射手；无实体归属时为 {@code null}。 */
+        @Nullable
+        public Entity shooter() {
+            return shooter;
+        }
+
+        /** 保留请求内容，仅替换信号优先级。 */
+        @Override
+        public FireCommand withPriority(int priority) {
+            return priority == this.priority ? this : new FireCommand(value, firing, shooter, priority);
         }
     }
 
@@ -2093,6 +2131,8 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         super.onPrePhysicsTick();
         if (getOwner() == null) return;
 
+        updateAimCorrection();
+
         BallisticProjectileType type;
         while ((type = pendingFires.poll()) != null) {
             fireSingle(type);
@@ -2190,8 +2230,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     /**
      * 读一次枪口状态。
      * <p>
-     * 方向的优先级与既有开火一致：活跃 {@link FireCommand} 的期望方向 + 修正角生效时用
-     * {@link #clampToCone} 修正后的方向，否则用 locator 朝向。
+     * 出射方向取最近一次物理步发布的角速度受限快照；尚无快照时回退到当前 locator 方向。
      * <p>
      * <b>调用线程：</b>物理线程（{@link #fireSingle}）与主线程（{@link #onTick} 的首段预约）。
      * 读的是刚体实时变换，与 HUD 的 {@link #getMuzzleWorldPosition()} 同一读法。
@@ -2205,13 +2244,11 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
         Quaternion jmeRot = muzzleTransform.getRotation();
 
         Vector3f locatorForward = MyQuaternion.rotate(jmeRot, new Vector3f(0, 0, -1), null).normalize();
-        Vector3f direction;
-        FireCommand cmd = getActiveFireCommand();
-        if (cmd != null && cmd.direction() != null && cmd.correctionAngleDeg() > 0.001f) {
-            direction = clampToCone(locatorForward, cmd.direction(), cmd.correctionAngleDeg());
-        } else {
-            direction = locatorForward;
-        }
+        Vec3 directionSnapshot = effectiveFireDirection;
+        Vector3f direction = directionSnapshot == null
+                ? locatorForward
+                : new Vector3f((float) directionSnapshot.x, (float) directionSnapshot.y,
+                        (float) directionSnapshot.z).normalize();
 
         float spreadMult = 1.0f;
         float velMult = attr.staticAttribute.getBarrel().velocityMultiplier();
@@ -2317,7 +2354,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     // ——— 信号化开火控制（火控写入输入槽） ———
 
     /**
-     * 按 controlInputs 频道优先级从当前信号容器读取最高优先级的有效发射指令。<br>
+     * 按信号越级优先级、controlInputs 频道顺序和发送者身份，从当前信号容器选出唯一胜出请求。<br>
      * 火控把 {@link FireCommand} 作为信号值写入本发射器的到达频道；
      * {@link io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal} 表示该来源已释放。
      * 结构变化后输入槽被清空，无需逐个来源调用释放。
@@ -2325,40 +2362,69 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
      * @return 最高优先级的有效 FireCommand，null = 无控制器持有开火权
      */
     @Nullable
-    private FireCommand getActiveFireCommand() {
-        for (String channel : attr.staticAttribute.getControlInputs()) {
-            SignalChannel values = getSignalInputChannels().get(channel);
+    private FireCommand getWinningFireCommand() {
+        List<String> channels = attr.staticAttribute.getControlInputs();
+        FireCommand winner = null;
+        ISignalSender winnerSender = null;
+        int winnerTier = Integer.MIN_VALUE;
+        for (int index = 0; index < channels.size(); index++) {
+            SignalChannel values = getSignalInputChannels().get(channels.get(index));
             if (values == null) continue;
-            for (Object value : values.values()) {
-                if (value instanceof FireCommand cmd && cmd.firing()) return cmd;
+            int tier = channels.size() - index;
+            for (Map.Entry<ISignalSender, Object> entry : values.entrySet()) {
+                if (!(entry.getValue() instanceof FireCommand candidate)) continue;
+                ISignalSender sender = entry.getKey();
+                if (winner == null
+                        || candidate.priority > winner.priority
+                        || candidate.priority == winner.priority && tier > winnerTier
+                        || candidate.priority == winner.priority && tier == winnerTier
+                                && ISignalSender.compareSenders(sender, winnerSender) < 0) {
+                    winner = candidate;
+                    winnerSender = sender;
+                    winnerTier = tier;
+                }
             }
         }
-        return null;
+        return winner;
+    }
+
+    /** 仅当胜出请求仍要求开火时返回它；瞄准请求仍由 {@link #getWinningFireCommand()} 单独用于修正。 */
+    @Nullable
+    private FireCommand getActiveFireCommand() {
+        FireCommand winner = getWinningFireCommand();
+        return winner != null && winner.firing() ? winner : null;
     }
 
     /**
-     * 将期望方向限制在以 locator 朝向为轴的锥角内。<br>
-     * 若期望方向与 locator 朝向的夹角 ≤ maxAngleDeg，则直接使用期望方向；<br>
-     * 否则将 locator 方向向期望方向旋转 maxAngleDeg 度。<br>
-     * <b>调用线程：</b>物理线程（fireSingle 内部调用）。
-     *
-     * @param forward      locator 前方单位向量（锥轴方向）
-     * @param preferred    期望方向（单位向量）
-     * @param maxAngleDeg  最大允许偏离角度（度）
-     * @return 修正后的发射方向（单位向量）
+     * 每个物理步选取胜出请求，在炮口局部空间限幅并推进角速度，再发布世界空间方向快照。
+     * 没有请求时以炮轴为目标，修正方向会按同一速度上限平顺回正。
      */
-    private static Vector3f clampToCone(Vector3f forward, Vector3f preferred, float maxAngleDeg) {
-        // 手算夹角：Vector3f 无 angleBetween 方法
-        float dot = forward.dot(preferred);
-        float angle = (float) Math.acos(Math.clamp(dot, -1.0f, 1.0f));
-        if (angle <= (float) Math.toRadians(maxAngleDeg)) return preferred;
-        // 将 forward 向 preferred 方向旋转 maxAngleDeg
-        // 使用 cross(..., null) 创建新实例，避免修改 forward
-        // normalize() 返回新实例（Vector3f 无 normalizeLocal 实例方法）
-        Vector3f axis = forward.cross(preferred, null).normalize();
-        // fromAngleNormalAxis: Quaternion 的正确方法名
-        Quaternion rot = new Quaternion().fromAngleNormalAxis((float) Math.toRadians(maxAngleDeg), axis);
-        return MyQuaternion.rotate(rot, forward, null);
+    private void updateAimCorrection() {
+        Transform muzzleTransform = getMuzzleWorldTransform();
+        Quaternion rotation = muzzleTransform.getRotation();
+        Vector3f desiredLocal = new Vector3f(0, 0, -1);
+        FireCommand request = getWinningFireCommand();
+        if (request != null) {
+            Vector3f muzzlePosition = muzzleTransform.getTranslation();
+            Vec3 target = request.aimPoint();
+            Vector3f desiredWorld = new Vector3f(
+                    (float) target.x - muzzlePosition.x,
+                    (float) target.y - muzzlePosition.y,
+                    (float) target.z - muzzlePosition.z);
+            if (desiredWorld.lengthSquared() > 1e-10f) {
+                desiredWorld = desiredWorld.normalize();
+                desiredLocal = MyQuaternion.rotate(rotation.inverse(), desiredWorld, null).normalize();
+            }
+        }
+
+        float dt = 1f / getPhysicsLevel().getTps();
+        Vector3f localDirection = aimCorrection.update(
+                desiredLocal,
+                attr.staticAttribute.getFireCorrectionMaxAngle(),
+                attr.staticAttribute.getFireCorrectionMaxAngularVelocity(),
+                dt);
+        Vector3f worldDirection = MyQuaternion.rotate(rotation, localDirection, null).normalize();
+        effectiveFireDirection = new Vec3(worldDirection.x, worldDirection.y, worldDirection.z);
     }
 
     // ——— 开火动画（仅客户端 onTick 中调用） ———
@@ -2787,7 +2853,7 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
     public RayHit findAimHit(double maxDistance) {
         if (!(maxDistance > 0)) return null;
         Vec3 from = getMuzzleWorldPosition();
-        Vec3 to = from.add(getMuzzleDirection().scale(maxDistance));
+        Vec3 to = from.add(getEffectiveFireDirection().scale(maxDistance));
         IPartAssembly assembly = getSubPart().part.assembly;
         for (RayHit hit : RayQueryContext.begin(getLevel(), null, from, to, null).withTerrain().hits()) {
             if (belongsTo(hit, assembly)) continue;
@@ -2810,23 +2876,18 @@ public class LauncherSubsystem extends ModularSubsystem implements IAmmoConsumer
 
     /**
      * 获取当前有效的发射方向（包含火控修正后的实际弹道方向）。<br>
-     * 若有活跃 FireCommand 指定了期望方向和修正角，则返回 clampToCone 修正后的方向；<br>
-     * 否则返回原始 locator 朝向。<br>
+     * 返回物理线程最近发布的角速度受限方向；首次物理更新前回退到 locator 朝向。<br>
      * <b>用途：</b>HUD 准星绘制，体现火控修正量对实际弹道的影响。<br>
      * <b>调用线程：</b>渲染线程。
      *
      * @return 世界空间单位方向向量
      */
     public Vec3 getEffectiveFireDirection() {
+        Vec3 snapshot = effectiveFireDirection;
+        if (snapshot != null) return snapshot;
         Transform tf = getMuzzleWorldTransform();
         Quaternion rot = tf.getRotation();
         Vector3f locatorForward = MyQuaternion.rotate(rot, new Vector3f(0, 0, -1), null).normalize();
-
-        FireCommand cmd = getActiveFireCommand();
-        if (cmd != null && cmd.direction() != null && cmd.correctionAngleDeg() > 0.001f) {
-            Vector3f corrected = clampToCone(locatorForward, cmd.direction(), cmd.correctionAngleDeg());
-            return new Vec3(corrected.x, corrected.y, corrected.z);
-        }
         return new Vec3(locatorForward.x, locatorForward.y, locatorForward.z);
     }
 

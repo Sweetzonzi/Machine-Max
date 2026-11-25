@@ -7,6 +7,7 @@
     "weapon.mg",
     "weapon.mg.mg34"
   ],
+  "fire_correction_max_angle": 1,
   "barrel": {
     "horizontal_accuracy_multiplier": 2,
     "vertical_accuracy_multiplier": 2

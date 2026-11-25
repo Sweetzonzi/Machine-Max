@@ -7,6 +7,7 @@
     "weapon.gun",
     "weapon.gun.kwk39"
   ],
+  "fire_correction_max_angle": 1,
   //(可选, 默认0)完整人力装填的基准秒数：本炮直接从弹药架取弹、由乘员全程装填，0 = 不支持该路径
   "human_reload_time": 5,
   "breech": {

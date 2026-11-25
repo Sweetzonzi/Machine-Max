@@ -43,14 +43,6 @@ public class WeaponControllerSubsystemStaticAttr extends BasicSubsystemStaticAtt
      * 弹种切换指令与开火指令共用这些频道，不会被当作开火。 */
     private final List<String> fireInputs;
 
-    /**
-     * 火控弹道修正角度（度）。<br>
-     * 0 = 严格沿 locator 方向发射（载具模式）；<br>
-     * > 0 = 允许发射方向向目标修正此角度（机娘等角色武器）。<br>
-     * 同时纳入 isAimedAt 判定：有效瞄准容差 = aimToleranceDeg + fireCorrectionAngleDeg。
-     */
-    private final float fireCorrectionAngleDeg;
-
     public static final MapCodec<WeaponControllerSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
             FIRE_MODE_CODEC.optionalFieldOf("fire_mode", FireMode.SALVO).forGetter(WeaponControllerSubsystemStaticAttr::getDefaultFireMode),
@@ -58,7 +50,6 @@ public class WeaponControllerSubsystemStaticAttr extends BasicSubsystemStaticAtt
             Codec.FLOAT.optionalFieldOf("aim_tolerance_deg", 3.0f).forGetter(WeaponControllerSubsystemStaticAttr::getAimToleranceDeg),
             Codec.STRING.listOf().optionalFieldOf("aim_inputs", List.of("crew_gunner_aim", "crew_commander_aim", "crew_any_aim")).forGetter(WeaponControllerSubsystemStaticAttr::getAimInputs),
             Codec.STRING.listOf().optionalFieldOf("fire_inputs", List.of("crew_gunner_fire", "crew_commander_fire", "crew_any_fire")).forGetter(WeaponControllerSubsystemStaticAttr::getFireInputs),
-            Codec.FLOAT.optionalFieldOf("fire_correction_angle_deg", 1f).forGetter(WeaponControllerSubsystemStaticAttr::getFireCorrectionAngleDeg),
             BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT).forGetter(BasicSubsystemStaticAttr::getSoundAttr)
     ).apply(instance, WeaponControllerSubsystemStaticAttr::new));
 
@@ -69,7 +60,6 @@ public class WeaponControllerSubsystemStaticAttr extends BasicSubsystemStaticAtt
             float aimToleranceDeg,
             List<String> aimInputs,
             List<String> fireInputs,
-            float fireCorrectionAngleDeg,
             BasicSoundAttr sounds) {
         super(basicAttr, sounds);
         this.defaultFireMode = defaultFireMode;
@@ -77,7 +67,6 @@ public class WeaponControllerSubsystemStaticAttr extends BasicSubsystemStaticAtt
         this.aimToleranceDeg = aimToleranceDeg;
         this.aimInputs = aimInputs;
         this.fireInputs = fireInputs;
-        this.fireCorrectionAngleDeg = fireCorrectionAngleDeg;
     }
 
     @Override

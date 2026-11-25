@@ -105,6 +105,10 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
      * 实际时长还要乘岗位倍率与乘员个人倍率（见装填计划 §2.2），换算由发射器在受理时做。
      */
     private final float humanReloadTime;
+    /** 出射方向相对炮轴允许偏离的最大角度（度）；0 表示不启用修正。 */
+    private final float fireCorrectionMaxAngle;
+    /** 修正方向允许变化的最大角速度（度/秒）。 */
+    private final float fireCorrectionMaxAngularVelocity;
     /** 发射器专属音效属性 */
     private final LauncherSoundAttr launcherSoundAttr;
 
@@ -126,6 +130,10 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
                     .forGetter(LauncherSubsystemStaticAttr::isSingleRoundLoading),
             Codec.FLOAT.optionalFieldOf("human_reload_time", 0f)
                     .forGetter(LauncherSubsystemStaticAttr::getHumanReloadTime),
+            Codec.FLOAT.optionalFieldOf("fire_correction_max_angle", 0f)
+                    .forGetter(LauncherSubsystemStaticAttr::getFireCorrectionMaxAngle),
+            Codec.FLOAT.optionalFieldOf("fire_correction_max_angular_velocity", 30f)
+                    .forGetter(LauncherSubsystemStaticAttr::getFireCorrectionMaxAngularVelocity),
             LauncherSoundAttr.CODEC.optionalFieldOf("sounds", LauncherSoundAttr.DEFAULT)
                     .forGetter(LauncherSubsystemStaticAttr::getLauncherSounds),
             BarrelModuleAttr.CODEC.codec().optionalFieldOf("barrel", BarrelModuleAttr.DEFAULT)
@@ -135,13 +143,15 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             CapacitorModuleAttr.CODEC.codec().optionalFieldOf("capacitor")
                     .forGetter(attr -> Optional.ofNullable(attr.getCapacitor()))
     ).apply(instance, LauncherSubsystemStaticAttr::new))
-            .validate(LauncherSubsystemStaticAttr::validateHumanReloadTime);
+            .validate(LauncherSubsystemStaticAttr::validate);
 
     public LauncherSubsystemStaticAttr(
             BasicAttr basicAttr,
             List<String> controlInputs,
             boolean singleRoundLoading,
             float humanReloadTime,
+            float fireCorrectionMaxAngle,
+            float fireCorrectionMaxAngularVelocity,
             LauncherSoundAttr sounds,
             BarrelModuleAttr barrel,
             BreechModuleAttr breech,
@@ -150,6 +160,8 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         this.controlInputs = controlInputs;
         this.singleRoundLoading = singleRoundLoading;
         this.humanReloadTime = humanReloadTime;
+        this.fireCorrectionMaxAngle = fireCorrectionMaxAngle;
+        this.fireCorrectionMaxAngularVelocity = fireCorrectionMaxAngularVelocity;
         this.launcherSoundAttr = sounds;
         this.barrel = barrel;
         this.breech = breech;
@@ -159,7 +171,7 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     /**
      * 边界校验：人工段只能是有限非负数。显式的 0 表示本型号不支持人力直取路径，负值与非有限值是解码错误。
      */
-    private static DataResult<LauncherSubsystemStaticAttr> validateHumanReloadTime(
+    private static DataResult<LauncherSubsystemStaticAttr> validate(
             LauncherSubsystemStaticAttr attr) {
         float human = attr.humanReloadTime;
         if (!Float.isFinite(human)) {
@@ -167,6 +179,14 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         }
         if (human < 0f) {
             return DataResult.error(() -> "human_reload_time 不得为负（零长度的人工段按未配置处理），实际为 " + human);
+        }
+        float correctionAngle = attr.fireCorrectionMaxAngle;
+        if (!Float.isFinite(correctionAngle) || correctionAngle < 0f || correctionAngle > 180f) {
+            return DataResult.error(() -> "fire_correction_max_angle 必须是 [0, 180] 内的有限数，实际为 " + correctionAngle);
+        }
+        float correctionSpeed = attr.fireCorrectionMaxAngularVelocity;
+        if (!Float.isFinite(correctionSpeed) || correctionSpeed < 0f) {
+            return DataResult.error(() -> "fire_correction_max_angular_velocity 必须是有限非负数，实际为 " + correctionSpeed);
         }
         return DataResult.success(attr);
     }

@@ -137,9 +137,13 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
      */
     private int rippleIndex = 0;
     /**
-     * 轮射模式下的 tick 计时器：{@code > 0} 时本模式只倒计时不下指令，到 0 才选下一根管。
+     * 轮射模式下的物理子步计时器：{@code > 0} 时持续更新瞄准点并维持当前轮的开火标记，
+     * 到 0 才选下一根管。
      */
     private int rippleTickCounter = 0;
+    /** 轮射当前持有扳机的发射器；间隔期间持续更新其目标点。 */
+    @Nullable
+    private LauncherSubsystem rippleFiringLauncher;
 
     /**
      * 插桩用：上一次记录的开火门状态。{@code 0} 无开火指令，{@code 1} 有指令且至少一根管已瞄准，
@@ -307,8 +311,10 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         if (!isActive() || isDestroyed() || target == null) {
             pushGuidanceTargets(null);
             releaseAllControl();
+            rippleFiringLauncher = null;
             return;
         }
+        int aimPriority = input == null ? 0 : input.priority;
         var staticAttr = attr.staticAttribute;
         float tolDeg = staticAttr.getAimToleranceDeg();
         driveAim(input == null ? new ViewInputSignal(target, Vec2.ZERO, AimTargetState.Mode.WORLD) : input, recorder);
@@ -335,16 +341,15 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
         }
         if (firing && !aimedLaunchers.isEmpty()) {
             switch (staticAttr.getDefaultFireMode()) {
-                case SALVO -> fireSalvo(aimedLaunchers, target);
-                case RIPPLE -> fireRipple(aimedLaunchers, target);
+                case SALVO -> fireSalvo(aimedLaunchers, target, aimPriority);
+                case RIPPLE -> fireRipple(aimedLaunchers, target, aimPriority);
             }
         } else {
-            // 无开火指令或无可开火发射器 → 释放开火权并重置轮射状态
-            for (Map.Entry<LauncherSubsystem, String> entry : launchers.entrySet()) {
-                sendSignalToTarget(entry.getValue(), entry.getKey(), EmptySignal.INSTANCE);
-            }
+            // 目标继续下发以供发射器渐进瞄准；仅撤销开火意图。
+            publishLauncherCommands(target, aimPriority, List.of());
             rippleTickCounter = 0;
             rippleIndex = 0;
+            rippleFiringLauncher = null;
         }
 
         // ④ 向受控发射器推送制导目标（瞄准点）——在飞制导弹据此持续修正
@@ -784,57 +789,57 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
 
     /**
      * 齐射：所有已瞄准的发射器同时开火。<br>
-     * 先停火所有发射器（释放上次控制权），再让已瞄准的同时开火。
+     * 每根发射器都会收到同一瞄准点；只有通过瞄准门的发射器收到开火标记。
      */
-    private void fireSalvo(List<LauncherSubsystem> aimedLaunchers, Vec3 targetPos) {
-        float correctionDeg = attr.staticAttribute.getFireCorrectionAngleDeg();
-        // 先停火所有发射器
-        for (Map.Entry<LauncherSubsystem, String> entry : launchers.entrySet()) {
-            sendSignalToTarget(entry.getValue(), entry.getKey(), EmptySignal.INSTANCE);
-        }
-        // 已瞄准的同时开火
-        for (LauncherSubsystem launcher : aimedLaunchers) {
-            String channel = launchers.get(launcher);
-            if (channel == null) continue;
-            sendSignalToTarget(channel, launcher,
-                    new LauncherSubsystem.FireCommand(computeFireDirection(launcher, targetPos), correctionDeg, true, operator));
-        }
+    private void fireSalvo(List<LauncherSubsystem> aimedLaunchers, Vec3 targetPos, int aimPriority) {
+        rippleFiringLauncher = null;
+        publishLauncherCommands(targetPos, aimPriority, aimedLaunchers);
     }
 
     /**
-     * 轮射：每一轮只让一根管开火，两次之间隔 {@code ripple_interval}。<br>
+     * 轮射：每一轮只让一根管持有开火标记，两次之间隔 {@code ripple_interval}。<br>
      * 每轮从轮转位置起沿序列找<b>第一根此刻能打的管</b>：装填中、膛内空或换装锁定的管只让位一轮，
-     * 这一次发火的机会给后面那根；一根都不能打时本步不下开火指令、轮转位置原地不动，下一物理步再试。
-     * 一根管的装填因此只影响它自己的那一轮。
+     * 这一次发火的机会给后面那根；一根都不能打时本步只更新瞄准点、不标记开火，轮转位置原地不动，
+     * 下一物理步再试。一根管的装填因此只影响它自己的那一轮。
      * <p>
      * 能打的判据是 {@link LauncherSubsystem#isFireReady()}——"膛内或可回充弹链有弹，且不在换装中"的
      * 主线程快照，与 HUD 的就绪口径一致。两端各跑一份同条件的选择，客户端的炮口特效因此仍落在本端
      * 选中的那根管上。
      * <p><b>调用线程：</b>物理线程（{@link #onPrePhysicsTick()}）。
      */
-    private void fireRipple(List<LauncherSubsystem> aimedLaunchers, Vec3 targetPos) {
+    private void fireRipple(List<LauncherSubsystem> aimedLaunchers, Vec3 targetPos, int aimPriority) {
         if (aimedLaunchers.isEmpty()) return;
         if (rippleTickCounter > 0) {
             rippleTickCounter--;
+            List<LauncherSubsystem> firingLaunchers = rippleFiringLauncher != null
+                    && aimedLaunchers.contains(rippleFiringLauncher)
+                    ? List.of(rippleFiringLauncher)
+                    : List.of();
+            publishLauncherCommands(targetPos, aimPriority, firingLaunchers);
             return;
         }
 
-        // 先释放上一轮的开火权：本模式一次只有一根管持有扳机
-        for (Map.Entry<LauncherSubsystem, String> entry : launchers.entrySet()) {
-            sendSignalToTarget(entry.getValue(), entry.getKey(), EmptySignal.INSTANCE);
-        }
-
         LauncherSubsystem launcher = nextReadyLauncher(aimedLaunchers);
-        if (launcher == null) return; // 全都在装填：不占轮转位置，下一物理步再看
-
-        String channel = launchers.get(launcher);
-        if (channel == null) return;
-        sendSignalToTarget(channel, launcher,
-                new LauncherSubsystem.FireCommand(computeFireDirection(launcher, targetPos),
-                        attr.staticAttribute.getFireCorrectionAngleDeg(), true, operator));
+        rippleFiringLauncher = launcher;
+        publishLauncherCommands(targetPos, aimPriority,
+                launcher == null ? List.of() : List.of(launcher));
+        if (launcher == null) return; // 全都在装填：不占轮转位置，下一物理步再试
         // 计数单位是物理子步（onPrePhysicsTick 每子步跑一次），而一游戏 tick 跑 tps/20 个子步：
         // 服务端 100 Hz、客户端 60 Hz，按"每 tick 一步"折算会让同一份 ripple_interval 差出 3～5 倍。
         rippleTickCounter = Math.round(attr.staticAttribute.getRippleInterval() * getPhysicsLevel().getTps());
+    }
+
+    /**
+     * 为每根发射器发布包含同一目标点的请求，并用 firing 集合区分持续开火与仅瞄准。
+     * 每个发射器都保留本控制器独立的信号槽，轮射切换时不会覆盖其他控制器的请求。
+     */
+    private void publishLauncherCommands(Vec3 target, int aimPriority,
+                                         Collection<LauncherSubsystem> firingLaunchers) {
+        for (Map.Entry<LauncherSubsystem, String> entry : launchers.entrySet()) {
+            sendSignalToTarget(entry.getValue(), entry.getKey(),
+                    new LauncherSubsystem.FireCommand(target, firingLaunchers.contains(entry.getKey()),
+                            operator, aimPriority));
+        }
     }
 
     /**
@@ -858,15 +863,6 @@ public class WeaponControllerSubsystem extends BasicSubsystem implements IHudHos
             return candidate;
         }
         return null;
-    }
-
-    /**
-     * 计算从 launcher 枪口指向 target 的单位方向向量（JME Vector3f）。
-     */
-    private Vector3f computeFireDirection(LauncherSubsystem launcher, Vec3 targetPos) {
-        Vec3 muzzlePos = launcher.getMuzzleWorldPosition();
-        Vec3 toTarget = targetPos.subtract(muzzlePos).normalize();
-        return new Vector3f((float) toTarget.x, (float) toTarget.y, (float) toTarget.z);
     }
 
     /**

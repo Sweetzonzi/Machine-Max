@@ -6,6 +6,7 @@
   "control_inputs": [
     "weapon.atgm"
   ],
+  "fire_correction_max_angle": 1,
   "barrel": {
     "recoil_multiplier": 0
   },

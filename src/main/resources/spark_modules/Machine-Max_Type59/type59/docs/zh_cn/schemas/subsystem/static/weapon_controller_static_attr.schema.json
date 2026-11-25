@@ -65,12 +65,6 @@
       "default": ["crew_gunner_fire", "crew_commander_fire", "crew_any_fire"],
       "description": "开火指令输入频道列表，任一频道里出现开火信号即视为开火指令。信号按语义判定：主/副武器开火指令、值为 true 的布尔、非 0 的数值算开火；弹种切换指令与开火指令共用这些频道，不会被当作开火。通常接收按键触发的开火信号。列表顺序即默认归属，口径同 aim_inputs。"
     },
-    "fire_correction_angle_deg": {
-      "type": "number",
-      "minimum": 0,
-      "default": 1.0,
-      "description": "火控弹道修正角度（度）。0 = 严格沿 locator 方向发射（载具模式）；大于 0 时允许发射方向朝目标修正至多该角度。判定是否瞄准时会计入有效瞄准容差。"
-    },
     "sounds": {
       "type": "object",
       "properties": {

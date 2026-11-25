@@ -4,7 +4,6 @@
   "basic_durability": 20,
   "fire_mode": "SALVO",
   "aim_tolerance_deg": 5,
-  "fire_correction_angle_deg": 0,
   "aim_inputs": [
     "crew_loader_aim_aa"
   ],

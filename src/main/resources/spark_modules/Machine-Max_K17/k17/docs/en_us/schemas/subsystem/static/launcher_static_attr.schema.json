@@ -52,6 +52,19 @@
       "default": 0,
       "description": "Base duration of the complete manual loading flow in seconds (standard crew): the model takes rounds straight from the ammo rack and crew do the whole load, so the mechanical stage is zero. Omit or write 0 to disable that path, in which case the weapon loads only through an autoloader; negative and non-finite values are decoding errors. When the delivery target declares a human stage of its own, it owns the crew and this field does not apply. The actual duration is multiplied by the post multiplier and the occupant's personal multiplier. A model that configures a human stage while no seat declares its crew channel waits for an operator forever and logs a warning at startup."
     },
+    "fire_correction_max_angle": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 180,
+      "default": 0,
+      "description": "Maximum angle between the corrected firing direction and the barrel axis, in degrees. Set to 0 to disable correction."
+    },
+    "fire_correction_max_angular_velocity": {
+      "type": "number",
+      "minimum": 0,
+      "default": 30,
+      "description": "Maximum angular velocity of the corrected firing direction, in degrees per second. Set to 0 to hold the current correction direction."
+    },
     "sounds": {
       "type": "object",
       "properties": {

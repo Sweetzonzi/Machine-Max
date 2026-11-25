@@ -4,6 +4,7 @@
   "single_round_loading": false,
   "basic_durability": 80,
   "control_inputs": ["weapon_control"],
+  "fire_correction_max_angle": 1,
   "breech": {
     "fire_rate": 600
   }

@@ -7,6 +7,7 @@
     "weapon.autocannon",
     "weapon.autocannon.2a90"
   ],
+  "fire_correction_max_angle": 1,
   "barrel": {
     "horizontal_accuracy_multiplier": 1,
     "vertical_accuracy_multiplier": 1,

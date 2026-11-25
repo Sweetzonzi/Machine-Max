@@ -52,6 +52,19 @@
       "default": 0,
       "description": "本型号人力路的基准秒数（标准人力）：本型号可以从弹药架直接取弹、由乘员全程装填，这条路的机械段为零。省略或写 0 表示没有人力路——本管的弹药由机械运输者（自动装弹机）经自己的喂弹线取得；负值与非有限值是解码错误。实际时长还要乘岗位倍率与该乘员的个人倍率。两处配置失误各自在启动时告警一次：配了人工段却没有任何座位声明本管的装填人员频道（这条流程等不到执行者），以及没有发现到任何弹药架（人力路因此不存在）。"
     },
+    "fire_correction_max_angle": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 180,
+      "default": 0,
+      "description": "出射方向相对炮轴允许偏离的最大角度，单位为度；设为 0 可关闭弹道修正。"
+    },
+    "fire_correction_max_angular_velocity": {
+      "type": "number",
+      "minimum": 0,
+      "default": 30,
+      "description": "修正方向允许变化的最大角速度，单位为度/秒；设为 0 时保持当前修正方向。"
+    },
     "sounds": {
       "type": "object",
       "properties": {

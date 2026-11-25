@@ -13,6 +13,5 @@
   "fire_inputs": [
     "crew_gunner_fire_atgm"
   ],
-  "fire_correction_angle_deg": 1,
   "$schema": "../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
 }
