@@ -1,0 +1,6 @@
+{
+  // 空控制器集：部件变体写 "controllers": "machine_max:empty" 表示「本变体不跑任何状态机」。
+  // 控制器集缺省按模型 id 绑定，同一个 geo 的其它零件因此会带上开合类状态机；
+  // 动画集为空（"animations": "machine_max:empty"）的零件若跟着绑定，会反复报「没有找到动画」。
+  "animation_controllers": {}
+}

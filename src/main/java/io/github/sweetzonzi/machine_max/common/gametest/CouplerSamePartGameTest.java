@@ -84,7 +84,7 @@ public final class CouplerSamePartGameTest {
                       "subsystems": {
                         "subsystem.machine_max.test_same_part_coupler": {
                           "type": "machine_max:coupler",
-                          "definition": "machine_max:santana_latch",
+                          "definition": "machine_max:door_latch",
                           "connector": "connector.machine_max.test_active"
                         }
                       }
@@ -232,7 +232,7 @@ public final class CouplerSamePartGameTest {
                 CouplerSubsystemStaticAttr.CouplerSoundAttr.DEFAULT);
         MMDynamicRes.STATIC_SUBSYSTEM_ATTRS.put(model, staticAttr);
         MMDynamicRes.SERVER_STATIC_SUBSYSTEM_ATTRS.put(model, staticAttr);
-        CouplerSubsystem coupler = new CouplerSubsystemAttr(model, ACTIVE)
+        CouplerSubsystem coupler = new CouplerSubsystemAttr(model, ACTIVE, java.util.Map.of())
                 .createSubsystem(hullSub, FORCE_COUPLER);
         hullSub.installSubsystem(FORCE_COUPLER, coupler);
 

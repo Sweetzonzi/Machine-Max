@@ -1,0 +1,72 @@
+{
+  "animation_controllers": {
+    "left_front_door": {
+      "initial_state": "default",
+      "states": {
+        "default": {
+          "animations": ["left_front_door_close"],
+          "transitions": [
+            {"open": "event.interact_left_front_door"}
+          ]
+        },
+        "open": {
+          "animations": ["left_front_door_open"],
+          "transitions": [
+            {"default": "event.interact_left_front_door"}
+          ]
+        }
+      }
+    },
+    "right_front_door": {
+      "initial_state": "default",
+      "states": {
+        "default": {
+          "animations": ["right_front_door_close"],
+          "transitions": [
+            {"open": "event.interact_right_front_door"}
+          ]
+        },
+        "open": {
+          "animations": ["right_front_door_open"],
+          "transitions": [
+            {"default": "event.interact_right_front_door"}
+          ]
+        }
+      }
+    },
+    "hood": {
+      "initial_state": "default",
+      "states": {
+        "default": {
+          "animations": ["hood_close"],
+          "transitions": [
+            {"open": "event.interact_hood"}
+          ]
+        },
+        "open": {
+          "animations": ["hood_open"],
+          "transitions": [
+            {"default": "event.interact_hood"}
+          ]
+        }
+      }
+    },
+    "trunk_door": {
+      "initial_state": "default",
+      "states": {
+        "default": {
+          "animations": ["trunk_door_close"],
+          "transitions": [
+            {"open": "event.interact_trunk_door"}
+          ]
+        },
+        "open": {
+          "animations": ["trunk_door_open"],
+          "transitions": [
+            {"default": "event.interact_trunk_door"}
+          ]
+        }
+      }
+    }
+  }
+}

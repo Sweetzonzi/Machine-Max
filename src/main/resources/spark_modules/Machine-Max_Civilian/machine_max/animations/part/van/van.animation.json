@@ -42,6 +42,105 @@
 					"rotation": [0, 0, "math.atan2(local.connector_offset('connector.machine_max.hull_right_back_wheel', 1)*16,12.263)"]
 				}
 			}
+		},
+		// 车门绕竖直轴开合，没有重力回正力矩，铰链只有阻尼没有弹簧：开、关片段都单次，
+		// 走完松手，静止由铰链限位与锁扣承担。
+		"left_front_door_open": {
+			"loop": false,
+			"animation_length": 1,
+			"bones": {
+				"LeftFrontDoorHinge": {
+					"rotation": [0, -80, 0]
+				}
+			}
+		},
+		"left_front_door_close": {
+			"loop": false,
+			"animation_length": 1,
+			"bones": {
+				"LeftFrontDoorHinge": {
+					"rotation": [0, 0, 0]
+				}
+			}
+		},
+		"right_front_door_open": {
+			"loop": false,
+			"animation_length": 1,
+			"bones": {
+				"RightFrontDoorHinge": {
+					"rotation": [0, 80, 0]
+				}
+			}
+		},
+		"right_front_door_close": {
+			"loop": false,
+			"animation_length": 1,
+			"bones": {
+				"RightFrontDoorHinge": {
+					"rotation": [0, 0, 0]
+				}
+			}
+		},
+		// 滑门是平动轴，连接点弹簧的平衡位在开位：开、关两段都写 loop: true，
+		// 开方向由驱动器按 max_speed 控速，关方向由驱动器持续顶住弹簧直到锁扣扣上。
+		// 开位取弹簧平衡位换算成模型位移（16 模型单位 = 1 m）：偏移 (x,y,z) 对应的关节平动值是
+		// (x/16, y/16, -z/16)，而弹簧平衡位写进 Bullet 时 x、z 各乘 -1，故开位为 (1.6, 0, 16)。
+		"left_back_door_open": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {
+				"LeftBackDoorHinge": {
+					"position": [1.6, 0, 16]
+				}
+			}
+		},
+		"left_back_door_close": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {
+				"LeftBackDoorHinge": {
+					"position": [0, 0, 0]
+				}
+			}
+		},
+		"right_back_door_open": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {
+				"RightBackDoorHinge": {
+					"position": [-1.6, 0, 16]
+				}
+			}
+		},
+		"right_back_door_close": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {
+				"RightBackDoorHinge": {
+					"position": [0, 0, 0]
+				}
+			}
+		},
+		// 后备箱盖的自重绕铰链的力矩大于弹簧托力，抬起后松手会自己落下：开片段循环，
+		// 由驱动器持续给目标角；关方向与重力一致，关片段单次，走完由锁扣承力。
+		// 模型 +X 旋转对应关节坐标系里的开位（−80°）。
+		"trunk_door_open": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {
+				"TrunkDoorHinge": {
+					"rotation": [80, 0, 0]
+				}
+			}
+		},
+		"trunk_door_close": {
+			"loop": false,
+			"animation_length": 1,
+			"bones": {
+				"TrunkDoorHinge": {
+					"rotation": [0, 0, 0]
+				}
+			}
 		}
 	}
 }

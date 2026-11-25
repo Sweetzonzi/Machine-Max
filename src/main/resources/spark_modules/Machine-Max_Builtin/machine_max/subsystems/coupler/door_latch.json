@@ -1,5 +1,6 @@
 {
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  // 车门 / 舱盖通用锁扣型号：各车的车门与盖板共用这一组窗口与耐久，需要不同锁止窗口的件另建型号。
   "type": "machine_max:coupler",
   "basic_durability": 20,
   "capture_distance": 0.04,

@@ -38,6 +38,19 @@
               "definition": "machine_max:senna_gtr_right_door_axis"
             }
           },
+          "subsystems": {
+            "subsystem.machine_max.left_front_door_driver": {
+              "type": "machine_max:joint_driver",
+              // 闭位弹簧力矩 1200 N·m，普通型号的 250 N·m 压不到底
+              "definition": "machine_max:rotation_joint_driver_heavy",
+              "connector": "connector.machine_max.left_door_axis"
+            },
+            "subsystem.machine_max.right_front_door_driver": {
+              "type": "machine_max:joint_driver",
+              "definition": "machine_max:rotation_joint_driver_heavy",
+              "connector": "connector.machine_max.right_door_axis"
+            }
+          },
           "projected_area": [4.6, 6.9, 5.5],
           "hydro_priority": 10,
           "hydrodynamics": {
@@ -75,11 +88,70 @@
             },
             "connector.machine_max.left_door_lock": {
               "locator": "hull_left_door_lock",
-              "definition": "machine_max:fixed_up"
+              "definition": "machine_max:fixed_rigid",
+              "signal_targets": {
+                "interact": [
+                  "subsystem.machine_max.left_front_door_coupler"
+                ]
+              },
+              "signal_translations": {
+                "interact_left_front_door": "interact"
+              },
+              "overwrite": {
+                // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+                "integrity": 3.5,
+                "impact_reduction": 0.5,
+                "impact_absorption": 0.6,
+                "direction": "yp",
+                "required_tags": [
+                  "machine_max:door",
+                  "machine_max:direction/left",
+                  "machine_max:series/senna_gtr"
+                ]
+              }
             },
             "connector.machine_max.right_door_lock": {
               "locator": "hull_right_door_lock",
-              "definition": "machine_max:fixed_up"
+              "definition": "machine_max:fixed_rigid",
+              "signal_targets": {
+                "interact": [
+                  "subsystem.machine_max.right_front_door_coupler"
+                ]
+              },
+              "signal_translations": {
+                "interact_right_front_door": "interact"
+              },
+              "overwrite": {
+                // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+                "integrity": 3.5,
+                "impact_reduction": 0.5,
+                "impact_absorption": 0.6,
+                "direction": "yp",
+                "required_tags": [
+                  "machine_max:door",
+                  "machine_max:direction/right",
+                  "machine_max:series/senna_gtr"
+                ]
+              }
+            }
+          },
+          "subsystems": {
+            "subsystem.machine_max.left_front_door_coupler": {
+              "type": "machine_max:coupler",
+              "definition": "machine_max:door_latch",
+              "connector": "connector.machine_max.left_door_lock",
+              // 扣合状态发到装配体的信号存储：左前快速上座区在底盘零件上，跨零件只能按频道名读
+              "state_outputs": {
+                "senna_left_door_latched": ["global"]
+              }
+            },
+            "subsystem.machine_max.right_front_door_coupler": {
+              "type": "machine_max:coupler",
+              "definition": "machine_max:door_latch",
+              "connector": "connector.machine_max.right_door_lock",
+              "state_outputs": {
+                "senna_right_door_latched": ["global"]
+              }
             }
           },
           "projected_area": [4.6, 6.9, 5.5],

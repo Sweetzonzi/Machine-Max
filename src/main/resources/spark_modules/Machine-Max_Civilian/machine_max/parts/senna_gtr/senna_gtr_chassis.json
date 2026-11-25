@@ -47,6 +47,7 @@
           },
           "interact.machine_max.left_seat_fast": { //键:交互判定区名称
             "bone": "LeftSeatOnBoard", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
+            "condition": "global.get('senna_left_door_latched') == 0", //门扣着时门板挡在座位前，只留门边拉手；没装门或已开门才允许隔着门框直接上座。锁扣在车尾零件上，这里跨零件按频道名读它的状态输出
             "signal_targets": {
               "right_seat_interact": ["subsystem.machine_max.driver_seat"]
             },
@@ -54,6 +55,7 @@
           },
           "interact.machine_max.right_seat_fast": { //键:交互判定区名称
             "bone": "RightSeatOnBoard", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
+            "condition": "global.get('senna_right_door_latched') == 0", //与左门同理，右门的锁扣状态由右前门锁扣子系统发布
             "signal_targets": {
               "right_seat_interact": ["subsystem.machine_max.copilot_seat"]
             },

@@ -1,0 +1,38 @@
+{
+  "animation_controllers": {
+    "left_front_door": {
+      "initial_state": "default",
+      "states": {
+        "default": {
+          "animations": ["left_front_door_close"],
+          "transitions": [
+            {"open": "event.interact_left_front_door"}
+          ]
+        },
+        "open": {
+          "animations": ["left_front_door_open"],
+          "transitions": [
+            {"default": "event.interact_left_front_door"}
+          ]
+        }
+      }
+    },
+    "right_front_door": {
+      "initial_state": "default",
+      "states": {
+        "default": {
+          "animations": ["right_front_door_close"],
+          "transitions": [
+            {"open": "event.interact_right_front_door"}
+          ]
+        },
+        "open": {
+          "animations": ["right_front_door_open"],
+          "transitions": [
+            {"default": "event.interact_right_front_door"}
+          ]
+        }
+      }
+    }
+  }
+}

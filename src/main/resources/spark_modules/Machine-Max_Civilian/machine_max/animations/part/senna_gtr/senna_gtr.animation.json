@@ -35,6 +35,45 @@
 					"rotation": [0, "local.connector_rotation('connector.machine_max.hull_right_front_wheel', 1)", 0]
 				}
 			}
+		},
+		// 两台铰链是倾斜轴。倾斜角挂在父骨骼 LeftDoorHingeTilt / RightDoorHingeTilt 的静止旋转上，
+		// 被动画的 LeftFrontDoorHinge / RightFrontDoorHinge 在父骨骼坐标系里静止旋转为零、只绕自身 Z 轴转，
+		// 所以关键帧就是绕铰链轴的干净 ±80°。左门 −80、右门 +80，与两侧连接点的开位限位同号。
+		"left_front_door_open": {
+			"loop": false,
+			"animation_length": 1,
+			"bones": {
+				"LeftFrontDoorHinge": {
+					"rotation": [0, 0, -80]
+				}
+			}
+		},
+		"left_front_door_close": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {
+				"LeftFrontDoorHinge": {
+					"rotation": [0, 0, 0]
+				}
+			}
+		},
+		"right_front_door_open": {
+			"loop": false,
+			"animation_length": 1,
+			"bones": {
+				"RightFrontDoorHinge": {
+					"rotation": [0, 0, 80]
+				}
+			}
+		},
+		"right_front_door_close": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {
+				"RightFrontDoorHinge": {
+					"rotation": [0, 0, 0]
+				}
+			}
 		}
 	}
 }

@@ -10,6 +10,7 @@
       "model": "machine_max:kluo.geo", //模型路径
       "textures": "machine_max:textures/part/kluo/kluo.png",
       "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
+      "controllers": "machine_max:empty", // 本件不自带开合状态机，显式清掉按模型 id 缺省绑定的控制器集
       "tags": ["machine_max:type/land", "machine_max:category/mobility", "machine_max:wheel", "machine_max:direction/left", "machine_max:series/kluo"], //(可选)部件标签列表
       "sub_parts": {//零件(子部件)列表
         "sub_part.machine_max.main": {//零件(子部件)名称
@@ -49,6 +50,7 @@
       "model": "machine_max:kluo.geo", //模型路径
       "textures": "machine_max:textures/part/kluo/kluo.png",
       "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
+      "controllers": "machine_max:empty", // 本件不自带开合状态机，显式清掉按模型 id 缺省绑定的控制器集
       "tags": ["machine_max:type/land", "machine_max:category/mobility", "machine_max:wheel", "machine_max:direction/right", "machine_max:series/kluo"], //(可选)部件标签列表
       "sub_parts": {//零件(子部件)列表
         "sub_part.machine_max.main": {//零件(子部件)名称

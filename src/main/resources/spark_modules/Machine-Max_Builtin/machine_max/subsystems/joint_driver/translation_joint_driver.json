@@ -1,0 +1,20 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:joint_driver",
+  // 平动轴只开 X 与 Z：滑动门先向外让 0.1 m、再沿车身滑行 1 m，两条轴的目标位移在同一段片段里一起给。
+  // 平动的单位是米与米每秒：max_force 是牛顿、max_speed 是米每秒。
+  // 力值取 1600 N：滑门的连接点弹簧刚度是 1000 N/m，关门要把它从 1 m 的平衡位压回 0，
+  // 起始约需 1000 N，400 N 会顶不到锁扣的锁止窗口。
+  // 速度按轴分：X 是外让的 0.1 m，取 0.12 m/s（0.83 s 让完）；Z 是沿车身的 1 m，取 0.80 m/s（1.25 s 滑完）。
+  // 关合末段靠伺服在目标位附近自行减速，把两端速度收进锁扣 0.25 m/s 的锁止窗口；两轴并发，一次开合约 1.25 s。
+  "axes": {
+    "X": {
+      "max_force": 1600,
+      "max_speed": 0.12
+    },
+    "Z": {
+      "max_force": 1600,
+      "max_speed": 0.80
+    }
+  }
+}

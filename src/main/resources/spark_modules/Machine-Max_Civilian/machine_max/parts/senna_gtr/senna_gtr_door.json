@@ -23,6 +23,19 @@
               "material": "machine_max:7035_aluminum_alloy"
             }
           },
+          "interact_boxes": {
+            "interact.machine_max.left_front_door": {
+              "bone": "interact_left_front_door",
+              "condition": "local.has_connector('connector.machine_max.axis')", // 未装上车体（铰链没有对端）的件不提示
+              "interact_mode": "accurate",
+              "signal_targets": {
+                "interact_left_front_door": [
+                  "connector.machine_max.lock",
+                  "global"
+                ]
+              }
+            }
+          },
           "connectors": {
             "connector.machine_max.axis": {
               "locator": "left_door_hull_axis",
@@ -30,7 +43,17 @@
             },
             "connector.machine_max.lock": {
               "locator": "left_door_hull_lock",
-              "definition": "machine_max:fixed_down"
+              "definition": "machine_max:fixed_down",
+              "overwrite": {
+                // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+                "integrity": 3.5,
+                "impact_reduction": 0.5,
+                "impact_absorption": 0.6,
+                "required_tags": [
+                  "machine_max:hull",
+                  "machine_max:series/senna_gtr"
+                ]
+              }
             }
           },
           "projected_area": [0.19, 1.04, 0.29],
@@ -60,6 +83,19 @@
               "material": "machine_max:7035_aluminum_alloy"
             }
           },
+          "interact_boxes": {
+            "interact.machine_max.right_front_door": {
+              "bone": "interact_right_front_door",
+              "condition": "local.has_connector('connector.machine_max.axis')", // 未装上车体（铰链没有对端）的件不提示
+              "interact_mode": "accurate",
+              "signal_targets": {
+                "interact_right_front_door": [
+                  "connector.machine_max.lock",
+                  "global"
+                ]
+              }
+            }
+          },
           "connectors": {
             "connector.machine_max.axis": {
               "locator": "right_door_hull_axis",
@@ -67,7 +103,17 @@
             },
             "connector.machine_max.lock": {
               "locator": "right_door_hull_lock",
-              "definition": "machine_max:fixed_down"
+              "definition": "machine_max:fixed_down",
+              "overwrite": {
+                // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+                "integrity": 3.5,
+                "impact_reduction": 0.5,
+                "impact_absorption": 0.6,
+                "required_tags": [
+                  "machine_max:hull",
+                  "machine_max:series/senna_gtr"
+                ]
+              }
             }
           },
           "projected_area": [0.19, 1.04, 0.29],

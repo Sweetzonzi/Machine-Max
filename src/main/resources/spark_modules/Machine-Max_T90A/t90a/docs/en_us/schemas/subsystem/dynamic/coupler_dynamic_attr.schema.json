@@ -16,6 +16,13 @@
     "connector": {
       "type": "string",
       "description": "Name of the active advanced connector; one advanced connector holds at most one coupler."
+    },
+    "state_outputs": {
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
+      "default": {},
+      "description": "Output channels for the latched state. Every channel carries a number each tick: 1 when latched, 0 when not (no part installed, already unlatched, or the latch was knocked off). The channel name is chosen by the author and scoped to the whole assembly's signal storage, so two couplers on the same assembly need two distinct names; a gating condition in another part reads it with global.get."
     }
   },
   "required": ["type", "definition", "connector"],
@@ -23,8 +30,16 @@
   "examples": [
     {
       "type": "machine_max:coupler",
-      "definition": "machine_max:santana_latch",
+      "definition": "machine_max:door_latch",
       "connector": "connector.machine_max.left_front_door_lock"
+    },
+    {
+      "type": "machine_max:coupler",
+      "definition": "machine_max:door_latch",
+      "connector": "connector.machine_max.left_door_lock",
+      "state_outputs": {
+        "senna_left_door_latched": ["global"]
+      }
     }
   ]
 }

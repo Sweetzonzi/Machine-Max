@@ -534,7 +534,7 @@
           },
           "subsystem.machine_max.left_front_door_coupler": {
             "type": "machine_max:coupler",
-            "definition": "machine_max:santana_latch",
+            "definition": "machine_max:door_latch",
             "connector": "connector.machine_max.left_front_door_lock"
           },
           "subsystem.machine_max.copilot_seat": {
@@ -558,7 +558,7 @@
           },
           "subsystem.machine_max.right_front_door_coupler": {
             "type": "machine_max:coupler",
-            "definition": "machine_max:santana_latch",
+            "definition": "machine_max:door_latch",
             "connector": "connector.machine_max.right_front_door_lock"
           },
           "subsystem.machine_max.left_back_seat": {
@@ -581,7 +581,7 @@
           },
           "subsystem.machine_max.left_back_door_coupler": {
             "type": "machine_max:coupler",
-            "definition": "machine_max:santana_latch",
+            "definition": "machine_max:door_latch",
             "connector": "connector.machine_max.left_back_door_lock"
           },
           "subsystem.machine_max.right_back_seat": {
@@ -604,7 +604,7 @@
           },
           "subsystem.machine_max.right_back_door_coupler": {
             "type": "machine_max:coupler",
-            "definition": "machine_max:santana_latch",
+            "definition": "machine_max:door_latch",
             "connector": "connector.machine_max.right_back_door_lock"
           },
           "subsystem.machine_max.hood_driver": {
@@ -614,7 +614,7 @@
           },
           "subsystem.machine_max.hood_coupler": {
             "type": "machine_max:coupler",
-            "definition": "machine_max:santana_latch",
+            "definition": "machine_max:door_latch",
             "connector": "connector.machine_max.hood_lock"
           },
           "subsystem.machine_max.trunk_door_driver": {
@@ -624,7 +624,7 @@
           },
           "subsystem.machine_max.trunk_door_coupler": {
             "type": "machine_max:coupler",
-            "definition": "machine_max:santana_latch",
+            "definition": "machine_max:door_latch",
             "connector": "connector.machine_max.trunk_door_lock"
           }
         },

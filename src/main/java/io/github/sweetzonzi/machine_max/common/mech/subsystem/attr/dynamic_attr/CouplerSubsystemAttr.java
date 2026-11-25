@@ -12,26 +12,38 @@ import lombok.Getter;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * 锁扣子系统安装属性：绑定本子零件上的一个高级连接点作为主动端。
  *
  * <p>被动端不在这里配置——运行时在同一载具内按几何发现最近的兼容简单端。</p>
+ *
+ * <p>{@code state_outputs} 声明扣合状态的输出频道：频道上每 tick 发一个数字，{@code 1} 为扣合、
+ * {@code 0} 为未扣合。数值型是与 {@code global.get}／{@code local.get} 的读取口径对齐的——
+ * 两者只认 {@code Number}，写成布尔会被静默读成 0。</p>
  */
 @Getter
 public class CouplerSubsystemAttr extends BasicSubsystemDynamicAttr {
 
     public final CouplerSubsystemStaticAttr staticAttribute;
     public final String connector;
+    /** 扣合状态输出：频道名 → 目标名列表。 */
+    public final Map<String, List<String>> stateOutputs;
 
     public static final MapCodec<CouplerSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName),
-            Codec.STRING.fieldOf("connector").forGetter(CouplerSubsystemAttr::getConnector)
+            Codec.STRING.fieldOf("connector").forGetter(CouplerSubsystemAttr::getConnector),
+            SIGNAL_TARGETS_CODEC.optionalFieldOf("state_outputs", Map.of())
+                    .forGetter(CouplerSubsystemAttr::getStateOutputs)
     ).apply(instance, CouplerSubsystemAttr::new));
 
-    public CouplerSubsystemAttr(ResourceLocation modelName, String connector) {
+    public CouplerSubsystemAttr(ResourceLocation modelName, String connector, Map<String, List<String>> stateOutputs) {
         super(modelName);
         this.staticAttribute = (CouplerSubsystemStaticAttr) getStaticAttr();
         this.connector = connector;
+        this.stateOutputs = stateOutputs;
     }
 
     @Override

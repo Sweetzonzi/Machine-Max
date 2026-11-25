@@ -46,6 +46,10 @@ import java.util.Map;
  * <p><b>{@code connected} 只是逻辑配对的镜像。</b>连接事实由双端 {@code attachedConnector} 互指、
  * 共享关节与 {@code partNet} 承担；标记用于跨端显示、音效与同件存档恢复提示。</p>
  *
+ * <p><b>扣合状态按需对外发布。</b>安装属性声明了 {@code state_outputs} 的锁扣每 tick 向这些频道发
+ * {@code 1}（扣合）或 {@code 0}（未扣合）。跨零件的读取只能走这条通路：连接点名与子系统名的作用域
+ * 都是 {@code Part}，锁扣在车尾、快速上座区在底盘时两者不在同一个 {@code Part} 里。</p>
+ *
  * <p><b>线程：</b>{@link #onTick()} 主线程；{@link #onPrePhysicsTick()} / {@link #onPostPhysicsTick()}
  * 物理线程；{@link #onInteract(LivingEntity)} 主线程（客户端回放不处理）。</p>
  */
@@ -157,6 +161,17 @@ public class CouplerSubsystem extends BasicSubsystem {
         return List.of(INTERACT_CHANNEL);
     }
 
+    /**
+     * 扣合状态的输出频道，由安装属性声明。
+     *
+     * <p>频道名由作者取，作用域是装配体的信号存储——跨零件的门控条件正是按这个名字读
+     * {@code global.get}。同一个装配体上并列的两把锁扣（左门、右门）因此要取两个不同的频道名。</p>
+     */
+    @Override
+    public Map<String, List<String>> getTargetNames() {
+        return attr.stateOutputs;
+    }
+
     // ==================================================================
     // 主线程：状态机与逻辑提交
     // ==================================================================
@@ -164,6 +179,12 @@ public class CouplerSubsystem extends BasicSubsystem {
     @Override
     public void onTick() {
         super.onTick();
+        // 扣合状态是状态型输出：结构变化清空信号槽后由本 tick 补回，不依赖扣合／解扣边沿。
+        // 两端都发——客户端的交互区门控与动画条件读的是同一份值，而 connected 是同步值。
+        float latched = isConnected() ? 1f : 0f;
+        for (String channel : attr.stateOutputs.keySet()) {
+            sendSignalToAllTargets(channel, latched);
+        }
         if (getLevel().isClientSide()) {
             tickClientSounds();
             return;

@@ -2374,15 +2374,35 @@
 					"parent": "Root",
 					"pivot": [0, 3.61015, 7.79758],
 					"locators": {
-						"hull_left_door_axis": {
-							"offset": [15.1533, 3.57335, 10.86475],
-							"rotation": [39.3953, -41.3265, -15.0263]
-						},
-						"hull_right_door_axis": {
-							"offset": [-15.1533, 3.57335, 10.86475],
-							"rotation": [39.3953, 41.3265, 15.0263]
-						},
 						"hull_chassis_front": [0, 3.68375, 1.66325]
+					}
+				},
+				{
+					"name": "LeftDoorHingeTilt",
+					"parent": "Connectors",
+					"pivot": [15.1533, 3.57335, 10.86475],
+					"rotation": [39.3953, -41.3265, -15.0263]
+				},
+				{
+					"name": "LeftFrontDoorHinge",
+					"parent": "LeftDoorHingeTilt",
+					"pivot": [15.1533, 3.57335, 10.86475],
+					"locators": {
+						"hull_left_door_axis": [15.1533, 3.57335, 10.86475]
+					}
+				},
+				{
+					"name": "RightDoorHingeTilt",
+					"parent": "Connectors",
+					"pivot": [-15.1533, 3.57335, 10.86475],
+					"rotation": [39.3953, 41.3265, 15.0263]
+				},
+				{
+					"name": "RightFrontDoorHinge",
+					"parent": "RightDoorHingeTilt",
+					"pivot": [-15.1533, 3.57335, 10.86475],
+					"locators": {
+						"hull_right_door_axis": [-15.1533, 3.57335, 10.86475]
 					}
 				},
 				{

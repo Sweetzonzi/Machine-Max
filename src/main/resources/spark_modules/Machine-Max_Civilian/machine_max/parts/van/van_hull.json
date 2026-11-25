@@ -65,60 +65,169 @@
           "subsystem.machine_max.right_tail_lamp": {
             "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
             "definition": "machine_max:default_glass"
+          },
+          "subsystem.machine_max.left_front_door_driver": {
+            "type": "machine_max:joint_driver",
+            "definition": "machine_max:rotation_joint_driver",
+            "connector": "connector.machine_max.left_front_door_axis"
+          },
+          "subsystem.machine_max.left_front_door_coupler": {
+            "type": "machine_max:coupler",
+            "definition": "machine_max:door_latch",
+            "connector": "connector.machine_max.left_front_door_lock"
+          },
+          "subsystem.machine_max.right_front_door_driver": {
+            "type": "machine_max:joint_driver",
+            "definition": "machine_max:rotation_joint_driver",
+            "connector": "connector.machine_max.right_front_door_axis"
+          },
+          "subsystem.machine_max.right_front_door_coupler": {
+            "type": "machine_max:coupler",
+            "definition": "machine_max:door_latch",
+            "connector": "connector.machine_max.right_front_door_lock"
+          },
+          "subsystem.machine_max.left_back_door_driver": {
+            "type": "machine_max:joint_driver",
+            "definition": "machine_max:translation_joint_driver",
+            "connector": "connector.machine_max.left_back_door_axis"
+          },
+          "subsystem.machine_max.left_back_door_coupler": {
+            "type": "machine_max:coupler",
+            "definition": "machine_max:door_latch",
+            "connector": "connector.machine_max.left_back_door_lock"
+          },
+          "subsystem.machine_max.right_back_door_driver": {
+            "type": "machine_max:joint_driver",
+            "definition": "machine_max:translation_joint_driver",
+            "connector": "connector.machine_max.right_back_door_axis"
+          },
+          "subsystem.machine_max.right_back_door_coupler": {
+            "type": "machine_max:coupler",
+            "definition": "machine_max:door_latch",
+            "connector": "connector.machine_max.right_back_door_lock"
+          },
+          "subsystem.machine_max.trunk_door_driver": {
+            "type": "machine_max:joint_driver",
+            // 盖板 33 kg，开位自重静力矩约 220 N·m，普通型号的 250 N·m 余量不足
+            "definition": "machine_max:rotation_joint_driver_heavy",
+            "connector": "connector.machine_max.trunk_door_axis"
+          },
+          "subsystem.machine_max.trunk_door_coupler": {
+            "type": "machine_max:coupler",
+            "definition": "machine_max:door_latch",
+            "connector": "connector.machine_max.trunk_door_lock"
           }
         },
         "connectors": {
           "connector.machine_max.right_front_door_axis": {
             "locator": "right_front_door_axis_hull",
             "definition": "machine_max:van_right_front_door_axis_hull",
-            "signal_targets": { //向各个座椅传输来自车门的互动信号
-              "interact_right_front_door": ["connector.machine_max.chassis_connection"]
+            "signal_targets": { // 点击右前门把手：解扣，并由状态机播放开合动画
+              "interact": ["subsystem.machine_max.right_front_door_coupler"]
+            },
+            "signal_translations": {
+              "interact_right_front_door": "interact"
             }
           },
           "connector.machine_max.right_front_door_lock": {
             "locator": "right_front_door_lock_hull",
-            "definition": "machine_max:fixed_up"
+            "definition": "machine_max:fixed_rigid",
+            "overwrite": {
+              // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+              "integrity": 3.5,
+              "impact_reduction": 0.5,
+              "impact_absorption": 0.6,
+              "direction": "yp",
+              "required_tags": ["machine_max:door", "machine_max:direction/right", "machine_max:direction/front", "machine_max:series/van"]
+            }
           },
           "connector.machine_max.left_front_door_axis": {
             "locator": "left_front_door_axis_hull",
             "definition": "machine_max:van_left_front_door_axis_hull",
-            "signal_targets": { //向各个座椅传输来自车门的互动信号
-              "interact_left_front_door": ["connector.machine_max.chassis_connection"]
+            "signal_targets": { // 点击左前门把手：解扣，并由状态机播放开合动画
+              "interact": ["subsystem.machine_max.left_front_door_coupler"]
+            },
+            "signal_translations": {
+              "interact_left_front_door": "interact"
             }
           },
           "connector.machine_max.left_front_door_lock": {
             "locator": "left_front_door_lock_hull",
-            "definition": "machine_max:fixed_up"
+            "definition": "machine_max:fixed_rigid",
+            "overwrite": {
+              // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+              "integrity": 3.5,
+              "impact_reduction": 0.5,
+              "impact_absorption": 0.6,
+              "direction": "yp",
+              "required_tags": ["machine_max:door", "machine_max:direction/left", "machine_max:direction/front", "machine_max:series/van"]
+            }
           },
           "connector.machine_max.right_back_door_axis": {
             "locator": "right_back_door_axis_hull",
             "definition": "machine_max:van_right_back_door_axis_hull",
-            "signal_targets": { //向各个座椅传输来自车门的互动信号
-              "interact_right_back_door": ["connector.machine_max.chassis_connection"]
+            "signal_targets": { // 点击右滑门把手：解扣，并由状态机播放开合动画
+              "interact": ["subsystem.machine_max.right_back_door_coupler"]
+            },
+            "signal_translations": {
+              "interact_right_back_door": "interact"
             }
           },
           "connector.machine_max.right_back_door_lock": {
             "locator": "right_back_door_lock_hull",
-            "definition": "machine_max:fixed_up"
+            "definition": "machine_max:fixed_rigid",
+            "overwrite": {
+              // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+              "integrity": 3.5,
+              "impact_reduction": 0.5,
+              "impact_absorption": 0.6,
+              "direction": "yp",
+              "required_tags": ["machine_max:door", "machine_max:direction/right", "machine_max:direction/back", "machine_max:series/van"]
+            }
           },
           "connector.machine_max.left_back_door_axis": {
             "locator": "left_back_door_axis_hull",
             "definition": "machine_max:van_left_back_door_axis_hull",
-            "signal_targets": { //向各个座椅传输来自车门的互动信号
-              "interact_left_back_door": ["connector.machine_max.chassis_connection"]
+            "signal_targets": { // 点击左滑门把手：解扣，并由状态机播放开合动画
+              "interact": ["subsystem.machine_max.left_back_door_coupler"]
+            },
+            "signal_translations": {
+              "interact_left_back_door": "interact"
             }
           },
           "connector.machine_max.left_back_door_lock": {
             "locator": "left_back_door_lock_hull",
-            "definition": "machine_max:fixed_up"
+            "definition": "machine_max:fixed_rigid",
+            "overwrite": {
+              // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+              "integrity": 3.5,
+              "impact_reduction": 0.5,
+              "impact_absorption": 0.6,
+              "direction": "yp",
+              "required_tags": ["machine_max:door", "machine_max:direction/left", "machine_max:direction/back", "machine_max:series/van"]
+            }
           },
           "connector.machine_max.trunk_door_axis": {
             "locator": "back_door_axis_hull",
-            "definition": "machine_max:van_back_door_axis_hull"
+            "definition": "machine_max:van_back_door_axis_hull",
+            "signal_targets": { // 点击后备箱盖把手：解扣，并由状态机播放开合动画
+              "interact": ["subsystem.machine_max.trunk_door_coupler"]
+            },
+            "signal_translations": {
+              "interact_trunk_door": "interact"
+            }
           },
           "connector.machine_max.trunk_door_lock": {
             "locator": "back_door_lock_hull",
-            "definition": "machine_max:fixed_up"
+            "definition": "machine_max:fixed_rigid",
+            "overwrite": {
+              // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+              "integrity": 3.5,
+              "impact_reduction": 0.5,
+              "impact_absorption": 0.6,
+              "direction": "yp",
+              "required_tags": ["machine_max:trunk", "machine_max:series/van"]
+            }
           },
           "connector.machine_max.chassis_connection": {
             "locator": "chassis_locator_hull",

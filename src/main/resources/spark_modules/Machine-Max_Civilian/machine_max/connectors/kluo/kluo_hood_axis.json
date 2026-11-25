@@ -10,9 +10,9 @@
     "xr": {
       "lower_limit": 0.0,
       "upper_limit": 80.0,
-      "equilibrium": 45.0,
-      "stiffness": 17.363193,
-      "damping": 1.736319
+      "equilibrium": 80.0,
+      "stiffness": 2.3,
+      "damping": 0.55
     }
   }
 }

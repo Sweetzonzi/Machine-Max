@@ -2131,17 +2131,52 @@
 					],
 					"locators": {
 						"chassis_locator_hull": [-0.5091, 20.3625, -8.0756],
-						"right_front_door_axis_hull": [-20.25, 22.7757, -24.6761],
 						"right_front_door_lock_hull": [-20, 24.40067, -3.92609],
-						"left_front_door_axis_hull": [20.25, 22.7757, -24.6761],
 						"left_front_door_lock_hull": [20, 24.40067, -3.92609],
-						"back_door_axis_hull": [0, 40.5125, 51.2494],
 						"back_door_lock_hull": [0.3841, 10.51251, 50.9494],
-						"right_back_door_axis_hull": [-20.25, 20.7757, 22.3239],
 						"right_back_door_lock_hull": [-20.25, 20.7757, -0.9261],
-						"left_back_door_axis_hull": [20.25, 20.7757, 22.3239],
 						"left_back_door_lock_hull": [20.25, 20.7757, -0.9261],
 						"hull_mass_center": [0, 16, 0]
+					}
+				},
+				{
+					"name": "LeftFrontDoorHinge",
+					"parent": "Hull",
+					"pivot": [20.25, 22.7757, -24.6761],
+					"locators": {
+						"left_front_door_axis_hull": [20.25, 22.7757, -24.6761]
+					}
+				},
+				{
+					"name": "RightFrontDoorHinge",
+					"parent": "Hull",
+					"pivot": [-20.25, 22.7757, -24.6761],
+					"locators": {
+						"right_front_door_axis_hull": [-20.25, 22.7757, -24.6761]
+					}
+				},
+				{
+					"name": "LeftBackDoorHinge",
+					"parent": "Hull",
+					"pivot": [20.25, 20.7757, 22.3239],
+					"locators": {
+						"left_back_door_axis_hull": [20.25, 20.7757, 22.3239]
+					}
+				},
+				{
+					"name": "RightBackDoorHinge",
+					"parent": "Hull",
+					"pivot": [-20.25, 20.7757, 22.3239],
+					"locators": {
+						"right_back_door_axis_hull": [-20.25, 20.7757, 22.3239]
+					}
+				},
+				{
+					"name": "TrunkDoorHinge",
+					"parent": "Hull",
+					"pivot": [0, 40.5125, 51.2494],
+					"locators": {
+						"back_door_axis_hull": [0, 40.5125, 51.2494]
 					}
 				},
 				{
@@ -6897,6 +6932,33 @@
 						{
 							"origin": [-16.3841, 26.51251, 49.9494],
 							"size": [1.7682, 11, 2],
+							"uv": {}
+						}
+					]
+				},
+				{
+					"name": "interact_trunk_door",
+					"parent": "collision_backdoor",
+					"pivot": [0, 40.51251, 51.2494],
+					"cubes": [
+						{
+							"origin": [13.6159, 25.51251, 48.9494],
+							"size": [3.7682, 13, 4],
+							"uv": {}
+						},
+						{
+							"origin": [-17.3841, 36.51251, 48.9494],
+							"size": [34.7682, 6, 4],
+							"uv": {}
+						},
+						{
+							"origin": [-17.3841, 9.51251, 48.9494],
+							"size": [34.7682, 18, 4],
+							"uv": {}
+						},
+						{
+							"origin": [-17.3841, 25.51251, 48.9494],
+							"size": [3.7682, 13, 4],
 							"uv": {}
 						}
 					]

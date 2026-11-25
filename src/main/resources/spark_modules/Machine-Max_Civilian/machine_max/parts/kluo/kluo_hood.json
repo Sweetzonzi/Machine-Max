@@ -22,6 +22,16 @@
             "material": "machine_max:structural_steel"
           }
         },
+        "interact_boxes": {//交互判定区列表
+          "interact.machine_max.hood": {//键:交互判定区名称
+            "bone": "interact_hood",//骨骼名称, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
+            "condition": "local.has_connector('connector.machine_max.axis')", // 未装上车体（铰链没有对端）的件不提示
+            "interact_mode": "accurate",//(可选, 默认fast)精确交互: 玩家瞄准交互区按下交互键才触发
+            "signal_targets": {//交互频道及目标: 铰链端口把同一次点击送去解扣, global 让车体状态机切动画
+              "interact_hood": ["connector.machine_max.axis", "global"]
+            }
+          }
+        },
         "connectors": {//子部件用于与其他零件连接的连接点列表
           "connector.machine_max.axis": {//连接点名称
             "locator": "hood_hull_axis",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
@@ -29,7 +39,14 @@
           },
           "connector.machine_max.lock": {//连接点名称
             "locator": "hood_hull_lock",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
-            "definition": "machine_max:fixed_down"
+            "definition": "machine_max:fixed_down",
+            "overwrite": {//两侧都弱化: 打盖板与打车体都能让锁扣先于铰链脱开
+              // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+              "integrity": 3.5,
+              "impact_reduction": 0.5,
+              "impact_absorption": 0.6,
+              "required_tags": ["machine_max:hull", "machine_max:series/kluo"]
+            }
           }
         },
         "projected_area": [0.48, 2.44, 1.17],

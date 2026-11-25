@@ -3,7 +3,7 @@
   "bundled_on": "2026-11-25",
   "schemas": {
     "repository": "https://github.com/Sweetzonzi/Machine-Max",
-    "revision": "cfd7a0f78b8f2a46cc1714de544eee2294de098e",
+    "revision": "199601125a190a086db2c952493bb6514b1cc330",
     "source_directory": "src/main/resources/spark_modules/Machine-Max_Builtin/machine_max/docs/zh_cn/schemas",
     "locale": "zh_cn",
     "selection": "all JSON files, relative paths preserved, LF line endings",
@@ -201,8 +201,8 @@
       },
       {
         "path": "references/schemas/subsystem/dynamic/coupler_dynamic_attr.schema.json",
-        "bytes": 1042,
-        "sha256": "1048e7903bf6fca844e27b5523099d59a3b1c703d561de505fd0125278338829"
+        "bytes": 1778,
+        "sha256": "6b641ec5bff687054cb433936d4c6b651dcb6bdfab2271f7d0b1a485ca7cb565"
       },
       {
         "path": "references/schemas/subsystem/dynamic/engine_dynamic_attr.schema.json",
@@ -346,8 +346,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/launcher_static_attr.schema.json",
-        "bytes": 13698,
-        "sha256": "ad1b356a947c3ce47ea269bf4c72097d431b413b4d0532910703a7bf0f44db6e"
+        "bytes": 14197,
+        "sha256": "0273320facbdd2604add3bff898a8b29f0a52dc8f617764c575e4391c4c234f1"
       },
       {
         "path": "references/schemas/subsystem/static/light_static_attr.schema.json",
@@ -411,8 +411,8 @@
       },
       {
         "path": "references/schemas/subsystem/static/weapon_controller_static_attr.schema.json",
-        "bytes": 5725,
-        "sha256": "9bc3810120a625a9284bd2e60b40a236356dac1da04edc12470df0c52cedca0d"
+        "bytes": 5388,
+        "sha256": "4b6dbe911ccd1ecf086df45bbaa1149cd7410c9dae79baa0ec86741b4823922e"
       },
       {
         "path": "references/schemas/subsystem/static/wheel_driver_static_attr.schema.json",

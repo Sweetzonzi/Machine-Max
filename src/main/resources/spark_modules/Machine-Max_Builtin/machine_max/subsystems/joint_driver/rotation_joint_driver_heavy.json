@@ -1,0 +1,25 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:joint_driver",
+  // 重载旋转驱动，挂在闭位静力矩超过 machine_max:rotation_joint_driver 的 250 N·m 的铰链上：
+  // Senna GTR 的两扇车门（弹簧 15 N·m/度、平衡位在开位，闭位弹簧力矩 1200 N·m）、
+  // Van 的后备箱盖（盖板 33 kg，开位的自重静力矩约 220 N·m，普通型号余量不足）。
+  // 三个轴一起给，理由与普通型号相同：铰链上真正转动的轴由连接点限位决定，另外两轴被限位钳住后只起锁轴作用。
+  // 力值取 1500 N·m：闭位留 300 N·m 净力矩把件压到底、让锁扣捕获。阻尼 3.5031 N·m·s/度 在 180 °/s 时约 630 N·m，
+  // 速度再高就由阻尼而不是马达限速；关合冲撞感明显时向下调，下限是 1200（闭位弹簧力矩本身）。
+  // 速度取 180 °/s：80° 行程约 0.44 s。
+  "axes": {
+    "XR": {
+      "max_force": 1500,
+      "max_speed": 180
+    },
+    "YR": {
+      "max_force": 1500,
+      "max_speed": 180
+    },
+    "ZR": {
+      "max_force": 1500,
+      "max_speed": 180
+    }
+  }
+}

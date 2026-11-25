@@ -50,7 +50,7 @@ public final class CouplerGameTest {
     /**
      * 预事件否决解扣时，双端引用、关节与图边都必须保持原样。
      *
-     * <p>旧入口先移图边再问 Connector，否决时留下「断开了但图边已删除」的分叉；本用例钉住
+     * <p>先移图边再问 Connector 的顺序在否决时留下「断开了但图边已删除」的分叉；本用例钉住
      * 「只有 Connector 判定成立才改图」。</p>
      */
     @GameTest(template = "part_foundation", batch = BATCH, timeoutTicks = 100)

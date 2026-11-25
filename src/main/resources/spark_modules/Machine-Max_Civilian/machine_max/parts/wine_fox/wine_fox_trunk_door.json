@@ -47,6 +47,16 @@
             "condition": "!local.subsystem_destroyed('subsystem.machine_max.right_tail_light')"
           }
         },
+        "interact_boxes": {//交互判定区列表
+          "interact.machine_max.trunk_door": {//键:交互判定区名称
+            "bone": "interact_trunk_door",//骨骼名称, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
+            "condition": "local.has_connector('connector.machine_max.axis')", // 未装上车体（铰链没有对端）的件不提示
+            "interact_mode": "accurate",//(可选, 默认fast)精确交互: 玩家瞄准交互区按下交互键才触发
+            "signal_targets": {//交互频道及目标: 铰链端口把同一次点击送去解扣, global 让车体状态机切动画
+              "interact_trunk_door": ["connector.machine_max.axis", "global"]
+            }
+          }
+        },
         "subsystems": {
           "subsystem.machine_max.glass": {
             "type": "machine_max:basic", //无功能子系统, 仅用于表示玻璃是否被摧毁
@@ -68,7 +78,14 @@
           },
           "connector.machine_max.lock": {//连接点名称
             "locator": "trunk_door_hull_lock",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
-            "definition": "machine_max:fixed_down"
+            "definition": "machine_max:fixed_down",//件侧锁扣保持 fixed_down（法线 yn），车体侧取 yp 与之配对
+            "overwrite": {//两侧都弱化: 打盖板与打车体都能让锁扣先于铰链脱开
+              // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+              "integrity": 3.5,
+              "impact_reduction": 0.5,
+              "impact_absorption": 0.6,
+              "required_tags": ["machine_max:hull", "machine_max:series/wine_fox"]
+            }
           }
         },
         "projected_area": [0.23, 0.35, 2.34],

@@ -339,6 +339,210 @@
           1.0
         ]
       }
+    },
+    {
+      "partUuidS": "828a1f05-e5de-48fc-953d-ad18dc0f66e7",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.lock",
+      "posRotS": {
+        "position": [
+          0.0020180657,
+          -0.5281444,
+          1.0101224
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "bd9e623d-15ca-44dd-86dd-e68de05b5e02",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_front_door_lock",
+      "posRotA": {
+        "position": [
+          -1.2211375,
+          0.15621126,
+          0.5375
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "990cdb6e-7fc3-4320-9b64-c7145e32effc",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.lock",
+      "posRotS": {
+        "position": [
+          -0.0020180705,
+          -0.52814436,
+          1.0101223
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "bd9e623d-15ca-44dd-86dd-e68de05b5e02",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_front_door_lock",
+      "posRotA": {
+        "position": [
+          1.2211375,
+          0.15621126,
+          0.5375
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "5000314e-776f-4585-a864-2eed40a95ed6",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.lock",
+      "posRotS": {
+        "position": [
+          -0.102066174,
+          -0.5043972,
+          0.6602146
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "bd9e623d-15ca-44dd-86dd-e68de05b5e02",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_back_door_lock",
+      "posRotA": {
+        "position": [
+          -1.2658376,
+          0.12503187,
+          1.81875
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "c25165c1-7edb-4b02-b0e5-eba08ef5a5fe",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.lock",
+      "posRotS": {
+        "position": [
+          0.102065876,
+          -0.5043975,
+          0.6602146
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "bd9e623d-15ca-44dd-86dd-e68de05b5e02",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_back_door_lock",
+      "posRotA": {
+        "position": [
+          1.2658376,
+          0.12503187,
+          1.81875
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "768a9803-c330-4901-85e7-fec5a12dbcbd",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.lock",
+      "posRotS": {
+        "position": [
+          0.0,
+          0.23632747,
+          -0.82708913
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "bd9e623d-15ca-44dd-86dd-e68de05b5e02",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.hood_lock",
+      "posRotA": {
+        "position": [
+          0.0,
+          0.784375,
+          -3.1875
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "e112ca3d-89d8-4b30-8fd3-00b0828c3dda",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.lock",
+      "posRotS": {
+        "position": [
+          0.0,
+          0.04065345,
+          0.47296393
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "bd9e623d-15ca-44dd-86dd-e68de05b5e02",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.trunk_door_lock",
+      "posRotA": {
+        "position": [
+          0.0,
+          0.765625,
+          3.5
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
     }
   ],
   "meta": {

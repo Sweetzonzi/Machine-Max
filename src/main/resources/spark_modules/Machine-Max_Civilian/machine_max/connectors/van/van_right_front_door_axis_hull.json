@@ -11,8 +11,8 @@
   "impact_multiplier": 1.0,
   "joint_attrs": {
     "yr": {
-      "lower_limit": -80.0,
-      "upper_limit": 0.0,
+      "lower_limit": 0.0,
+      "upper_limit": 80.0,
       "damping": 1.736319
     }
   }

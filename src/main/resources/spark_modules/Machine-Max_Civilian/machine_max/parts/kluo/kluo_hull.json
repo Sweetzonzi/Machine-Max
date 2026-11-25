@@ -118,6 +118,7 @@
           },
           "interact.machine_max.left_seat_fast": { //键:交互判定区名称
             "bone": "LeftSeatOnBoard", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
+            "condition": "!local.has_connector('connector.machine_max.left_door_lock')", //左门扣着时只留门边拉手，没装门或已开门才允许隔着门框直接上座。锁扣与交互区同在本零件，按连接点名读即可
             "signal_targets": {
               "right_seat_interact": ["subsystem.machine_max.driver_seat"] //将交互信号转发给后排座椅
             },
@@ -125,6 +126,7 @@
           },
           "interact.machine_max.right_seat_fast": { //键:交互判定区名称
             "bone": "RightSeatOnBoard", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
+            "condition": "!local.has_connector('connector.machine_max.right_door_lock')", //右门同理
             "signal_targets": {
               "right_seat_interact": ["subsystem.machine_max.copilot_seat"] //将交互信号转发给后排座椅
             },
@@ -278,6 +280,46 @@
           "subsystem.machine_max.right_fog_lamp": {
             "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
             "definition": "machine_max:default_glass"
+          },
+          "subsystem.machine_max.left_front_door_driver": {
+            "type": "machine_max:joint_driver", //车体动画集里的开合片段给出目标角，驱动器按铰链关节执行
+            "definition": "machine_max:rotation_joint_driver",
+            "connector": "connector.machine_max.left_door_axis"
+          },
+          "subsystem.machine_max.left_front_door_coupler": {
+            "type": "machine_max:coupler", //锁扣：解扣后件可自由摆动，关合到位再扣上
+            "definition": "machine_max:door_latch",
+            "connector": "connector.machine_max.left_door_lock"
+          },
+          "subsystem.machine_max.right_front_door_driver": {
+            "type": "machine_max:joint_driver", //车体动画集里的开合片段给出目标角，驱动器按铰链关节执行
+            "definition": "machine_max:rotation_joint_driver",
+            "connector": "connector.machine_max.right_door_axis"
+          },
+          "subsystem.machine_max.right_front_door_coupler": {
+            "type": "machine_max:coupler", //锁扣：解扣后件可自由摆动，关合到位再扣上
+            "definition": "machine_max:door_latch",
+            "connector": "connector.machine_max.right_door_lock"
+          },
+          "subsystem.machine_max.hood_driver": {
+            "type": "machine_max:joint_driver", //车体动画集里的开合片段给出目标角，驱动器按铰链关节执行
+            "definition": "machine_max:rotation_joint_driver",
+            "connector": "connector.machine_max.hood_axis"
+          },
+          "subsystem.machine_max.hood_coupler": {
+            "type": "machine_max:coupler", //锁扣：解扣后件可自由摆动，关合到位再扣上
+            "definition": "machine_max:door_latch",
+            "connector": "connector.machine_max.hood_lock"
+          },
+          "subsystem.machine_max.trunk_door_driver": {
+            "type": "machine_max:joint_driver", //车体动画集里的开合片段给出目标角，驱动器按铰链关节执行
+            "definition": "machine_max:rotation_joint_driver",
+            "connector": "connector.machine_max.trunk_door_axis"
+          },
+          "subsystem.machine_max.trunk_door_coupler": {
+            "type": "machine_max:coupler", //锁扣：解扣后件可自由摆动，关合到位再扣上
+            "definition": "machine_max:door_latch",
+            "connector": "connector.machine_max.trunk_door_lock"
           }
         },
         "connectors": {
@@ -323,35 +365,91 @@
           },
           "connector.machine_max.left_door_axis": {
             "locator": "hull_left_door_axis",
-            "definition": "machine_max:kluo_left_door_axis"
+            "definition": "machine_max:kluo_left_door_axis",
+            "signal_targets": { //车门交互区经门轴端口到达这里，转给车体上的锁扣
+              "interact": ["subsystem.machine_max.left_front_door_coupler"]
+            },
+            "signal_translations": {
+              "interact_left_front_door": "interact"
+            }
           },
           "connector.machine_max.left_door_lock": {
             "locator": "hull_left_door_lock",
-            "definition": "machine_max:fixed_up"
+            "definition": "machine_max:fixed_rigid",
+            "overwrite": {
+              // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+              "integrity": 3.5,
+              "impact_reduction": 0.5,
+              "impact_absorption": 0.6,
+              "direction": "yp", //件侧锁扣是 fixed_down（法线 yn），车体侧取反向
+              "required_tags": ["machine_max:door", "machine_max:direction/left", "machine_max:series/kluo"]
+            }
           },
           "connector.machine_max.right_door_axis": {
             "locator": "hull_right_door_axis",
-            "definition": "machine_max:kluo_right_door_axis"
+            "definition": "machine_max:kluo_right_door_axis",
+            "signal_targets": { //车门交互区经门轴端口到达这里，转给车体上的锁扣
+              "interact": ["subsystem.machine_max.right_front_door_coupler"]
+            },
+            "signal_translations": {
+              "interact_right_front_door": "interact"
+            }
           },
           "connector.machine_max.right_door_lock": {
             "locator": "hull_right_door_lock",
-            "definition": "machine_max:fixed_up"
+            "definition": "machine_max:fixed_rigid",
+            "overwrite": {
+              // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+              "integrity": 3.5,
+              "impact_reduction": 0.5,
+              "impact_absorption": 0.6,
+              "direction": "yp", //件侧锁扣是 fixed_down（法线 yn），车体侧取反向
+              "required_tags": ["machine_max:door", "machine_max:direction/right", "machine_max:series/kluo"]
+            }
           },
           "connector.machine_max.trunk_door_axis": {
             "locator": "hull_trunk_door_axis",
-            "definition": "machine_max:kluo_trunk_door_axis"
+            "definition": "machine_max:kluo_trunk_door_axis",
+            "signal_targets": { //后备箱盖交互区经铰链端口到达这里，转给车体上的锁扣
+              "interact": ["subsystem.machine_max.trunk_door_coupler"]
+            },
+            "signal_translations": {
+              "interact_trunk_door": "interact"
+            }
           },
           "connector.machine_max.trunk_door_lock": {
             "locator": "hull_trunk_door_lock",
-            "definition": "machine_max:fixed_up"
+            "definition": "machine_max:fixed_rigid",
+            "overwrite": {
+              // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+              "integrity": 3.5,
+              "impact_reduction": 0.5,
+              "impact_absorption": 0.6,
+              "direction": "yp", //件侧锁扣是 fixed_down（法线 yn），车体侧取反向
+              "required_tags": ["machine_max:trunk", "machine_max:series/kluo"]
+            }
           },
           "connector.machine_max.hood_axis": {
             "locator": "hull_hood_axis",
-            "definition": "machine_max:kluo_hood_axis"
+            "definition": "machine_max:kluo_hood_axis",
+            "signal_targets": { //引擎盖交互区经铰链端口到达这里，转给车体上的锁扣
+              "interact": ["subsystem.machine_max.hood_coupler"]
+            },
+            "signal_translations": {
+              "interact_hood": "interact"
+            }
           },
           "connector.machine_max.hood_lock": {
             "locator": "hull_hood_lock",
-            "definition": "machine_max:fixed_up"
+            "definition": "machine_max:fixed_rigid",
+            "overwrite": {
+              // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
+              "integrity": 3.5,
+              "impact_reduction": 0.5,
+              "impact_absorption": 0.6,
+              "direction": "yp", //件侧锁扣是 fixed_down（法线 yn），车体侧取反向
+              "required_tags": ["machine_max:hood", "machine_max:series/kluo"]
+            }
           },
           "connector.machine_max.top_left_front": {
             "locator": "hull_top_left_front",

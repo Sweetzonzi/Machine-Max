@@ -11,11 +11,12 @@
   "impact_multiplier": 1.0,
   "joint_attrs": {
     "xr": {
-      "lower_limit": 80.0,
+      // 关节坐标系里的开位是 −80°、闭位 0°：驱动目标由开片段的 +80° 取反得到，弹簧平衡位与限位同号。
+      "lower_limit": -80.0,
       "upper_limit": 0.0,
-      "equilibrium": 45.0,
-      "stiffness": 17.363193,
-      "damping": 1.736319
+      "equilibrium": -80.0,
+      "stiffness": 1.4,
+      "damping": 0.22
     }
   }
 }

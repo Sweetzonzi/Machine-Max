@@ -16,6 +16,13 @@
     "connector": {
       "type": "string",
       "description": "主动高级连接点名称；一个高级连接点最多挂一个锁扣。"
+    },
+    "state_outputs": {
+      "allOf": [
+        { "$ref": "../base/signal_targets.json" }
+      ],
+      "default": {},
+      "description": "扣合状态的输出频道及目标。每个频道每 tick 发一个数字：1 为扣合，0 为未扣合（未装件、已解扣或锁扣被打脱）。频道名由作者取、作用域是整个装配体的信号存储，因此同一装配体上并列的两把锁扣要取两个不同的名字；跨零件的门控条件按这个名字读 global.get。"
     }
   },
   "required": ["type", "definition", "connector"],
@@ -23,8 +30,16 @@
   "examples": [
     {
       "type": "machine_max:coupler",
-      "definition": "machine_max:santana_latch",
+      "definition": "machine_max:door_latch",
       "connector": "connector.machine_max.left_front_door_lock"
+    },
+    {
+      "type": "machine_max:coupler",
+      "definition": "machine_max:door_latch",
+      "connector": "connector.machine_max.left_door_lock",
+      "state_outputs": {
+        "senna_left_door_latched": ["global"]
+      }
     }
   ]
 }

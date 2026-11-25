@@ -4631,19 +4631,12 @@
 						"hull_back_bumper_right": [-16, 6.75, 30],
 						"hull_front_bumper_left": [16, 6.75, -31],
 						"hull_front_bumper_right": [-16, 6.75, -31],
-						"hull_trunk_door_axis": {
-							"offset": [0, 31.5, 23.5],
-							"rotation": [15, 0, 0]
-						},
 						"hull_trunk_door_lock": {
 							"offset": [0, 14.11334, 28.15874],
 							"rotation": [15, 0, 0]
 						},
 						"hull_right_door_lock": [-16.75, 19, 6.0264],
-						"hull_right_door_axis": [-16.75, 19, -10.9736],
-						"hull_left_door_axis": [16.75, 19, -10.9736],
 						"hull_left_door_lock": [16.75, 19, 6.0264],
-						"hull_hood_axis": [0, 20.5, -14],
 						"hull_hood_lock": [0, 15, -32],
 						"left_front_wheel": [15.25, 7, -21],
 						"right_front_wheel": [-15.25, 7, -21],
@@ -4655,6 +4648,41 @@
 						"hull_top_right_front": [-14, 33, 9.5],
 						"hull_front_light_right": [-6.5, 8.75, -34.5],
 						"hull_front_light_left": [6.5, 8.75, -34.5]
+					}
+				},
+				{
+					"name": "LeftFrontDoorHinge",
+					"parent": "HullConnector",
+					"pivot": [16.75, 19, -10.9736],
+					"locators": {
+						"hull_left_door_axis": [16.75, 19, -10.9736]
+					}
+				},
+				{
+					"name": "RightFrontDoorHinge",
+					"parent": "HullConnector",
+					"pivot": [-16.75, 19, -10.9736],
+					"locators": {
+						"hull_right_door_axis": [-16.75, 19, -10.9736]
+					}
+				},
+				{
+					"name": "HoodHinge",
+					"parent": "HullConnector",
+					"pivot": [0, 20.5, -14],
+					"locators": {
+						"hull_hood_axis": [0, 20.5, -14]
+					}
+				},
+				{
+					"name": "TrunkHinge",
+					"parent": "HullConnector",
+					"pivot": [0, 31.5, 23.5],
+					"locators": {
+						"hull_trunk_door_axis": {
+							"offset": [0, 31.5, 23.5],
+							"rotation": [15, 0, 0]
+						}
 					}
 				},
 				{
@@ -4875,6 +4903,32 @@
 					]
 				},
 				{
+					"name": "interact_right_front_door",
+					"parent": "RightDoorHitBox",
+					"pivot": [-16.75, 19, 6.0264],
+					"cubes": [
+						{
+							"origin": [-19, 6, -12],
+							"size": [5, 15, 19],
+							"uv": {}
+						},
+						{
+							"origin": [-17.75, 18.5, -11.5],
+							"size": [3, 4, 19],
+							"pivot": [-16.75, 19.5, 7.5],
+							"rotation": [0, 0, 7.5],
+							"uv": {}
+						},
+						{
+							"origin": [-18, 18.5, -12.7],
+							"size": [3.25, 16, 3.2],
+							"pivot": [-16, 19.5, -11.5],
+							"rotation": [-20, 0, 7.5],
+							"uv": {}
+						}
+					]
+				},
+				{
 					"name": "RightDoorMirror",
 					"parent": "RightFrontDoor",
 					"pivot": [-19, 18, -11.25],
@@ -5013,6 +5067,32 @@
 						{
 							"origin": [15.75, 19.5, -11.7],
 							"size": [1.25, 14, 1.2],
+							"pivot": [16, 19.5, -11.5],
+							"rotation": [-20, 0, -7.5],
+							"uv": {}
+						}
+					]
+				},
+				{
+					"name": "interact_left_front_door",
+					"parent": "LeftDoorHitBox",
+					"pivot": [16.75, 19, 6.0264],
+					"cubes": [
+						{
+							"origin": [14, 6, -12],
+							"size": [5, 15, 19],
+							"uv": {}
+						},
+						{
+							"origin": [14.75, 18.5, -11.5],
+							"size": [3, 4, 19],
+							"pivot": [16.75, 19.5, 7.5],
+							"rotation": [0, 0, -7.5],
+							"uv": {}
+						},
+						{
+							"origin": [14.75, 18.5, -12.7],
+							"size": [3.25, 16, 3.2],
 							"pivot": [16, 19.5, -11.5],
 							"rotation": [-20, 0, -7.5],
 							"uv": {}
@@ -6062,6 +6142,39 @@
 						{
 							"origin": [-9, 19, -23],
 							"size": [18, 2, 9],
+							"uv": {}
+						}
+					]
+				},
+				{
+					"name": "interact_hood",
+					"parent": "HoodHitBox",
+					"pivot": [0, 20.5, -14],
+					"cubes": [
+						{
+							"origin": [-10, 9.07689, -29.91378],
+							"size": [20, 4, 3.78622],
+							"pivot": [0, 10.07689, -32.21378],
+							"rotation": [55, 0, 0],
+							"uv": {}
+						},
+						{
+							"origin": [-10, 9.07689, -28.12756],
+							"size": [20, 4, 3.91378],
+							"pivot": [0, 10.07689, -32.21378],
+							"rotation": [55, 0, 0],
+							"uv": {}
+						},
+						{
+							"origin": [-10, 14.72606, -29.97102],
+							"size": [20, 4, 10],
+							"pivot": [0, 15.72606, -27.97102],
+							"rotation": [30, 0, 0],
+							"uv": {}
+						},
+						{
+							"origin": [-10, 18, -24],
+							"size": [20, 4, 11],
 							"uv": {}
 						}
 					]
@@ -7273,6 +7386,35 @@
 						{
 							"origin": [-14.89, 14.55783, 25.08832],
 							"size": [29.79, 6.20145, 4.48474],
+							"inflate": 0.005,
+							"pivot": [15.005, 20.76428, 29.57806],
+							"rotation": [10, 0, 0],
+							"uv": {}
+						}
+					]
+				},
+				{
+					"name": "interact_trunk_door",
+					"parent": "TrunkHitBox",
+					"pivot": [0, 31.5, 23.5],
+					"cubes": [
+						{
+							"origin": [-14.42409, 20.88364, 21.6484],
+							"size": [3, 16, 4],
+							"pivot": [30.01, 28.55783, 56.64087],
+							"rotation": [15, 0, 7.5],
+							"uv": {}
+						},
+						{
+							"origin": [11.93757, 28.45088, 23.67604],
+							"size": [3, 16, 4],
+							"pivot": [30.01, 28.55783, 56.64087],
+							"rotation": [15, 0, -7.5],
+							"uv": {}
+						},
+						{
+							"origin": [-15.89, 13.55783, 24.08832],
+							"size": [31.79, 8.20145, 6.48474],
 							"inflate": 0.005,
 							"pivot": [15.005, 20.76428, 29.57806],
 							"rotation": [10, 0, 0],

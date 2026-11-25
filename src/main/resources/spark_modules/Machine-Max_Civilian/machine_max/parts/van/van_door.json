@@ -34,10 +34,11 @@
           "interact_boxes": {//交互判定区列表
             "interact.machine_max.left_front_door": {//键:交互判定区名称
               "bone": "interact_left_door", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
+              "condition": "local.has_connector('connector.machine_max.axis')", // 未装上车体（铰链没有对端）的件不提示
               "signal_targets": {
-                "interact_left_front_door": ["connector.machine_max.axis"]//将交互信号转发给驾驶座
+                "interact_left_front_door": ["connector.machine_max.axis", "global"] //解扣走连接点, global 交给装配体广播给车体上的开合状态机
               },
-              "interact_mode": "fast"//(可选, 默认fast)交互模式, fast为玩家碰撞箱与交互区碰撞时按下交互键触发, accurate为玩家瞄准交互区按下交互键触发
+              "interact_mode": "accurate"//瞄准交互区按下交互键才触发; 门板贴身触发会与上车的座位抢同一次按键, 所以不用 fast
             }
           },
           "subsystems": {
@@ -53,7 +54,13 @@
             },
             "connector.machine_max.lock": {//连接点名称
               "locator": "left_front_door_lock",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
-              "definition": "machine_max:fixed_down"
+              "definition": "machine_max:fixed_down",
+              "overwrite": {//件侧锁扣同步弱化, 打门板与打车体都会让锁扣先于铰链脱开
+                "integrity": 3.5,
+                "impact_reduction": 0.5,
+                "impact_absorption": 0.6,
+                "required_tags": ["machine_max:hull", "machine_max:series/van"]
+              }
             }
           }
         }
@@ -87,10 +94,11 @@
           "interact_boxes": {//交互判定区列表
             "interact.machine_max.right_front_door": {//键:交互判定区名称
               "bone": "interact_right_door", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
+              "condition": "local.has_connector('connector.machine_max.axis')", // 未装上车体（铰链没有对端）的件不提示
               "signal_targets": {
-                "interact_right_front_door": ["connector.machine_max.axis"]//将交互信号转发给驾驶座
+                "interact_right_front_door": ["connector.machine_max.axis", "global"] //解扣走连接点, global 交给装配体广播给车体上的开合状态机
               },
-              "interact_mode": "fast"//(可选, 默认fast)交互模式, fast为玩家碰撞箱与交互区碰撞时按下交互键触发, accurate为玩家瞄准交互区按下交互键触发
+              "interact_mode": "accurate"//瞄准交互区按下交互键才触发; 门板贴身触发会与上车的座位抢同一次按键, 所以不用 fast
             }
           },
           "subsystems": {
@@ -106,7 +114,13 @@
             },
             "connector.machine_max.lock": {//连接点名称
               "locator": "right_front_door_lock",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
-              "definition": "machine_max:fixed_down"
+              "definition": "machine_max:fixed_down",
+              "overwrite": {//件侧锁扣同步弱化, 打门板与打车体都会让锁扣先于铰链脱开
+                "integrity": 3.5,
+                "impact_reduction": 0.5,
+                "impact_absorption": 0.6,
+                "required_tags": ["machine_max:hull", "machine_max:series/van"]
+              }
             }
           }
         }
