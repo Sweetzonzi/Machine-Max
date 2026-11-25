@@ -2,9 +2,9 @@
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
   "type": "machine_max:gearbox",
   "basic_durability": 40,
-  "final_ratio": 4.941454,
-  "ratios": [-4.0, 4.0, 2.8, 1.9, 1.25, 0.82],
-  "switch_time": 0.2,
+  "final_ratio": 6.9,
+  "ratios": [-4.2, 4.2, 3.3, 2.2, 1.5, 0.95],
+  "switch_time": 0.1,
   "sounds": {
     "fmod": {
       "bank": "machine_max:basic_vehicle_sounds",
