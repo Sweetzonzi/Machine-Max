@@ -63,7 +63,7 @@
           },
           //车门区在车体两侧，走 fast 接触判定；舱内的座位与货箱走 accurate 射线判定，
           //两者体积不重叠，所以贴着车门时选这里，坐进舱内时选座位那一块。
-          "interact.machine_max.left_door": {
+          "interact.machine_max.board_left_seat": {
             "bone": "LeftDoorInteract",
             "signal_targets": {
               //同件具名直连：座位与交互区同属车架，不需要经连接点转译
@@ -71,7 +71,7 @@
             },
             "interact_mode": "fast"
           },
-          "interact.machine_max.right_door": {
+          "interact.machine_max.board_right_seat": {
             "bone": "RightDoorInteract",
             "signal_targets": {
               "interact": ["subsystem.machine_max.copilot_seat"]

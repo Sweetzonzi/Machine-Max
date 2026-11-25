@@ -23,7 +23,7 @@
           }
         },
         "interact_boxes": {
-          "interact.machine_max.seat": {
+          "interact.machine_max.board_seat": {
             "bone": "SeatInteract",
             "signal_targets": {
               "interact": ["subsystem.machine_max.driver_seat"] //将交互信号转发给驾驶座

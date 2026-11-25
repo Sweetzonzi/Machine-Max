@@ -122,7 +122,7 @@ public final class InteractBoxGameTest {
                     seatPart);
             vehicle.onAddToLevel();
 
-            InteractBox box = findBox(helper, hull, "interact.machine_max.left_front_door");
+            InteractBox box = findBox(helper, hull, "interact.machine_max.board_left_front_seat");
             Map<String, ISignalReceiver> firstHop = box.getTargets().get("interact_left_front_door");
             helper.assertTrue(firstHop != null && firstHop.size() == 1,
                     "首跳表应只有车壳自己的连接点，实际 " + firstHop);

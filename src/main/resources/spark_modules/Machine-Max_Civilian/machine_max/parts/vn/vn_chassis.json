@@ -23,7 +23,7 @@
           }
         },
         "interact_boxes": {
-          "interact.machine_max.seat": { //键:交互判定区名称
+          "interact.machine_max.board_seat": { //键:交互判定区名称
             "bone": "Interact", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
             "signal_targets": {
               "seat_interact": ["subsystem.machine_max.driver_seat"] //将交互信号转发给驾驶座

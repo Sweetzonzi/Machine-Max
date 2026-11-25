@@ -39,7 +39,7 @@ public final class CouplerStateOutputGameTest {
     private static final String DOOR_LOCK = "connector.machine_max.lock";
     private static final String COUPLER = "subsystem.machine_max.left_front_door_coupler";
     private static final String LATCH_CHANNEL = "senna_left_door_latched";
-    private static final String FAST_BOX = "interact.machine_max.left_seat_fast";
+    private static final String FAST_BOX = "interact.machine_max.board_left_seat";
 
     private CouplerStateOutputGameTest() {
     }
