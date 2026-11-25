@@ -52,5 +52,7 @@
   "dashboard.type59.reverse": "REV",
   "dashboard.type59.high_rpm": "RPM HI",
   "dashboard.type59.fuel_quantity": "FUEL LEVEL",
-  "dashboard.type59.attitude": "TANK POSE"
+  "dashboard.type59.attitude": "TANK POSE",
+  "type59.research.type59_hull": "Type 59 Hull",
+  "type59.research.type59_turret": "Type 59 Turret"
 }

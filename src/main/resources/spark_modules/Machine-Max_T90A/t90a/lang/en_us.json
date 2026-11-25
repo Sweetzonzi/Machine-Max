@@ -41,5 +41,9 @@
   "research.t90a.t90a_hull_era.desc": "Unlock fabrication of the T-90A hull add-on armor.",
   "research.t90a.t90a_turret_era.desc": "Unlock fabrication of the T-90A turret ERA module.",
   "t90a.fitting.t90a_track": "T-90A Track Link",
-  "machine_max.series.t90a": "T-90A"
+  "machine_max.series.t90a": "T-90A",
+  "t90a.research.t90a_hull": "T-90A Hull",
+  "t90a.research.t90a_hull_era": "T-90A Hull Add-on Armor",
+  "t90a.research.t90a_turret": "T-90A Turret",
+  "t90a.research.t90a_turret_era": "T-90A Turret ERA Module"
 }

@@ -52,5 +52,7 @@
   "dashboard.type59.reverse": "后退",
   "dashboard.type59.high_rpm": "高转",
   "dashboard.type59.fuel_quantity": "油量",
-  "dashboard.type59.attitude": "姿态"
+  "dashboard.type59.attitude": "姿态",
+  "type59.research.type59_hull": "59式车体",
+  "type59.research.type59_turret": "59式炮塔"
 }

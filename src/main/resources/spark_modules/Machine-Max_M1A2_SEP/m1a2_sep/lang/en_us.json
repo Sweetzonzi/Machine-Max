@@ -95,5 +95,6 @@
   "controlGroup.m1a2_sep.commander_backup_fire": "Commander: Backup Fire Control (Main Gun / Machine Gun)",
   "controlGroup.m1a2_sep.loader_mg": "Loader Machine Gun",
   "subsystem.m1a2_sep.rws_terminal_controller": "RWS Terminal",
-  "machine_max.series.m1a2": "M1A2 SEP"
+  "machine_max.series.m1a2": "M1A2 SEP",
+  "m1a2_sep.research.m153_crows": "M153 CROWS Remote Weapon Station"
 }

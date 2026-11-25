@@ -95,5 +95,6 @@
   "controlGroup.m1a2_sep.commander_backup_fire": "车长：备用火控（主炮／机枪）",
   "controlGroup.m1a2_sep.loader_mg": "装填手机枪",
   "subsystem.m1a2_sep.rws_terminal_controller": "遥控武器站终端",
-  "machine_max.series.m1a2": "M1A2 SEP"
+  "machine_max.series.m1a2": "M1A2 SEP",
+  "m1a2_sep.research.m153_crows": "M153 CROWS 遥控武器站"
 }

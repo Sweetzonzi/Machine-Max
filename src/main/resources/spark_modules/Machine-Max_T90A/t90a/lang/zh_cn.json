@@ -41,5 +41,9 @@
   "author.t90a.blueprint.t90a": "待补充",
   "sub_part.t90a.barrel": "125 mm 独立炮管",
   "t90a.fitting.t90a_track": "T-90A 履带节",
-  "machine_max.series.t90a": "T-90A"
+  "machine_max.series.t90a": "T-90A",
+  "t90a.research.t90a_hull": "T-90A 车体",
+  "t90a.research.t90a_hull_era": "T-90A 车体附加装甲",
+  "t90a.research.t90a_turret": "T-90A 炮塔",
+  "t90a.research.t90a_turret_era": "T-90A 炮塔独立爆反组件"
 }
