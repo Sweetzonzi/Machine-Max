@@ -7,14 +7,14 @@
     0
   ],
   "min": [
-    -2.7,
-    -0.05,
-    -6.8
+    -2.88508866,
+    -0.053427568,
+    -7.266149219
   ],
   "max": [
-    2.7,
-    5.1,
-    4.4
+    2.88508866,
+    5.449611914,
+    4.701625965
   ],
   "hp_ratio": 1,
   "parts": {
@@ -35,7 +35,7 @@
           "pos_rot_vel_vel": {
             "position": [
               0,
-              1.1875,
+              1.268904735,
               0
             ],
             "rotation": [
@@ -63,9 +63,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              -1.608156875,
-              0.8028425,
-              -3.571886875
+              -1.718398209,
+              0.857878442,
+              -3.816744563
             ],
             "rotation": [
               0,
@@ -92,9 +92,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              -1.608156875,
-              0.4261025,
-              -2.662274375
+              -1.718398209,
+              0.455312404,
+              -2.844776893
             ],
             "rotation": [
               0,
@@ -121,9 +121,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              -1.608156875,
-              0.4261025,
-              -1.587274375
+              -1.718398209,
+              0.455312404,
+              -1.696084185
             ],
             "rotation": [
               0,
@@ -150,9 +150,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              -1.608156875,
-              0.4261025,
-              -0.779974375
+              -1.718398209,
+              0.455312404,
+              -0.833442676
             ],
             "rotation": [
               0,
@@ -179,9 +179,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              -1.608156875,
-              0.4261025,
-              0.027325625
+              -1.718398209,
+              0.455312404,
+              0.029198834
             ],
             "rotation": [
               0,
@@ -208,9 +208,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              -1.608156875,
-              0.4261025,
-              0.834625625
+              -1.718398209,
+              0.455312404,
+              0.891840343
             ],
             "rotation": [
               0,
@@ -237,9 +237,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              -1.608156875,
-              0.4261025,
-              1.641925
+              -1.718398209,
+              0.455312404,
+              1.754481185
             ],
             "rotation": [
               0,
@@ -266,9 +266,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              -1.608156875,
-              0.4261025,
-              2.449225625
+              -1.718398209,
+              0.455312404,
+              2.617123362
             ],
             "rotation": [
               0,
@@ -295,9 +295,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              -1.655249375,
-              0.82437,
-              3.3291825
+              -1.768718964,
+              0.880881681,
+              3.557402474
             ],
             "rotation": [
               0,
@@ -324,9 +324,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              1.608156875,
-              0.8028425,
-              -3.571886875
+              1.718398209,
+              0.857878442,
+              -3.816744563
             ],
             "rotation": [
               0,
@@ -353,9 +353,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              1.608156875,
-              0.4261025,
-              -2.662274375
+              1.718398209,
+              0.455312404,
+              -2.844776893
             ],
             "rotation": [
               0,
@@ -382,9 +382,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              1.608156875,
-              0.4261025,
-              -1.587274375
+              1.718398209,
+              0.455312404,
+              -1.696084185
             ],
             "rotation": [
               0,
@@ -411,9 +411,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              1.608156875,
-              0.4261025,
-              -0.779974375
+              1.718398209,
+              0.455312404,
+              -0.833442676
             ],
             "rotation": [
               0,
@@ -440,9 +440,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              1.608156875,
-              0.4261025,
-              0.027325625
+              1.718398209,
+              0.455312404,
+              0.029198834
             ],
             "rotation": [
               0,
@@ -469,9 +469,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              1.608156875,
-              0.4261025,
-              0.834625625
+              1.718398209,
+              0.455312404,
+              0.891840343
             ],
             "rotation": [
               0,
@@ -498,9 +498,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              1.608156875,
-              0.4261025,
-              1.641925
+              1.718398209,
+              0.455312404,
+              1.754481185
             ],
             "rotation": [
               0,
@@ -527,9 +527,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              1.608156875,
-              0.4261025,
-              2.449225625
+              1.718398209,
+              0.455312404,
+              2.617123362
             ],
             "rotation": [
               0,
@@ -556,9 +556,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              1.655249375,
-              0.82437,
-              3.3291825
+              1.768718964,
+              0.880881681,
+              3.557402474
             ],
             "rotation": [
               0,
@@ -599,8 +599,8 @@
           "pos_rot_vel_vel": {
             "position": [
               0,
-              2.1875,
-              0.4375
+              2.337456091,
+              0.467491218
             ],
             "rotation": [
               0,
@@ -627,9 +627,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              -0.126875,
-              2.15625,
-              -2.6193181818181817
+              -0.135572453,
+              2.304063861,
+              -2.798875994
             ],
             "rotation": [
               0,
@@ -658,9 +658,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              -1.1375,
-              2.65625,
-              -0.34375
+              -1.215477167,
+              2.838339539,
+              -0.367314529
             ],
             "rotation": [
               0,
@@ -687,9 +687,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              -1.1375,
-              2.99375,
-              -0.34375
+              -1.215477167,
+              3.198975621,
+              -0.367314529
             ],
             "rotation": [
               0,
@@ -716,9 +716,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              0.65486375,
-              2.90625,
-              0.009936875
+              0.699755548,
+              3.105477377,
+              0.010618061
             ],
             "rotation": [
               0,
@@ -745,9 +745,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              0.8607186657440568,
-              3.22467125,
-              0.5108967418703797
+              0.919722097,
+              3.445726836,
+              0.545919406
             ],
             "rotation": [
               0,
@@ -774,9 +774,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              -0.126875,
-              2.15625,
-              -4.5625
+              -0.135572453,
+              2.304063861,
+              -4.87526556
             ],
             "rotation": [
               0,
@@ -803,9 +803,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              -0.96638,
-              2.88125,
-              -1.0290625
+              -1.032626659,
+              3.078763594,
+              -1.099606129
             ],
             "rotation": [
               0,
@@ -845,9 +845,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              0.966721875,
-              2.88928625,
-              -1.212498125
+              1.03299197,
+              3.087350739,
+              -1.295616515
             ],
             "rotation": [
               0,
@@ -874,9 +874,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              0.99615375,
-              3.559164375,
-              -1.11256
+              1.06444144,
+              3.803149918,
+              -1.188827496
             ],
             "rotation": [
               0,
@@ -916,9 +916,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              -2.3125,
-              1.1615625,
-              -0.511875
+              -2.47102501,
+              1.241189184,
+              -0.546964725
             ],
             "rotation": [
               0,
@@ -958,9 +958,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              2.3153125,
-              1.1615625,
-              -0.5303125
+              2.474030311,
+              1.241189184,
+              -0.566666141
             ],
             "rotation": [
               0,
@@ -1000,9 +1000,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              -2.151875,
-              2.4053125,
-              0.5896875
+              -2.299388948,
+              2.570199933,
+              0.630111378
             ],
             "rotation": [
               0,
@@ -1042,9 +1042,9 @@
           "durability_ratio": 1,
           "pos_rot_vel_vel": {
             "position": [
-              2.151875,
-              2.4053125,
-              0.5896875
+              2.299388948,
+              2.570199933,
+              0.630111378
             ],
             "rotation": [
               0,
@@ -1076,9 +1076,9 @@
       "advConnectorName": "connector.machine_max.turret_hull_axis",
       "posRotA": {
         "position": [
-          0.014101875,
-          -0.375,
-          -1.0850149999999998
+          0.015068578,
+          -0.400706758,
+          -1.159394249
         ],
         "rotation": [
           0,
@@ -1092,9 +1092,9 @@
       "simplePointConnectorName": "connector.machine_max.hull_turret_axis",
       "posRotS": {
         "position": [
-          0.014101875,
-          0.625,
-          -0.647515
+          0.015068578,
+          0.667844597,
+          -0.691903031
         ],
         "rotation": [
           0,
@@ -1110,9 +1110,9 @@
       "advConnectorName": "connector.machine_max.hull_era_left",
       "posRotA": {
         "position": [
-          -2.005,
-          -0.025937499999999947,
-          -0.511875
+          -2.142445468,
+          -0.027715551,
+          -0.546964725
         ],
         "rotation": [
           0,
@@ -1126,7 +1126,7 @@
       "simplePointConnectorName": "connector.machine_max.hull_era_left_host",
       "posRotS": {
         "position": [
-          0.3075000000000001,
+          0.328579542,
           0,
           0
         ],
@@ -1144,9 +1144,9 @@
       "advConnectorName": "connector.machine_max.hull_era_right",
       "posRotA": {
         "position": [
-          2.005,
-          -0.025937499999999947,
-          -0.5303125
+          2.142445468,
+          -0.027715551,
+          -0.566666141
         ],
         "rotation": [
           0,
@@ -1160,7 +1160,7 @@
       "simplePointConnectorName": "connector.machine_max.hull_era_right_host",
       "posRotS": {
         "position": [
-          -0.3103125000000002,
+          -0.331584843,
           0,
           0
         ],
@@ -1178,9 +1178,9 @@
       "advConnectorName": "connector.machine_max.turret_era_left",
       "posRotA": {
         "position": [
-          -1.925,
-          0.21781249999999996,
-          0.15218750000000003
+          -2.05696136,
+          0.232743842,
+          0.162620159
         ],
         "rotation": [
           0,
@@ -1194,7 +1194,7 @@
       "simplePointConnectorName": "connector.machine_max.turret_era_left_host",
       "posRotS": {
         "position": [
-          0.22687499999999994,
+          0.242427589,
           0,
           0
         ],
@@ -1212,9 +1212,9 @@
       "advConnectorName": "connector.machine_max.turret_era_right",
       "posRotA": {
         "position": [
-          1.925,
-          0.21781249999999996,
-          0.15218750000000003
+          2.05696136,
+          0.232743842,
+          0.162620159
         ],
         "rotation": [
           0,
@@ -1228,7 +1228,7 @@
       "simplePointConnectorName": "connector.machine_max.turret_era_right_host",
       "posRotS": {
         "position": [
-          -0.22687499999999994,
+          -0.242427589,
           0,
           0
         ],
@@ -1262,9 +1262,9 @@
       "simplePointConnectorName": "connector.m1a2_sep.turret_rws",
       "posRotS": {
         "position": [
-          0.966721875,
-          0.70178625,
-          -1.649998125
+          1.03299197,
+          0.749894649,
+          -1.763107733
         ],
         "rotation": [
           0,

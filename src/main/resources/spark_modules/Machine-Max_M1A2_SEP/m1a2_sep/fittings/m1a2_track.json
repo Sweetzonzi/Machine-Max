@@ -3,15 +3,15 @@
   "type": "track",
   "tags": ["machine_max:series/m1a2"],
   "material": "machine_max:track_steel",
-  "thickness_mm": 59.201875,
+  "thickness_mm": 63.26024379,
   "durability_per_link": 12,
-  "length_per_link": 0.148005,
+  "length_per_link": 0.158150943,
   "tension": {
     "enabled": true,
     "stiffness": 12000,
     "damping": 900,
     "preload": 0,
-    "slack": 0.015,
+    "slack": 0.01602827,
     "max_force": 800
   },
   "fmod": {
