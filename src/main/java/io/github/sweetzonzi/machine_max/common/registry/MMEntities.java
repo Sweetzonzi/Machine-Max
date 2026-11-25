@@ -18,6 +18,9 @@ public class MMEntities {
     private static final DeferredRegister<EntityType<?>> ENTITY_TYPES =
             DeferredRegister.create(Registries.ENTITY_TYPE, MachineMax.MOD_ID);
 
+    /** MMPartEntity 的客户端跟踪半径，单位为区块。 */
+    public static final int PART_ENTITY_TRACKING_RANGE_CHUNKS = 16;
+
     /**
      * 部件实体
      */
@@ -26,6 +29,7 @@ public class MMEntities {
             () -> EntityType.Builder.<MMPartEntity>of(MMPartEntity::new, MobCategory.MISC)
                     .noSummon()
                     .noSave()
+                    .clientTrackingRange(PART_ENTITY_TRACKING_RANGE_CHUNKS)
                     .updateInterval(Integer.MAX_VALUE)
                     .fireImmune() //TODO: 检查为什么放出来瞬间有可能被判定处于岩浆中
                     .eyeHeight(0.0F)

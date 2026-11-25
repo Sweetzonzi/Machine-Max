@@ -3,7 +3,6 @@ package io.github.sweetzonzi.machine_max.client.render.renderer;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
-import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.sweetzonzi.machine_max.MachineMax;
@@ -18,40 +17,18 @@ import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Brightness;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
-import org.joml.Vector3f;
 
 import java.awt.*;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * 远程载具渲染器 — 通过 {@link RenderLevelStageEvent} 代理渲染超出实体渲染距离的远处载具。
- * <p>在 {@link RenderLevelStageEvent.Stage#AFTER_LEVEL} 阶段执行（所有渲染完成后的最后阶段，
- * 此时雾效已处理完毕，在出现雾时自动切换为该渲染器，
- * 遍历 {@link ObjectManager#clientAllVehicles} 中的所有 {@link SubPart}，
- * 跳过：已移除的、在原版实体渲染距离内的（由 {@link io.github.sweetzonzi.machine_max.client.render.renderer.PartEntityRenderer} 渲染）、
- * 超出最大渲染距离（20倍实体渲染距离）的；销毁倒计时中的（isDestroyed）仍渲染黑化/淡出效果。</p>
- * <p>使用简化渲染：所有骨骼一律 {@link RenderType#entityCutout} + 与近距离载具渲染（{@link PartEntityRenderer}）一致的光照机制
- * （按 SubPart 世界位置采样方块光/天空光，采样结果为 0 时回退到该零件缓存的上一次光照值）；
- * 自发光骨骼（命名以 {@code ysmGlow} 为前缀或 {@code _illuminated} 为后缀，见 Spark-Core {@code OBone#shouldGlow}）
- * 在本渲染器中同样走普通纹理渲染，不做 {@link RenderType#eyes} 与全亮处理；
- * 销毁倒计时中按近距离同样逻辑黑化/淡出。不处理淡入、受击闪白、线框/组装进度等状态。</p>
- * <p>主动轮 SubPart 还通过 {@link TrackRenderer#renderTrack} 顺带绘制整条履带，远处载具的履带
- * 因此与车体一起显示。</p>
- */
+/** 在 AFTER_LEVEL 阶段绘制交接距离之外的客户端载具，并为缺失实体代理的零件提供兜底。 */
 public class DistantVehicleRenderer extends VisualEffectRenderer {
-
-    private final Map<UUID, Integer> partUuid$LightValueCache = new ConcurrentHashMap<>();
 
     @Override
     public void tick() {
@@ -70,6 +47,10 @@ public class DistantVehicleRenderer extends VisualEffectRenderer {
 
     @Override
     public void render(@NotNull RenderLevelStageEvent event, @NotNull MultiBufferSource bufferSource, float partialTick) {
+        Minecraft minecraft = Minecraft.getInstance();
+        Level level = minecraft.level;
+        if (level == null) return;
+
         Camera camera = event.getCamera();
 
         Vec3 camPos = camera.getPosition();
@@ -77,25 +58,24 @@ public class DistantVehicleRenderer extends VisualEffectRenderer {
         // AFTER_LEVEL 的 PoseStack 为空，相机旋转在此矩阵中，需传入渲染方法
         Matrix4f modelViewMatrix = event.getModelViewMatrix();
 
-        for (VehicleCore vehicle : ObjectManager.clientAllVehicles.values()) {;
+        for (VehicleCore vehicle : ObjectManager.clientAllVehicles.values()) {
+            if (vehicle.level != level) continue;
 
             for (RegularPart part : vehicle.partMap.values()) {
                 for (SubPart subPart : part.subParts.values()) {
                     try {
                         Matrix4f worldMatrix = subPart.getRenderWorldPositionMatrix(partialTick);
-                        Vector3f subPartPos = SparkMathKt.toVector3f(subPart.getPosition());
-                        double dx = subPartPos.x() - camPos.x;
-                        double dy = subPartPos.y() - camPos.y;
-                        double dz = subPartPos.z() - camPos.z;
-                        double distSqr = dx * dx + dy * dy + dz * dz;
+                        Vec3 renderPosition = subPart.getPresentationPosition();
+                        double dx = renderPosition.x - camPos.x;
+                        double dy = renderPosition.y - camPos.y;
+                        double dz = renderPosition.z - camPos.z;
 
-                        // 原版设置渲染距离内的由老管线（PartEntityRenderer）接管，阈值 = 当前渲染距离（方块）
-                        if (!FMLLoader.getDist().isClient()) return;
-                        int renderDistance = Minecraft.getInstance().options.getEffectiveRenderDistance();
-                        double renderDist = (renderDistance - (renderDistance*0.09)) * 1024;
-                        // 经实测，取该阈值时远近切换的显示效果最自然
-                        if (distSqr < renderDist) continue;
-                        renderSubPart(subPart, subPartPos, worldMatrix, camPos, modelViewMatrix, poseStack, bufferSource, partialTick);
+                        var entity = subPart.entity;
+                        boolean hasEntityProxy = entity != null && !entity.isRemoved() && entity.level() == level;
+                        if (hasEntityProxy && VehicleRenderDistance.isEntityRenderOwner(dx, dy, dz)) {
+                            continue;
+                        }
+                        renderSubPart(subPart, worldMatrix, camPos, modelViewMatrix, poseStack, bufferSource, partialTick);
                     } catch (Exception e) {
                         MachineMax.LOGGER.warn("远程载具渲染失败: subPart={}", subPart.name, e);
                     }
@@ -104,27 +84,15 @@ public class DistantVehicleRenderer extends VisualEffectRenderer {
         }
     }
 
-    private void renderSubPart(SubPart subPart, Vector3f subPartPos, Matrix4f worldMatrix, Vec3 camPos,
+    private void renderSubPart(SubPart subPart, Matrix4f worldMatrix, Vec3 camPos,
                                Matrix4f modelViewMatrix, PoseStack poseStack,
                                MultiBufferSource bufferSource, float partialTick) {
         var modelController = subPart.part.getModelController();
         var modelInstance = modelController.getModel();
         if (modelInstance == null) return;
 
-        // 亮度：与近距离载具渲染（PartEntityRenderer）相同机制 — 按 SubPart 世界位置采样方块光/天空光后打包
-        Level level = Minecraft.getInstance().level;
-        BlockPos blockPos = BlockPos.containing(subPartPos.x, subPartPos.y, subPartPos.z);
-        int blockLight = level.getBrightness(LightLayer.BLOCK, blockPos);
-        int skyLight = level.getBrightness(LightLayer.SKY, blockPos);
-        int light = LightTexture.pack(blockLight, skyLight);
-        if (light != 0) {
-            partUuid$LightValueCache.put(subPart.getPart().getUuid(), light);
-        } else {
-            Integer cachedLight = partUuid$LightValueCache.get(subPart.getPart().getUuid());
-            if (cachedLight != null) {
-                light = cachedLight;
-            } else return;
-        }
+        // 远距零件不依赖所在区块的光照数据，只保留天空光，不叠加方块光。
+        int light = LightTexture.FULL_SKY;
 
         poseStack.pushPose();
         // AFTER_LEVEL 的 PoseStack 为空，需手动乘入相机旋转矩阵，
@@ -153,17 +121,14 @@ public class DistantVehicleRenderer extends VisualEffectRenderer {
 
         var bones = subPart.getBones();
         ResourceLocation texture = modelController.getTextureLocation();
-        RenderType renderType = RenderType.entityCutout(texture);
         for (OBone bone : bones.values()) {
-            // 此渲染器不做自发光处理：自发光骨骼（命名以 ysmGlow 为前缀或 _illuminated 为后缀，
-            // 见 Spark-Core OBone#shouldGlow）在这里与普通骨骼一样用 entityCutout + 采样光照，
-            // 不套用 PartEntityRenderer#renderTextured 中的 RenderType.eyes + 全亮分支
+            boolean glow = bone.getShouldGlow();
             ModelRenderHelperKt.render(
                     bone,
                     modelInstance.getPose(),
                     poseStack,
-                    bufferSource.getBuffer(renderType),
-                    light,
+                    bufferSource.getBuffer(glow ? RenderType.eyes(texture) : RenderType.entityCutout(texture)),
+                    glow ? Brightness.FULL_BRIGHT.pack() : light,
                     overlay,
                     color,
                     partialTick,

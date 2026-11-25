@@ -62,9 +62,10 @@ public class PartEntityRenderer extends EntityRenderer<MMPartEntity> {
     @Override
     public boolean shouldRender(MMPartEntity entity, Frustum camera, double camX, double camY, double camZ) {
         if (entity.subPart != null) {
-            float renderDistance = Minecraft.getInstance().gameRenderer.getRenderDistance();
-            double sqrDist = entity.distanceToSqr(camX, entity.getY(), camZ);
-            if (sqrDist > renderDistance * renderDistance) {
+            if (!VehicleRenderDistance.isEntityRenderOwner(
+                    entity.getX() - camX,
+                    entity.getY() - camY,
+                    entity.getZ() - camZ)) {
                 return false;
             } else {
                 // 剔除盒：普通部件取完整刚体 AABB；履带主动轮并入轮组 AABB 外扩后的履带范围
