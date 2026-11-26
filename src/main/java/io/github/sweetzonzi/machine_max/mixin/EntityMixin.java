@@ -10,11 +10,13 @@ import com.jme3.bullet.collision.PhysicsSweepTestResult;
 import com.jme3.bullet.collision.shapes.CapsuleCollisionShape;
 import com.jme3.math.Transform;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.util.MMMath;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.decoration.BlockAttachedEntity;
@@ -29,6 +31,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import javax.annotation.Nullable;
@@ -55,6 +58,23 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
 
     @Shadow
     public abstract void setDeltaMovement(Vec3 deltaMovement);
+
+    @Redirect(
+            method = "getViewVector(F)Lnet/minecraft/world/phys/Vec3;",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/world/entity/Entity;getViewYRot(F)F"
+            )
+    )
+    private float machine_max$useWorldYawForSeatedPlayerView(Entity entity, float partialTicks) {
+        if (entity instanceof Player
+                && ((IEntityMixin) entity).machine_Max$getControllingSubsystem() instanceof SeatSubsystem) {
+            return partialTicks == 1.0F
+                    ? entity.getYRot()
+                    : Mth.rotLerp(partialTicks, entity.yRotO, entity.getYRot());
+        }
+        return entity.getViewYRot(partialTicks);
+    }
 
     @Unique
     private AbstractControllableSubsystem machine_Max$controllingSubSystem;

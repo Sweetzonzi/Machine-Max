@@ -30,7 +30,7 @@ public class MouseHandlerMixin {
     )
     public void beforeTurnPlayer(double movementTime, CallbackInfo ci, @Local(ordinal = 4) double d0, @Local(ordinal = 5) double d1, @Local int i) {
         CameraController.turnCamera(d0, d1*i);//传输镜头控制量
-        if (RawInputHandler.freeCam) ci.cancel();//自由视角模式下不旋转玩家朝向
+        if (RawInputHandler.freeCam || CameraController.shouldSuppressVanillaTurn()) ci.cancel();
     }
 
     @Inject(method = "onMove", at = @At("HEAD"), cancellable = true)

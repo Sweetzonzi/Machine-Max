@@ -190,12 +190,7 @@ public final class CameraController {
             updateFixed();
         }
         send();
-        // 交互方向与当前逻辑光轴一致；临时自由观察期间保留武器与玩家控制方向。
-        if (!RawInputHandler.freeCam && logicalView != null) {
-            Vec2 angles = ViewMath.directionAngles(logicalView.pose().forward());
-            CLIENT.player.setXRot((float) -Math.toDegrees(angles.x));
-            CLIENT.player.setYRot((float) Math.toDegrees(angles.y) + 180);
-        }
+        publishNativeSeatFacing();
     }
 
     /** 客户端主线程逐采样累计俯仰／偏航输入；每 tick 发送完整目标值。 */
@@ -227,7 +222,24 @@ public final class CameraController {
             camera.turnView(delta);
         } else {
             updateSeat(delta);
+            publishNativeSeatFacing();
         }
+    }
+
+    /** 原版玩家物品只跟随普通座椅观察；设备瞄准与临时自由观察不改玩家本体朝向。 */
+    private static void publishNativeSeatFacing() {
+        if (controllingSeat == null || activeCamera != null || RawInputHandler.freeCam
+                || logicalView == null || CLIENT.player == null) {
+            return;
+        }
+        Vec2 angles = ViewMath.directionAngles(logicalView.pose().forward());
+        CLIENT.player.setXRot((float) -Math.toDegrees(angles.x));
+        CLIENT.player.setYRot((float) Math.toDegrees(angles.y) + 180);
+    }
+
+    /** 座位视角已自行消费鼠标增量，避免原版再叠加一次玩家朝向变化。 */
+    public static boolean shouldSuppressVanillaTurn() {
+        return controllingSeat != null;
     }
 
     /** 固定炮镜的稳定配置描述武器目标；第三人称与可转镜头统一发布世界点。 */
