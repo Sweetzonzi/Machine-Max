@@ -41,6 +41,7 @@ public class VehicleAssemblyHelper {
     /** 安装角（玩家可自定义，服务端仅归一化到 [0,360)）。 */
     @Setter
     private float attachRotation;
+    /** 客户端当前载具放置 yaw；与部件安装角分离，且不写入载具数据。 */
     private float vehiclePlacementYaw;
 
     private VehicleAssemblyHelper() {
@@ -142,6 +143,11 @@ public class VehicleAssemblyHelper {
         attachRotation = next;
     }
 
+    /**
+     * 按 90 度步进更新本次放置朝向，并归一化到 [0, 360)。
+     *
+     * @param add 为 {@code true} 时增加 90 度；为 {@code false} 时减少 90 度
+     */
     public void cycleVehiclePlacementYaw(boolean add) {
         float next = (vehiclePlacementYaw + (add ? 90f : -90f)) % 360f;
         if (next < 0) next += 360f;

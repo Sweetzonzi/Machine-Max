@@ -1487,6 +1487,18 @@ public enum MMLanguageRegistry {
             zh_cn, "[%1$s] 旋转零件 (-)",
             en_us, "[%1$s] Rotate part (-)"
     )),
+    HUD_KEY_VEHICLE_PLACE("hud.key.machine_max.vehicle.place", ImmutableMap.of(
+            zh_cn, "[%1$s] 放置载具",
+            en_us, "[%1$s] Place vehicle"
+    )),
+    HUD_KEY_VEHICLE_ROTATE_FORWARD("hud.key.machine_max.vehicle.rotate_forward", ImmutableMap.of(
+            zh_cn, "[%1$s] 旋转载具朝向 (+90°)",
+            en_us, "[%1$s] Rotate vehicle (+90°)"
+    )),
+    HUD_KEY_VEHICLE_ROTATE_BACKWARD("hud.key.machine_max.vehicle.rotate_backward", ImmutableMap.of(
+            zh_cn, "[%1$s] 旋转载具朝向 (-90°)",
+            en_us, "[%1$s] Rotate vehicle (-90°)"
+    )),
     // 研究点显示HUD
     HUD_HINT_RP_ADD_REASON_EXP("hud.hint.machine_max.rp_add_reason.exp", ImmutableMap.of(
             zh_cn, "获得经验",

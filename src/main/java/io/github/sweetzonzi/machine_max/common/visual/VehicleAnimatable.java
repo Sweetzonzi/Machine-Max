@@ -8,52 +8,30 @@ import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
-import com.jme3.math.Vector3f;
-import jme3utilities.math.MyMath;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehiclePlacementService;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.SubPartAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.RegularPartData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.SubPartData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
-import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 载具动画体，用于表示整个载具及其所有零件的渲染状态。
- * 
- * <p>设计思想：</p>
- * <ul>
- *   <li>所有{@link SubPartAnimatable}使用绝对世界坐标存储，确保渲染一致性</li>
- *   <li>载具质心变换时，计算相对变换差值并应用到所有子零件</li>
- *   <li>插值由每个{@link SubPartAnimatable}自行处理（通过其{@code oldTransform}字段）</li>
- *   <li>变换更新公式：Δ = newTransform × currentTransform⁻¹，应用于所有子零件</li>
- *   <li>参考{@link PartAnimatable}的实现模式，使用{@link MyMath#combine}进行变换组合</li>
- * </ul>
- * 
- * <p>使用场景：</p>
- * <ul>
- *   <li>载具蓝图/装配体在GUI中的3D预览（当未提供图标时）</li>
- *   <li>玩家保存的载具设计展示</li>
- *   <li>世界中的载具放置预览（通过PartAssemblyRenderer）</li>
- * </ul>
- * 
- * <p>注意：与{@link PartAnimatable}不同，本类不设{@code rootSubPart}概念，
- * 所有子零件直接相对于载具质心进行变换。</p>
- * 
- * <p>缩放属性：支持模型缩尺比（scale属性），例如scale=35代表1:35比例，
- * 渲染时需要将模型缩小至原尺寸的1/35。缩放由渲染器在{@code poseStack}中应用。</p>
+ * 载具的纯渲染动画体，供物品模型与世界放置预览共用。
+ * 整车位姿由接地锚点和参考根朝向描述；各子零件独立保存绝对位姿和上一 tick 的插值端点。
  */
 @Getter
 public class VehicleAnimatable implements IAnimatable<VehicleAnimatable> {
@@ -64,132 +42,110 @@ public class VehicleAnimatable implements IAnimatable<VehicleAnimatable> {
     public final Map<Integer, SubPartAnimatable> subParts = new HashMap<>();
     public VehicleData vehicleData;
     public Transform transform = new Transform();
-    private final Transform delta = new Transform();
+    private VehiclePlacementService placement;
     private float scale; //TODO: 动态scale
 
+    /**
+     * 从载具快照创建动画体，初始接地锚点和参考根朝向取展示坐标系的原点和单位旋转。
+     *
+     * @param vehicle 提供数据快照和世界的载具
+     */
     public VehicleAnimatable(VehicleCore vehicle) {
         this(vehicle.level, new VehicleData(vehicle), 1.0f);
     }
 
+    /**
+     * 创建无缩放的载具动画体。
+     *
+     * @param level 解析部件定义的世界
+     * @param vehicleData 源子零件及其位姿；在动画体生命周期内保持不变
+     */
     public VehicleAnimatable(Level level, VehicleData vehicleData) {
         this(level, vehicleData, 1.0f);
     }
 
+    /**
+     * 创建载具动画体，初始接地锚点和参考根朝向取展示坐标系的原点和单位旋转。
+     *
+     * @param level 解析部件定义的世界
+     * @param vehicleData 源子零件及其位姿；在动画体生命周期内保持不变
+     * @param scale 模型显示倍率，仅供渲染器使用，不影响碰撞边界或放置锚点
+     */
     public VehicleAnimatable(Level level, VehicleData vehicleData, float scale) {
         this.level = level;
         this.scale = scale;
         this.update(vehicleData);
     }
 
+    /**
+     * 用新的载具快照重建子零件动画体与放置几何（主线程）。
+     *
+     * @param vehicle 提供新数据快照的载具
+     */
     public void update(VehicleCore vehicle) {
         this.update(new VehicleData(vehicle));
     }
 
+    /**
+     * 更换源数据与放置几何，在当前展示位姿上重建全部子零件（主线程）。
+     *
+     * @param vehicleData 新的载具数据，包含各子零件的源位姿
+     */
     public void update(VehicleData vehicleData) {
+        placement = new VehiclePlacementService(level, vehicleData);
         subParts.clear();
         this.vehicleData = vehicleData;
         for (RegularPartData partData : vehicleData.parts.values()) {
-            RegularPartType type = level.isClientSide()
-                    ? MMDynamicRes.PART_TYPES.get(partData.registryKey)
-                    : MMDynamicRes.SERVER_PART_TYPES.get(partData.registryKey);
-            if (type == null) continue;
-            String variantName = partData.variant;
-            VariantAttr variant = type.getVariant(variantName);
-            if (variant == null) continue;
+            RegularPartType type = RegularPartType.get(level, partData.registryKey);
+            VariantAttr variant = type.getVariant(partData.variant);
             for (Map.Entry<String, SubPartData> entry : partData.subParts.entrySet()) {
-                String name = entry.getKey();
-                SubPartData subPartData = entry.getValue();
-                SubPartAttr attr = variant.subParts.get(name);
-                int id = subPartData.id;
-                SubPartAnimatable subPartAnimatable = new SubPartAnimatable(variant, attr, level);
-                // 设置位姿并保存零件动画体对象
-                subPartAnimatable.setTransform(subPartData.getPosRotVelVel().toTransform());
-                subParts.put(id, subPartAnimatable);
+                SubPartAttr attr = variant.subParts.get(entry.getKey());
+                subParts.put(entry.getValue().id, new SubPartAnimatable(variant, attr, level));
             }
         }
-        this.transform= new Transform(PhysicsHelperKt.toBVector3f(vehicleData.pos), Quaternion.IDENTITY);
+        setTransform(transform);
     }
 
     /**
-     * 设置载具质心变换，并同步更新所有子零件的绝对坐标。
-     * 
-     * <p>计算相对变换 Δ = newTransform × currentTransform⁻¹，
-     * 然后将Δ应用到每个{@link SubPartAnimatable}的当前变换上。</p>
-     * 
-     * <p>实现参考{@link PartAnimatable#setTransform}，使用{@link MyMath#combine}
-     * 进行变换组合。所有子零件保持绝对世界坐标的同步更新。</p>
-     * 
-     * @param transform 新的载具质心变换（世界坐标）
+     * 立即设置放置位姿，将所有子零件的两个插值端点同时对齐（主线程）。
+     *
+     * @param transform 平移为目标接地锚点：XZ 对齐参考根局部 AABB 底心的投影，Y 为接地高度；
+     *                  旋转为参考根子零件的目标朝向；缩放不参与计算
      */
     public void setTransform(Transform transform) {
-        Transform currentTransform = this.transform;
-        this.transform = transform.clone();
-        
-        // 计算相对变换：Δ = newTransform × currentTransform⁻¹
-        Transform inverseCurrent = currentTransform.invert();
-        MyMath.combine(transform, inverseCurrent, delta);
-        
-        // 将相对变换应用到所有子零件（保持绝对坐标同步）
-        for (SubPartAnimatable subPart : subParts.values()) {
-            Transform subPartTransform = subPart.getTransform();
-            Transform newSubPartTransform = new Transform();
-            MyMath.combine(subPartTransform, delta, newSubPartTransform);
-            subPart.setTransform(newSubPartTransform);
-        }
+        applyTransform(SparkMathKt.toVec3(transform.getTranslation()), transform.getRotation(), false);
     }
 
     /**
-     * 更新载具质心变换（支持插值），同步更新子零件。
-     * 
-     * <p>与{@link #setTransform}逻辑相同，但使用{@link SubPartAnimatable#updateTransform}
-     * 以支持动画系统的插值需求。每个子零件将维护其{@code oldTransform}用于平滑过渡。</p>
-     * 
-     * @param transform 新的载具质心变换（世界坐标）
+     * 更新放置位姿，各子零件保留上一个 tick 的位姿用于渲染插值（主线程）。
+     *
+     * @param transform 平移为目标接地锚点：XZ 对齐参考根局部 AABB 底心的投影，Y 为接地高度；
+     *                  旋转为参考根子零件的目标朝向；缩放不参与计算
      */
     public void updateTransform(Transform transform) {
-        Transform currentTransform = this.transform;
-        this.transform = transform.clone();
-        
-        // 计算相对变换：Δ = newTransform × currentTransform⁻¹
-        Transform inverseCurrent = currentTransform.invert();
-        MyMath.combine(transform, inverseCurrent, delta);
-        
-        // 将相对变换应用到所有子零件，支持插值
-        for (SubPartAnimatable subPart : subParts.values()) {
-            Transform subPartTransform = subPart.getTransform();
-            Transform newSubPartTransform = new Transform();
-            MyMath.combine(subPartTransform, delta, newSubPartTransform);
-            subPart.updateTransform(newSubPartTransform);
-        }
+        applyTransform(SparkMathKt.toVec3(transform.getTranslation()), transform.getRotation(), true);
+    }
+
+    private void applyTransform(Vec3 groundAnchor, Quaternion rootRotation, boolean interpolate) {
+        // 每次从源数据出发，避免移动或旋转时在上一帧的绝对位姿上累积误差。
+        placement.forEachPlacedSubPart(groundAnchor, rootRotation, (pose, id) -> {
+            SubPartAnimatable subPart = subParts.get(id);
+            if (interpolate) subPart.updateTransform(pose);
+            else subPart.setTransform(pose);
+        });
+        this.transform = new Transform(PhysicsHelperKt.toBVector3f(groundAnchor), rootRotation);
     }
 
     /**
-     * 以id最小的零件为基准，将整车旋转对齐到世界坐标轴。
+     * 将参考根对齐到展示坐标轴，把该朝向下的碰撞盒几何中心移到展示坐标原点。
      *
-     * <p>该方法会保持各零件相对关系不变：对所有零件施加同一刚体旋转，
-     * 以基准零件位置作为旋转中心，并将基准零件旋转归零。</p>
+     * @param fitToUnitSize 为 {@code true} 时按碰撞盒平均边长自动缩放，为 {@code false} 时保留模型倍率
      */
-    public void alignToAxesByFirstSubPart() {
-        if (subParts.isEmpty()) return;
-        Map.Entry<Integer, SubPartAnimatable> firstEntry = subParts.entrySet().stream()
-                .min(Comparator.comparingInt(Map.Entry::getKey))
-                .orElse(null);
-        SubPartAnimatable referenceSubPart = firstEntry.getValue();
-        Transform referenceTransform = referenceSubPart.getTransform();
-        this.transform = Transform.IDENTITY.clone();
-        setTransform(referenceTransform.clone().invert());
-        this.transform = Transform.IDENTITY.clone();
-        Vector3f center = new Vector3f();
-        float totalMass = 0.0f;
-        for (SubPartAnimatable subPart : subParts.values()) {
-            float mass = subPart.attr.mass;
-            center.addLocal(subPart.getTransform().getTranslation().mult(mass));
-            totalMass += mass;
-        }
-        center.multLocal(1.0f / totalMass);
-        this.transform.setTranslation(center);
+    public void centerForItemDisplay(boolean fitToUnitSize) {
+        AABB bounds = placement.boundsAtOrigin(Quaternion.IDENTITY);
+        setTransform(new Transform(PhysicsHelperKt.toBVector3f(bounds.getCenter().scale(-1)), Quaternion.IDENTITY));
+        if (fitToUnitSize) scale = (float) (1.0 / bounds.getSize());
     }
-
     @Override
     public VehicleAnimatable getAnimatable() {
         return this;
@@ -212,7 +168,7 @@ public class VehicleAnimatable implements IAnimatable<VehicleAnimatable> {
 
     @Override
     public @NotNull Matrix4f getWorldPositionMatrix(@NotNull Number number) {
-        //返回载具质心
+        // 动画体原点是接地锚点，子零件矩阵独立保存绝对位姿。
         return SparkMathKt.toMatrix4f(transform.toTransformMatrix());
     }
 }

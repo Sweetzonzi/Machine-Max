@@ -1,22 +1,12 @@
 package io.github.sweetzonzi.machine_max.common.item.prop;
 
 import io.github.sweetzonzi.machine_max.common.mech.part.PartRestoreMode;
-import cn.solarmoon.spark_core.api.SparkLevel;
-import cn.solarmoon.spark_core.physics.body.CollisionGroups;
-import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
-import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
-import cn.solarmoon.spark_core.physics.level.WorldSnapshot;
-import cn.solarmoon.spark_core.util.PPhase;
-import cn.solarmoon.spark_core.util.SparkMathKt;
-import com.jme3.bullet.collision.PhysicsCollisionObject;
-import com.jme3.bullet.collision.shapes.BoxCollisionShape;
-import com.jme3.bullet.objects.PhysicsGhostObject;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
+import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
-import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehiclePlacementService;
@@ -28,18 +18,21 @@ import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.VehiclePlacementRequestPayload;
 import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
@@ -47,9 +40,11 @@ import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.util.*;
-import java.util.List;
+
 
 public abstract class BaseVehicleItem extends Item implements ICustomModelItem {
+    private static final double ANCHOR_SYNC_TOLERANCE_SQUARED = 1.0;
+    private static final Map<UUID, Long> LAST_PLACEMENT_REQUEST = new HashMap<>();
 
     public BaseVehicleItem(Properties properties) {
         super(properties);
@@ -64,7 +59,9 @@ public abstract class BaseVehicleItem extends Item implements ICustomModelItem {
         return null;
     }
 
-    /** 物品指向的内容包路径组件 id，用于名称与工具提示解析；无则 {@code null} */
+    /**
+     * 物品指向的内容包路径组件 id，用于名称与工具提示解析；无则 {@code null}
+     */
     @Nullable
     protected ResourceLocation getPathId(ItemStack stack) {
         return null;
@@ -82,7 +79,9 @@ public abstract class BaseVehicleItem extends Item implements ICustomModelItem {
         return null;
     }
 
-    /** 放置时应用的状态策略；蓝图使用骨架，收纳物品使用完整状态。 */
+    /**
+     * 放置时应用的状态策略；蓝图使用骨架，收纳物品使用完整状态。
+     */
     public PartRestoreMode restoreMode() {
         return PartRestoreMode.STRUCTURE_ONLY;
     }
@@ -119,69 +118,88 @@ public abstract class BaseVehicleItem extends Item implements ICustomModelItem {
         if (!level.isClientSide()) return InteractionResultHolder.sidedSuccess(stack, false);
 
         VehicleData vehicleData = getVehicleData(stack);
-        if (vehicleData == null) return InteractionResultHolder.fail(stack);
+        if (vehicleData == null || !SeatSubsystem.canUseItems(player)) return InteractionResultHolder.fail(stack);
         float yaw = VehicleAssemblyHelper.getInstance().getVehiclePlacementYaw();
-        PlacementContext ctx = calculatePlacement(level, player, vehicleData, yaw);
+        VehicleAnimatable preview = VisualEffectHelper.vehicleProjection;
+        VehiclePlacementService placement = preview != null && preview.level == level && preview.vehicleData == vehicleData
+                ? preview.getPlacement() : new VehiclePlacementService(level, vehicleData);
+        BlockHitResult hit = tracePlacement(level, player, placement.boundsAtOrigin(placementRotation(yaw)));
+        if (!isPlacementTarget(hit)) return InteractionResultHolder.fail(stack);
         PacketDistributor.sendToServer(new VehiclePlacementRequestPayload(
-                usedHand, getTemplateId(stack), SparkMathKt.toVec3(ctx.transform.getTranslation()), yaw));
+                usedHand, getTemplateId(stack), hit.getLocation(), yaw));
         return InteractionResultHolder.sidedSuccess(stack, true);
     }
 
-    /** 服务端从指定手重新解析数据并校验客户端放置请求，成功登记后才消费物品。 */
+    /**
+     * 从指定手重新解析数据并校验放置请求，成功登记后才执行物品处理（服务端主线程）。
+     *
+     * @param player  发起请求的服务端玩家
+     * @param request 客户端提交的手、来源 ID、候选接地锚点和 yaw；所有字段均需服务端复核
+     */
     public void handlePlacementRequest(Player player, VehiclePlacementRequestPayload request) {
+        if (!SeatSubsystem.canUseItems(player)) return;
         ItemStack stack = player.getItemInHand(request.hand());
+        if (stack.isEmpty() || stack.getItem() != this) return;
+        long now = player.level().getGameTime();
+        Long previous = LAST_PLACEMENT_REQUEST.put(player.getUUID(), now);
+        if (previous != null && now - previous < 4L) return;
+        if (LAST_PLACEMENT_REQUEST.size() > 1024) {
+            LAST_PLACEMENT_REQUEST.entrySet().removeIf(entry -> now - entry.getValue() > 1200L);
+        }
         try {
             if (!Float.isFinite(request.yaw()) || request.yaw() % 90f != 0f
-                    || !Double.isFinite(request.anchor().x) || !Double.isFinite(request.anchor().y)
-                    || !Double.isFinite(request.anchor().z)
+                    || !Double.isFinite(request.groundAnchor().x) || !Double.isFinite(request.groundAnchor().y)
+                    || !Double.isFinite(request.groundAnchor().z)
                     || !Objects.equals(getTemplateId(stack), request.sourceId())) {
                 return;
             }
             VehicleData vehicleData = getVehicleData(stack);
-            if (vehicleData == null || !player.level().hasChunkAt(player.blockPosition())) return;
-            PlacementContext ctx = calculatePlacement(player.level(), player, vehicleData, request.yaw());
-            Vec3 serverAnchor = SparkMathKt.toVec3(ctx.transform.getTranslation());
-            if (serverAnchor.distanceToSqr(request.anchor()) > 1.0) return;
-
-            PhysicsGhostObject testGhost = new PhysicsGhostObject(new BoxCollisionShape(ctx.halfExtents));
-            testGhost.setPhysicsLocation(ctx.transform.getTranslation());
-            testGhost.setCollisionGroup(CollisionGroups.PAWN);
-            testGhost.setCollideWithGroups(CollisionGroups.PAWN | CollisionGroups.PHYSICS_BODY);
-            boolean blocked = hasPlacementCollision(
-                    SparkLevel.getPhysicsLevel(player.level()).getWorld().getWorldSnapshot(), testGhost);
-            if (blocked) {
+            if (vehicleData == null || !player.level().hasChunkAt(player.blockPosition())
+                    || !vehicleData.validate(player.level()).isEmpty()) return;
+            Quaternion rotation = placementRotation(request.yaw());
+            VehiclePlacementService placement = new VehiclePlacementService(player.level(), vehicleData);
+            AABB boundsAtOrigin = placement.boundsAtOrigin(rotation);
+            BlockHitResult hit = tracePlacement(player.level(), player, boundsAtOrigin);
+            Vec3 groundAnchor = hit.getLocation();
+            // 客户端锚点只用于校验瞄准同步误差；实际生成和占位检查共用服务端锚点。
+            if (!isPlacementTarget(hit)
+                    || groundAnchor.distanceToSqr(request.groundAnchor()) > ANCHOR_SYNC_TOLERANCE_SQUARED) return;
+            if (placement.instantiateAndAdd(restoreMode(), groundAnchor, rotation) == null) {
                 player.displayClientMessage(MMLanguageRegistry.MESSAGE_BLUEPRINT_PLACE_FAILED.translated(), true);
                 return;
             }
-
-            VehiclePlacementService.instantiateAndAdd(player.level(), vehicleData, restoreMode(), ctx.transform);
-            onPlaceSuccess(player.level(), ctx, stack, player);
+            onPlaceSuccess(player.level(), boundsAtOrigin.move(groundAnchor), stack, player);
         } catch (Exception e) {
             player.sendSystemMessage(Component.translatable(
-                    MMLanguageRegistry.MESSAGE_VEHICLE_PLACE_FAILED.tag, e.getMessage())
+                            MMLanguageRegistry.MESSAGE_VEHICLE_PLACE_FAILED.tag, e.getMessage())
                     .withColor(Color.RED.getRGB()));
         }
     }
 
-    protected void onPlaceSuccess(Level level, PlacementContext ctx, ItemStack stack, Player player) {
+    /**
+     * 载具登记成功后的物品处理（服务端主线程）。
+     *
+     * @param level 载具入世的服务端世界
+     * @param bounds 已通过校验的载具世界碰撞包围盒
+     * @param stack 发起请求的物品
+     * @param player 完成放置的玩家
+     */
+    protected void onPlaceSuccess(Level level, AABB bounds, ItemStack stack, Player player) {
     }
 
     @Override
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
         super.inventoryTick(stack, level, entity, slotId, isSelected);
-        if (level.isClientSide) {
-            try {
-                // 座位上禁止使用物品时不重建投影与包围盒：渲染侧同一判据，
-                // 这里提前返回只省掉每 tick 的射线与物理接触测试
-                if (entity instanceof Player player && !SeatSubsystem.canUseItems(player)) return;
-                VehicleData vehicleData = getVehicleData(stack);
-                if (vehicleData == null) return;
-                if (isSelected) {
-                    updateClientPreview(level, entity, vehicleData);
-                }
-            } catch (NullPointerException ignored) {
-            }
+        if (!level.isClientSide || !(entity instanceof Player player) || !SeatSubsystem.canUseItems(player)) return;
+        // 副手仅在主手没有载具物品时显示，避免两件物品在同一 tick 内争用预览。
+        if (!isSelected && (player.getOffhandItem() != stack || player.getMainHandItem().getItem() instanceof BaseVehicleItem)) return;
+        VehicleData vehicleData = getVehicleData(stack);
+        if (vehicleData == null) {
+            VisualEffectHelper.vehicleProjection = null;
+            VisualEffectHelper.boundingBox = null;
+            return;
         }
+        updateClientPreview(level, player, vehicleData);
     }
 
     @Override
@@ -189,123 +207,56 @@ public abstract class BaseVehicleItem extends Item implements ICustomModelItem {
         return Component.translatable(getNameTranslationKey(stack));
     }
 
-    private PlacementContext calculatePlacement(Level level, Player player, VehicleData vehicleData, float yaw) {
-        Transform transform = new Transform(
-                PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
-                        player.getEyePosition(),
-                        player.getEyePosition().add(player.getViewVector(1).scale(player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
-                        ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).getLocation()).add(0, -(float) vehicleData.min.y, 0),
-                new Quaternion().fromAngleNormalAxis((float) Math.toRadians(yaw), com.jme3.math.Vector3f.UNIT_Y)
-        );
-        Vec3[] bounds = transformedBounds(transform, vehicleData);
-        Vec3 min = bounds[0];
-        Vec3 max = bounds[1];
-        com.jme3.math.Vector3f halfExtents = new com.jme3.math.Vector3f((float) (max.x - min.x), (float) (max.y - min.y), (float) (max.z - min.z)).mult(0.5f);
-        return new PlacementContext(transform, halfExtents);
+    private static BlockHitResult tracePlacement(Level level, Player player, AABB boundsAtOrigin) {
+        double longest = Math.max(boundsAtOrigin.getXsize(), boundsAtOrigin.getZsize());
+        double ordinary = player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE);
+        double range = Math.max(ordinary, longest * 0.5 + player.getBbWidth() * 0.5 + 2.0);
+        Vec3 eye = player.getEyePosition();
+        return level.clip(new ClipContext(eye, eye.add(player.getViewVector(1).scale(range)),
+                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
     }
 
-    private void updateClientPreview(Level level, Entity entity, VehicleData vehicleData) {
-        Transform transform = computePreviewTransform(level, entity, vehicleData,
-                VehicleAssemblyHelper.getInstance().getVehiclePlacementYaw());
-        updateBoundingBoxPreview(level, transform, vehicleData);
-        updateVehicleProjection(level, transform, vehicleData);
+    private static boolean isPlacementTarget(BlockHitResult hit) {
+        // 上表面取碰撞形状的实际命中高度（含台阶）；墙与底面不寻地，未命中沿用射线终点。
+        return hit.getType() == HitResult.Type.MISS || (hit.getDirection() == Direction.UP && !hit.isInside());
     }
 
-    private static Transform computePreviewTransform(Level level, Entity entity, VehicleData vehicleData, float yaw) {
-        if (entity instanceof LivingEntity livingEntity) {
-            return new Transform(
-                    PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
-                            entity.getEyePosition(),
-                            entity.getEyePosition().add(entity.getViewVector(1).scale(livingEntity.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
-                            ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity)).getLocation()).add(0, -(float) vehicleData.min.y, 0),
-                    new Quaternion().fromAngleNormalAxis((float) Math.toRadians(yaw), com.jme3.math.Vector3f.UNIT_Y)
-            );
+    private static Quaternion placementRotation(float yaw) {
+        return new Quaternion().fromAngleNormalAxis((float) Math.toRadians(yaw % 360f), Vector3f.UNIT_Y);
+    }
+
+    private void updateClientPreview(Level level, Player player, VehicleData vehicleData) {
+        VehicleAnimatable preview = VisualEffectHelper.vehicleProjection;
+        boolean firstPose = preview == null || preview.level != level || preview.vehicleData != vehicleData;
+        if (firstPose) {
+            preview = new VehicleAnimatable(level, vehicleData);
+            VisualEffectHelper.vehicleProjection = preview;
+            VisualEffectHelper.boundingBox = null;
+        }
+        Quaternion rotation = placementRotation(VehicleAssemblyHelper.getInstance().getVehiclePlacementYaw());
+        VehiclePlacementService placement = preview.getPlacement();
+        AABB boundsAtOrigin = placement.boundsAtOrigin(rotation);
+        BlockHitResult hit = tracePlacement(level, player, boundsAtOrigin);
+        Vec3 groundAnchor = hit.getLocation();
+        AABB bounds = boundsAtOrigin.move(groundAnchor);
+        updateBoundingBoxPreview(bounds, isPlacementTarget(hit) && placement.canPlace(bounds));
+
+        Transform target = new Transform(PhysicsHelperKt.toBVector3f(groundAnchor), rotation);
+        // 第一帧直接落位，后续各 tick 都推进插值，不重建子零件或源数据。
+        if (firstPose) preview.setTransform(target);
+        else preview.updateTransform(target);
+    }
+
+    private static void updateBoundingBoxPreview(AABB bounds, boolean canPlace) {
+        Vec3 min = bounds.getMinPosition();
+        Vec3 max = bounds.getMaxPosition();
+        RenderableBoundingBox box = VisualEffectHelper.boundingBox;
+        if (box == null) {
+            box = new RenderableBoundingBox(min, max);
+            VisualEffectHelper.boundingBox = box;
         } else {
-            return new Transform(
-                    PhysicsHelperKt.toBVector3f(entity.position()),
-                    new Quaternion().fromAngleNormalAxis((float) Math.toRadians(yaw), com.jme3.math.Vector3f.UNIT_Y)
-            );
+            box.updateShape(PhysicsHelperKt.toBVector3f(min), PhysicsHelperKt.toBVector3f(max));
         }
-    }
-
-    private static void updateBoundingBoxPreview(Level level, Transform transform, VehicleData vehicleData) {
-        Vec3[] bounds = transformedBounds(transform, vehicleData);
-        Vec3 min = bounds[0];
-        Vec3 max = bounds[1];
-        RenderableBoundingBox boundingBox;
-        if (VisualEffectHelper.boundingBox != null) {
-            boundingBox = VisualEffectHelper.boundingBox;
-        } else {
-            boundingBox = new RenderableBoundingBox(min, max);
-            VisualEffectHelper.boundingBox = boundingBox;
-        }
-        boundingBox.updateShape(PhysicsHelperKt.toBVector3f(min), PhysicsHelperKt.toBVector3f(max));
-        PhysicsGhostObject testGhost = new PhysicsGhostObject(new BoxCollisionShape(
-                boundingBox.getXExtent(), boundingBox.getYExtent(), boundingBox.getZExtent()));
-        testGhost.setPhysicsLocation(transform.getTranslation());
-        testGhost.setCollisionGroup(CollisionGroups.PAWN);
-        testGhost.setCollideWithGroups(CollisionGroups.PAWN | CollisionGroups.PHYSICS_BODY);
-        PhysicsLevel physicsLevel = SparkLevel.getPhysicsLevel(level);
-        physicsLevel.submitImmediateTask(PPhase.PRE, () -> {
-            boolean blocked = hasPlacementCollision(
-                    physicsLevel.getWorld().getWorldSnapshot(), testGhost);
-            if (blocked) boundingBox.setColor(Color.RED);
-            else boundingBox.setColor(Color.GREEN);
-            return null;
-        });
-    }
-
-    private static boolean hasPlacementCollision(WorldSnapshot snapshot, PhysicsGhostObject ghost) {
-        boolean[] blocked = {false};
-        snapshot.contactTest(ghost, event -> {
-            PhysicsCollisionObject other = event.getObjectA() == ghost
-                    ? event.getObjectB() : event.getObjectA();
-            Object owner = PhysicsBodyExtensionKt.getOwner(other);
-            if (owner instanceof io.github.sweetzonzi.machine_max.common.entity.MMPartEntity) return;
-            blocked[0] = true;
-        });
-        return blocked[0];
-    }
-
-    /** 将模板包围盒的八个角点按候选姿态变换，得到预览与动态占位共用的世界 AABB。 */
-    private static Vec3[] transformedBounds(Transform transform, VehicleData vehicleData) {
-        com.jme3.math.Vector3f min = new com.jme3.math.Vector3f(Float.POSITIVE_INFINITY,
-                Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY);
-        com.jme3.math.Vector3f max = new com.jme3.math.Vector3f(Float.NEGATIVE_INFINITY,
-                Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
-        com.jme3.math.Vector3f corner = new com.jme3.math.Vector3f();
-        for (int x = 0; x < 2; x++) {
-            for (int y = 0; y < 2; y++) {
-                for (int z = 0; z < 2; z++) {
-                    corner.set((float) (x == 0 ? vehicleData.min.x : vehicleData.max.x),
-                            (float) (y == 0 ? vehicleData.min.y : vehicleData.max.y),
-                            (float) (z == 0 ? vehicleData.min.z : vehicleData.max.z));
-                    transform.getRotation().toRotationMatrix().mult(corner, corner).addLocal(transform.getTranslation());
-                    min.set(Math.min(min.x, corner.x), Math.min(min.y, corner.y), Math.min(min.z, corner.z));
-                    max.set(Math.max(max.x, corner.x), Math.max(max.y, corner.y), Math.max(max.z, corner.z));
-                }
-            }
-        }
-        return new Vec3[]{SparkMathKt.toVec3(min), SparkMathKt.toVec3(max)};
-    }
-
-    private static void updateVehicleProjection(Level level, Transform transform, VehicleData vehicleData) {
-        if (VisualEffectHelper.vehicleProjection == null
-                || VisualEffectHelper.vehicleProjection.vehicleData != vehicleData) {
-            VisualEffectHelper.vehicleProjection = new VehicleAnimatable(level, vehicleData);
-            VisualEffectHelper.vehicleProjection.setTransform(transform);
-        } else {
-            VisualEffectHelper.vehicleProjection.updateTransform(transform);
-        }
-    }
-
-    protected static class PlacementContext {
-        public final Transform transform;
-        public final com.jme3.math.Vector3f halfExtents;
-
-        public PlacementContext(Transform transform, com.jme3.math.Vector3f halfExtents) {
-            this.transform = transform;
-            this.halfExtents = halfExtents;
-        }
+        box.setColor(canPlace ? Color.GREEN : Color.RED);
     }
 }

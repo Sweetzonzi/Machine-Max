@@ -5,6 +5,10 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.jme3.math.Vector3f;
+import com.jme3.math.Quaternion;
+import com.jme3.math.Matrix3f;
+import com.jme3.bounding.BoundingBox;
+import com.jme3.bullet.collision.shapes.infos.ChildCollisionShape;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
@@ -12,6 +16,7 @@ import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.SubPartAttr;
@@ -50,7 +55,14 @@ public class VehicleData {
     public final String name;
     public final UUID uuid;
     public final Vec3 pos;
+    /**
+     * 旧格式兼容的 AABB 缓存，坐标相对 {@link #pos}；不代表稳定的载具局部边界。
+     * 放置、射程与碰撞逻辑必须从各子零件的物理形状按目标位姿重新计算。新代码不要依赖此字段。
+     */
+    @Deprecated
     public final Vec3 min;
+    /** 旧格式兼容的 AABB 缓存；语义与 {@link #min} 相同，不应作为几何权威来源。 */
+    @Deprecated
     public final Vec3 max;
     public final float hpRatio;//血量比例（0~1，1 表示满血）
     public final Map<String, RegularPartData> parts;
@@ -262,6 +274,78 @@ public class VehicleData {
     }
 
     /**
+     * 查找放置锚点与朝向的参考根子零件（主线程）。总质量相同时取 UUID 自然顺序最小的部件。
+     *
+     * @param level 用于解析部件类型、变体与子零件质量的世界
+     * @return 最大质量部件的根子零件数据
+     * @throws IllegalArgumentException 当找不到有效的最大质量部件根子零件时
+     */
+    public SubPartData findPlacementReferenceRoot(Level level) {
+        RegularPartData rootPart = null;
+        String rootName = null;
+        float maxMass = Float.NEGATIVE_INFINITY;
+        for (RegularPartData part : parts.values()) {
+            RegularPartType type = RegularPartType.get(level, part.registryKey);
+            VariantAttr variant = type == null ? null : type.getVariant(part.variant);
+            if (variant == null) continue;
+            float mass = 0f;
+            for (SubPartAttr attr : variant.getSubParts().values()) mass += attr.getMass();
+            if (rootPart == null || mass > maxMass || (mass == maxMass
+                    && UUID.fromString(part.uuid).compareTo(UUID.fromString(rootPart.uuid)) < 0)) {
+                maxMass = mass;
+                rootPart = part;
+                rootName = variant.getRootSubPartName();
+            }
+        }
+        if (rootPart == null || rootName == null || !rootPart.subParts.containsKey(rootName)) {
+            throw new IllegalArgumentException("找不到有效的载具放置参考根子零件");
+        }
+        return rootPart.subParts.get(rootName);
+    }
+
+    /**
+     * 在指定坐标系中合成整车物理碰撞形状的 AABB（主线程）。
+     * 子零件使用数据中记录的位姿，与是否调用过 {@link #rebased()} 无关。
+     *
+     * @param level 用于解析部件类型、变体及物理碰撞形状的世界
+     * @param sourceOrigin 所求坐标系的原点，在载具数据坐标系中的位置
+     * @param sourceToFrame 将载具数据坐标系的方向旋转到所求坐标系的四元数
+     * @return 在所求坐标系的 XYZ 轴上对齐的整车碰撞包围盒
+     */
+    public AABB computeCollisionBounds(Level level, Vector3f sourceOrigin, Quaternion sourceToFrame) {
+        Vector3f min = new Vector3f(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY);
+        Vector3f max = new Vector3f(Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
+        BoundingBox box = new BoundingBox();
+        Vector3f boxMin = new Vector3f();
+        Vector3f boxMax = new Vector3f();
+        Vector3f childPosition = new Vector3f();
+        Quaternion childRotation = new Quaternion();
+        Matrix3f frameAxes = sourceToFrame.toRotationMatrix();
+        for (RegularPartData part : parts.values()) {
+            RegularPartType type = RegularPartType.get(level, part.registryKey);
+            VariantAttr variant = type.getVariant(part.variant);
+            for (Map.Entry<String, SubPartData> subEntry : part.subParts.entrySet()) {
+                SubPartAttr attr = variant.getSubParts().get(subEntry.getKey());
+                PosRotVelVel pose = subEntry.getValue().posRotVelVel;
+                Vector3f position = frameAxes.mult(pose.position().subtract(sourceOrigin), null);
+                Quaternion rotation = sourceToFrame.mult(SparkMathKt.toBQuaternion(pose.rotation()));
+                Matrix3f subPartAxes = rotation.toRotationMatrix();
+                // 逐个子形状换基；旋转 compound 的局部总盒会把空隙也算进接地高度。
+                for (ChildCollisionShape child : attr.getCollisionShape(variant).listChildren()) {
+                    subPartAxes.mult(child.copyOffset(childPosition), childPosition).addLocal(position);
+                    rotation.mult(child.copyRotation(childRotation), childRotation);
+                    child.getShape().boundingBoxWithoutRecalculate(childPosition, childRotation.toRotationMatrix(), box);
+                    box.getMin(boxMin);
+                    box.getMax(boxMax);
+                    min.set(Math.min(min.x, boxMin.x), Math.min(min.y, boxMin.y), Math.min(min.z, boxMin.z));
+                    max.set(Math.max(max.x, boxMax.x), Math.max(max.y, boxMax.y), Math.max(max.z, boxMax.z));
+                }
+            }
+        }
+        return new AABB(min.x, min.y, min.z, max.x, max.y, max.z);
+    }
+
+    /**
      * 将载具数据序列化为 JSON 字符串
      */
     public static String serializeToJsonString(VehicleData vehicleData) {
@@ -411,10 +495,8 @@ public class VehicleData {
             return problems;
         }
 
-        // 数值有限性：pos / min / max 必须为有限值且在坐标上限内
+        // 存储的 min/max 是兼容缓存，不参与蓝图有效性判定。
         checkFiniteVec(problems, "pos", pos);
-        checkFiniteVec(problems, "min", min);
-        checkFiniteVec(problems, "max", max);
 
         Set<UUID> partUuids = new HashSet<>(parts.size());
         // 结构：parts 的键必须可解析为 UUID——part_order 与蓝图往返都以它为部件身份

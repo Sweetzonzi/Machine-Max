@@ -5,7 +5,6 @@ import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
-import com.jme3.math.Transform;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.BlueprintData;
@@ -85,12 +84,10 @@ public class VehicleBlueprintItem extends BaseVehicleItem {
 
             VehicleData vehicleData = getVehicleData(itemStack);
             if (vehicleData != null) {
-                float size = (float) vehicleData.max.subtract(vehicleData.min).length();
-                VehicleAnimatable vehicleAnimatable = new VehicleAnimatable(level, vehicleData, 1f / size);
+                VehicleAnimatable vehicleAnimatable = new VehicleAnimatable(level, vehicleData);
                 vehicleAnimatable.getModelController().setModel(ICON_MODEL);
                 vehicleAnimatable.getModelController().setTextureLocation(BG_TEXTURE);
-                vehicleAnimatable.alignToAxesByFirstSubPart();
-                vehicleAnimatable.setTransform(new Transform());
+                vehicleAnimatable.centerForItemDisplay(true);
                 cacheAnimatable(itemStack, context, vehicleAnimatable);
                 return vehicleAnimatable;
             }

@@ -38,7 +38,8 @@ public class MMPayloadRegistry {
         // 不回退按名字再查；名字仍是存档键与翻译键。
         // 4.0.0 新增 TrackCloseRequestPayload：履带闭合是一次请求，携带载具 UUID、型号 id 与按铺设顺序
         // 排列的成员表（主动轮在首位）。
-        final PayloadRegistrar input = event.registrar("input:4.0.0");
+        // 7.0.0 将载具放置请求位置改为稳定的世界接地锚点。
+        final PayloadRegistrar input = event.registrar("input:7.0.0");
         // TrackLinkData#STREAM_CODEC 依次编码 clockwise 绕向、track_type 型号 id 与 link_count 节数，
         // VehicleData 的同步和蓝图载荷使用同一格式。
         // sync 与 misc 的版本共同约束两端线格式，防止参数错位。

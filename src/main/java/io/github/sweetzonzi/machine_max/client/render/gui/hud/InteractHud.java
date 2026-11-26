@@ -3,11 +3,13 @@ package io.github.sweetzonzi.machine_max.client.render.gui.hud;
 import io.github.sweetzonzi.machine_max.client.assembly.VehicleAssemblyClientHelper;
 import io.github.sweetzonzi.machine_max.client.input.KeyBinding;
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
+import io.github.sweetzonzi.machine_max.common.item.prop.BaseVehicleItem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleAssemblyHelper;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -39,6 +41,15 @@ public class InteractHud implements LayeredDraw.Layer {
         }
 
         VehicleAssemblyHelper assembly = VehicleAssemblyHelper.getInstance();
+        if (minecraft.screen == null && SeatSubsystem.canUseItems(localPlayer)
+                && hasVehiclePlacementItem(localPlayer)) {
+            addBoundHint(hints, minecraft.options.keyUse, MMLanguageRegistry.HUD_KEY_VEHICLE_PLACE);
+            addBoundHint(hints, KeyBinding.assemblyAddAttachAngleKey,
+                    MMLanguageRegistry.HUD_KEY_VEHICLE_ROTATE_FORWARD);
+            addBoundHint(hints, KeyBinding.assemblySubAttachAngleKey,
+                    MMLanguageRegistry.HUD_KEY_VEHICLE_ROTATE_BACKWARD);
+        }
+
         if (VehicleAssemblyClientHelper.getInstance().canUseAssemblyInput(localPlayer)) {
             addBoundHint(hints, minecraft.options.keyUse, MMLanguageRegistry.HUD_KEY_ASSEMBLY_PLACE);
             if (assembly.getPartType().getVariants().size() > 1) {
@@ -63,6 +74,12 @@ public class InteractHud implements LayeredDraw.Layer {
             guiGraphics.drawString(minecraft.font, hint, x, y, 0xFFFFFFFF);
             y += minecraft.font.lineHeight + 1;
         }
+    }
+
+    /** 检查任一只手是否持有可放置载具的物品。 */
+    private static boolean hasVehiclePlacementItem(LocalPlayer player) {
+        return player.getMainHandItem().getItem() instanceof BaseVehicleItem
+                || player.getOffhandItem().getItem() instanceof BaseVehicleItem;
     }
 
     private static void addBoundHint(List<Component> hints, KeyMapping key, MMLanguageRegistry text) {

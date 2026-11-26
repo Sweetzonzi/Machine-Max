@@ -73,6 +73,7 @@
 
 | 文档 | 当前进度 |
 | --- | --- |
+| [载具系统-放置旋转与结构生成复用计划](进行中/载具系统-放置旋转与结构生成复用计划.md) | 玩家载具预览旋转、服务端放置请求与验证、静态/动态碰撞拒绝、无玩家实例化入口已落地；P0 标定、结构生成调用方、GameTest 与实机验收待完成 |
 
 | [相机系统-载具速度差分与瞄准点枢轴震动实施计划](进行中/相机系统-载具速度差分与瞄准点枢轴震动实施计划.md) | 投射物冲击弹簧已接入；载具 `ΔV` 主线程采样、独立响应模型、目标枢轴旋转与同帧位姿合成待实施和客户端验收 |
 | [载具系统-爆反附加装甲与命中钩子实施计划](进行中/载具系统-爆反附加装甲与命中钩子实施计划.md) | T01—T09 已落地：`AbstractSubsystem#onHit` 与结算期调用、`ExplosionInstance#rayTestRigid` 改用 `findPickableHitBox`、`machine_max:reactive_armor` 类型（阈值引爆、不按伤害磨损）、26 块爆反瓦改用美系基础包的 ARAT II 型号（`arat_ii` 材质：`decay_rha` 与 `rha` 相同 → 恒定 78 mm、加性两段 −30／−320；`arat_ii_tile` 型号）、子系统 `hidden: false` 让损坏状态在 HUD 可见、builtin 参考实现 `machine_max:reactive_armor_brick` 与材质 `machine_max:reactive_armor`、schema 与 22 条类型计数同步；`ReactiveArmorHitGameTest` 5 项、`checkSchemas`／`checkContent` 通过；GameTest 待型号迁移后重跑。仍待 §9.2 的实机项 G2—G7 与 §11 的 D3、D5 两个数值标定 |

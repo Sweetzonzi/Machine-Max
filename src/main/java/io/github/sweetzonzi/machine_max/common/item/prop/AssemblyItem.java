@@ -3,7 +3,6 @@ package io.github.sweetzonzi.machine_max.common.item.prop;
 import io.github.sweetzonzi.machine_max.common.mech.part.PartRestoreMode;
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
-import com.jme3.math.Transform;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.AssemblyData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
@@ -17,6 +16,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
@@ -55,12 +56,13 @@ public class AssemblyItem extends BaseVehicleItem {
     }
 
     @Override
-    protected void onPlaceSuccess(Level level, PlacementContext ctx, ItemStack stack, Player player) {
+    protected void onPlaceSuccess(Level level, AABB bounds, ItemStack stack, Player player) {
         if (!player.hasInfiniteMaterials()) VisualEffectHelper.boundingBox = null;
         stack.consume(1, player);
-        var pos = ctx.transform.getTranslation();
-        ((ServerLevel) level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, Math.max((int) ctx.halfExtents.length(), 30),
-                ctx.halfExtents.x / 1.5f, ctx.halfExtents.y / 1.5f, ctx.halfExtents.z / 1.5f, 0.2f);
+        Vec3 pos = bounds.getBottomCenter();
+        ((ServerLevel) level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z,
+                Math.max((int) bounds.getSize(), 30), bounds.getXsize() / 3f,
+                bounds.getYsize() / 3f, bounds.getZsize() / 3f, 0.2f);
     }
 
     @Override
@@ -87,10 +89,8 @@ public class AssemblyItem extends BaseVehicleItem {
 
             VehicleData vehicleData = getVehicleData(itemStack);
             if (vehicleData != null) {
-                float size = (float) vehicleData.max.subtract(vehicleData.min).length();
-                VehicleAnimatable vehicleAnimatable = new VehicleAnimatable(level, vehicleData, 1f / size);
-                vehicleAnimatable.alignToAxesByFirstSubPart();
-                vehicleAnimatable.setTransform(new Transform());
+                VehicleAnimatable vehicleAnimatable = new VehicleAnimatable(level, vehicleData);
+                vehicleAnimatable.centerForItemDisplay(true);
                 cacheAnimatable(itemStack, context, vehicleAnimatable);
                 return vehicleAnimatable;
             }
@@ -101,8 +101,7 @@ public class AssemblyItem extends BaseVehicleItem {
             float scale = 1 / assemblyData.getScale();
             if (context.firstPerson()) scale *= 4f;
             VehicleAnimatable vehicleAnimatable = new VehicleAnimatable(level, vehicleData, scale);
-            vehicleAnimatable.alignToAxesByFirstSubPart();
-            vehicleAnimatable.setTransform(new Transform());
+            vehicleAnimatable.centerForItemDisplay(false);
             cacheAnimatable(itemStack, context, vehicleAnimatable);
             return vehicleAnimatable;
         }
