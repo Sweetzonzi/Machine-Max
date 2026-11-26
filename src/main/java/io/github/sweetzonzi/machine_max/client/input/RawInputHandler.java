@@ -9,6 +9,7 @@ import io.github.sweetzonzi.machine_max.common.mech.control.ControlBinding;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleAssemblyHelper;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.datagen.MMLanguageRegistry;
@@ -276,6 +277,18 @@ public class RawInputHandler {
         return client.player != null && VehicleAssemblyClientHelper.getInstance().canUseAssemblyInput(client.player);
     }
 
+    private static boolean isHoldingVehiclePlacementItem() {
+        return client.player != null && (client.player.getMainHandItem().getItem()
+                instanceof io.github.sweetzonzi.machine_max.common.item.prop.BaseVehicleItem
+                || client.player.getOffhandItem().getItem()
+                instanceof io.github.sweetzonzi.machine_max.common.item.prop.BaseVehicleItem);
+    }
+
+    private static boolean canUsePlacementRotationInput() {
+        if (client == null) client = Minecraft.getInstance();
+        return client.player != null && client.screen == null && SeatSubsystem.canUseItems(client.player);
+    }
+
 
     @SubscribeEvent
     public static void handleNormalInputs(ClientTickEvent.Pre event) {
@@ -444,12 +457,16 @@ public class RawInputHandler {
             //切换部件安装角
             KeyHooks.EVENT(KeyBinding.assemblyAddAttachAngleKey)
                     .OnKeyDown(() -> {
-                        if (canUseAssemblyInput()) VehicleAssemblyClientHelper.getInstance().cycleAttachAngle(true);
+                        if (isHoldingVehiclePlacementItem()) {
+                            if (canUsePlacementRotationInput()) VehicleAssemblyHelper.getInstance().cycleVehiclePlacementYaw(true);
+                        } else if (canUseAssemblyInput()) VehicleAssemblyClientHelper.getInstance().cycleAttachAngle(true);
                     });
 
             KeyHooks.EVENT(KeyBinding.assemblySubAttachAngleKey)
                     .OnKeyDown(() -> {
-                        if (canUseAssemblyInput()) VehicleAssemblyClientHelper.getInstance().cycleAttachAngle(false);
+                        if (isHoldingVehiclePlacementItem()) {
+                            if (canUsePlacementRotationInput()) VehicleAssemblyHelper.getInstance().cycleVehiclePlacementYaw(false);
+                        } else if (canUseAssemblyInput()) VehicleAssemblyClientHelper.getInstance().cycleAttachAngle(false);
                     });
 
             //切换部件连接点

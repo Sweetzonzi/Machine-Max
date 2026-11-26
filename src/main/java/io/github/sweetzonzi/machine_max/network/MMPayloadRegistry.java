@@ -194,6 +194,11 @@ public class MMPayloadRegistry {
                 TrackCloseRequestPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(TrackCloseRequestPayload::serverHandler)
         );
+        input.playToServer(
+                VehiclePlacementRequestPayload.TYPE,
+                VehiclePlacementRequestPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(VehiclePlacementRequestPayload::serverHandler)
+        );
         sync.playToClient(//通知客户端创建载具
                 VehicleCreatePayload.TYPE,
                 VehicleCreatePayload.STREAM_CODEC,

@@ -67,10 +67,13 @@
 | [载具系统-锁扣分离冲量设计](已实现/载具系统-锁扣分离冲量设计.md) | P0–P3 全部落地；四个静态字段、主动解扣与意外脱锁冲量、桑塔纳标定及 §9 G1–G2 测试通过 |
 | [武器系统-AmmoBelt与发射器装填第一阶段重构计划](已实现/武器系统-AmmoBelt与发射器装填第一阶段重构计划.md) | 第一阶段 P1–P5 已实施并经持续实际使用验证；§10 列的是后续扩展，不属于该阶段缺口 |
 | [物理-运动学刚体接约束入世后步进崩溃](已实现/物理-运动学刚体接约束入世后步进崩溃.md) | 项目侧规避方案已落地，上游 issue 已提交；归档复现描述、根因分析与验证记录 |
+| [物理系统-WorldSnapshot纳入PAWN查询计划](已实现/物理系统-WorldSnapshot纳入PAWN查询计划.md) | PAWN 快照查询与实体移除 GameTest 通过；客户端确认玩家阻挡放置、爆炸伤害实体正常。Bullet 与业务层排序、代理过滤及爆炸聚合去重经代码核验；卸载清理链经代码审查，无需专项测试 |
+
 ## 进行中
 
 | 文档 | 当前进度 |
 | --- | --- |
+
 | [相机系统-载具速度差分与瞄准点枢轴震动实施计划](进行中/相机系统-载具速度差分与瞄准点枢轴震动实施计划.md) | 投射物冲击弹簧已接入；载具 `ΔV` 主线程采样、独立响应模型、目标枢轴旋转与同帧位姿合成待实施和客户端验收 |
 | [载具系统-爆反附加装甲与命中钩子实施计划](进行中/载具系统-爆反附加装甲与命中钩子实施计划.md) | T01—T09 已落地：`AbstractSubsystem#onHit` 与结算期调用、`ExplosionInstance#rayTestRigid` 改用 `findPickableHitBox`、`machine_max:reactive_armor` 类型（阈值引爆、不按伤害磨损）、26 块爆反瓦改用美系基础包的 ARAT II 型号（`arat_ii` 材质：`decay_rha` 与 `rha` 相同 → 恒定 78 mm、加性两段 −30／−320；`arat_ii_tile` 型号）、子系统 `hidden: false` 让损坏状态在 HUD 可见、builtin 参考实现 `machine_max:reactive_armor_brick` 与材质 `machine_max:reactive_armor`、schema 与 22 条类型计数同步；`ReactiveArmorHitGameTest` 5 项、`checkSchemas`／`checkContent` 通过；GameTest 待型号迁移后重跑。仍待 §9.2 的实机项 G2—G7 与 §11 的 D3、D5 两个数值标定 |
 | [界面-载具状态HUD数据接入设计](进行中/界面-载具状态HUD数据接入设计.md) | builtin 透视／全息／俯视／名单四种样式、vehicle.seats 重复集合、乘员实体名称查询已交付；AUI 绑定与布局回归通过，客户端画面待验收；通用共享值、定制耐久条和真实履带几何待实施 |

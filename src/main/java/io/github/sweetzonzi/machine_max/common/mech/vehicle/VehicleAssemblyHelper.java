@@ -41,6 +41,7 @@ public class VehicleAssemblyHelper {
     /** 安装角（玩家可自定义，服务端仅归一化到 [0,360)）。 */
     @Setter
     private float attachRotation;
+    private float vehiclePlacementYaw;
 
     private VehicleAssemblyHelper() {
     }
@@ -139,6 +140,12 @@ public class VehicleAssemblyHelper {
         float next = (attachRotation + (add ? 90f : -90f)) % 360f;
         if (next < 0) next += 360f;
         attachRotation = next;
+    }
+
+    public void cycleVehiclePlacementYaw(boolean add) {
+        float next = (vehiclePlacementYaw + (add ? 90f : -90f)) % 360f;
+        if (next < 0) next += 360f;
+        vehiclePlacementYaw = next;
     }
 
     /** 循环连接点；若提供目标接口，优先停在兼容连接点。 */

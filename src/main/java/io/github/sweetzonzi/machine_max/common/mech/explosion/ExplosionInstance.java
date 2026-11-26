@@ -4,7 +4,6 @@ import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.PenetrationKey;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.level.WorldSnapshot;
-import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsRayTestResult;
 import com.jme3.bullet.objects.PhysicsRigidBody;
@@ -43,7 +42,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -55,7 +53,7 @@ import java.util.UUID;
  * <b>推进 → 结算 → 执行</b> 三阶段：</p>
  *
  * <ol>
- *   <li>{@link #advance()} —— DDA + 粗筛 + rayTest + 实体 AABB，只登记命中，不施加；</li>
+ *   <li>{@link #advance()} —— DDA + 快照 rayTest，只登记命中，不施加；</li>
  *   <li>{@link #settle()} —— 逐去重键汇总广延量并对外施加一次；</li>
  *   <li>{@link #execute()} —— 统一摧毁本 tick 标记的方块。</li>
  * </ol>
@@ -122,9 +120,6 @@ public final class ExplosionInstance {
     private final WorldSnapshot worldSnapshot;
     private final Level level;
 
-    private final List<PhysicsRigidBody> candidates = new ArrayList<>();
-    private float[] candidateBox = new float[0];
-    private int candidateCount;
     private final Vector3f scratchMin = new Vector3f();
     private final Vector3f scratchMax = new Vector3f();
     private final Vector3f dirTmp = new Vector3f();
@@ -214,9 +209,6 @@ public final class ExplosionInstance {
         tickCount++;
         float step = params.advancePerStep();
 
-        // 每爆炸每 tick 只付一次粗筛
-        coarseCull(step);
-
         for (BlastRay ray : rays) {
             if (ray.isAlive()) {
                 stepRay(ray, step);
@@ -267,11 +259,8 @@ public final class ExplosionInstance {
         walkVoxels(ray, ox, oy, oz, effectiveStep);
         // ② 快照刚体：裁剪到本 tick 推进段，每 tick 每射线一次
         rayTestRigid(ray, ox, oy, oz, ex, ey, ez);
-        // ③ 一般实体：AABB 求交，取进入 t
-        entitiesAlong(ray, ox, oy, oz, ex, ey, ez);
-
         if (!hits.isEmpty()) {
-            // 三条通道合并成同一条按 hitFraction 升序的序列（保序是这一段的全部意义）
+            // 两条查询通道合并成同一条按 hitFraction 升序的序列。
             hits.sort(Comparator.comparingDouble(h -> h.fraction));
 
             float baseDistance = ray.distance() - effectiveStep;
@@ -288,35 +277,6 @@ public final class ExplosionInstance {
         // 本步已到硬截断半径：结算完成后正常结束，不再有后续推进段
         if (ray.isAlive() && ray.distance() >= params.maxRadius()) {
             ray.kill();
-        }
-    }
-
-    /** 每爆炸每 tick 一次的球查询，把候选刚体及其 AABB 读进 Java 侧缓存。 */
-    private void coarseCull(float step) {
-        if (worldSnapshot == null) {
-            candidateCount = 0;
-            return;
-        }
-        float r = frontRadius() + step;
-        scratchMin.set(origin.x - r, origin.y - r, origin.z - r);
-        scratchMax.set(origin.x + r, origin.y + r, origin.z + r);
-        worldSnapshot.collectBodiesInAabb(scratchMin, scratchMax, candidates);
-
-        candidateCount = candidates.size();
-        if (candidateBox.length < candidateCount * 6) {
-            candidateBox = new float[candidateCount * 6];
-        }
-        for (int i = 0; i < candidateCount; i++) {
-            BoundingBox bb = candidates.get(i).boundingBox(null);
-            bb.getMin(scratchMin);
-            bb.getMax(scratchMax);
-            int b = i * 6;
-            candidateBox[b] = scratchMin.x;
-            candidateBox[b + 1] = scratchMin.y;
-            candidateBox[b + 2] = scratchMin.z;
-            candidateBox[b + 3] = scratchMax.x;
-            candidateBox[b + 4] = scratchMax.y;
-            candidateBox[b + 5] = scratchMax.z;
         }
     }
 
@@ -338,14 +298,12 @@ public final class ExplosionInstance {
     }
 
     /**
-     * 对 [起点, 终点] 段做一次快照 rayTest，命中刚体登记。
-     * 候选集按 owner 分派：仅 {@link SubPart} 走完整通路；其余（实体刚体、交互区、地形、未知）跳过。
+     * 对 [起点, 终点] 段做一次快照 rayTest，按 owner 登记载具部件与普通实体。
      * 命中箱按 {@link SubPart#findPickableHitBox(int)} 严格映射：条件失效的框与轮胎辅助球体不登记，
      * 射线继续传播——与投射物、玩家拾取同一条判定；{@code SubPart#getHitBox} 的越界回退不参与本路径。
      */
     private void rayTestRigid(BlastRay ray, float ox, float oy, float oz, float ex, float ey, float ez) {
-        if (worldSnapshot == null || candidateCount == 0) return;
-        if (!segmentNearAnyCandidate(ox, oy, oz, ex, ey, ez)) return;
+        if (worldSnapshot == null) return;
 
         scratchMin.set(ox, oy, oz);
         scratchMax.set(ex, ey, ez);
@@ -357,6 +315,15 @@ public final class ExplosionInstance {
             PhysicsCollisionObject pco = r.getCollisionObject();
             if (!(pco instanceof PhysicsRigidBody body)) continue;
             Object owner = PhysicsBodyExtensionKt.getOwner(body);
+            float frac = r.getHitFraction();
+            float px = ox + (ex - ox) * frac;
+            float py = oy + (ey - oy) * frac;
+            float pz = oz + (ez - oz) * frac;
+            if (owner instanceof Entity entity) {
+                if (!entity.isAlive() || entity instanceof MMPartEntity) continue;
+                hits.add(Hit.entity(frac, entity, -dirX, -dirY, -dirZ, px, py, pz));
+                continue;
+            }
             if (!(owner instanceof SubPart subPart)) continue;
 
             int tri = r.triangleIndex();
@@ -367,59 +334,12 @@ public final class ExplosionInstance {
             HitBox hitBox = subPart.findPickableHitBox(tri);
             if (hitBox == null) continue;
 
-            float frac = r.getHitFraction();
-            float px = ox + (ex - ox) * frac;
-            float py = oy + (ey - oy) * frac;
-            float pz = oz + (ez - oz) * frac;
-
             // 真实几何法线，统一朝向爆心（与射线方向同向时翻转）
             Vector3f n = r.getHitNormalLocal(null);
             if (n.dot(dirTmp.set(dirX, dirY, dirZ)) > 0f) {
                 n.negateLocal();
             }
             hits.add(Hit.rigid(frac, subPart, hitBox, key, n.x, n.y, n.z, px, py, pz));
-        }
-    }
-
-    /** 判断射线段 AABB 是否与任一候选刚体 AABB 相交（纯 Java 算术，无 native 调用）。 */
-    private boolean segmentNearAnyCandidate(float ox, float oy, float oz, float ex, float ey, float ez) {
-        float minX = Math.min(ox, ex) - 1e-3f, maxX = Math.max(ox, ex) + 1e-3f;
-        float minY = Math.min(oy, ey) - 1e-3f, maxY = Math.max(oy, ey) + 1e-3f;
-        float minZ = Math.min(oz, ez) - 1e-3f, maxZ = Math.max(oz, ez) + 1e-3f;
-        for (int i = 0; i < candidateCount; i++) {
-            int b = i * 6;
-            if (candidateBox[b + 3] >= minX && candidateBox[b] <= maxX
-                    && candidateBox[b + 4] >= minY && candidateBox[b + 1] <= maxY
-                    && candidateBox[b + 5] >= minZ && candidateBox[b + 2] <= maxZ) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /** 一般实体用主线程 AABB 相交发现命中，取进入 t 作 hitFraction。 */
-    private void entitiesAlong(BlastRay ray, float ox, float oy, float oz, float ex, float ey, float ez) {
-        double minX = Math.min(ox, ex) - 0.3, maxX = Math.max(ox, ex) + 0.3;
-        double minY = Math.min(oy, ey) - 0.3, maxY = Math.max(oy, ey) + 0.3;
-        double minZ = Math.min(oz, ez) - 0.3, maxZ = Math.max(oz, ez) + 0.3;
-        AABB search = new AABB(minX, minY, minZ, maxX, maxY, maxZ);
-        List<Entity> ents = level.getEntities((Entity) null, search,
-                e -> e.isAlive() && !(e instanceof MMPartEntity));
-        if (ents.isEmpty()) return;
-
-        Vec3 from = new Vec3(ox, oy, oz);
-        Vec3 to = new Vec3(ex, ey, ez);
-        float len = (float) from.distanceTo(to);
-        if (len <= 1e-6f) return;
-
-        for (Entity e : ents) {
-            Optional<Vec3> hit = e.getBoundingBox().inflate(1e-7).clip(from, to);
-            if (hit.isEmpty()) continue;
-            Vec3 p = hit.get();
-            float frac = (float) (from.distanceTo(p) / len);
-            // 实体法线取朝爆心方向（-射线方向）
-            hits.add(Hit.entity(frac, e, -ray.dirX(), -ray.dirY(), -ray.dirZ(),
-                    (float) p.x, (float) p.y, (float) p.z));
         }
     }
 

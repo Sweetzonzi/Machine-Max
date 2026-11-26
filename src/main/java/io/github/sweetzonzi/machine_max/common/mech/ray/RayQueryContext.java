@@ -31,7 +31,8 @@ import java.util.function.Predicate;
  * <p>解析结果包含 {@link RayHitResolver} 产出的全部命中类型；准星与投射物适配层只消费其中
  * 的 {@link SubPartRayHit}，其余类型留给调用方按需读取。</p>
  *
- * <p>物理快照只覆盖刚体与投射物，方块地形默认不在结果里；需要地形遮挡的查询在首次解析前调用
+ * <p>物理快照覆盖载具刚体、投射物与普通实体代理，方块地形默认不在结果里；部件实体代理被
+ * {@link RayHitResolver} 排除，避免与对应 {@link SubPart} 重复。需要地形遮挡的查询在首次解析前调用
  * {@link #withTerrain()}，由 {@link BlockRayHit#clip} 在主线程补上一条方块命中并与物理命中合并。</p>
  *
  * <p>返回给投射物的 {@link EntityHitResult} 通过 {@link #rememberResult} 与本上下文按实例身份
@@ -198,6 +199,14 @@ public final class RayQueryContext {
         List<RayHit> current = hits;
         if (current != null) return current;
         List<RayHit> resolved = resolveFromSnapshot(terrain ? BlockRayHit.clip(level, source, from, to) : null);
+        if (filter != null || source != null) {
+            resolved = resolved.stream().filter(hit -> {
+                if (!(hit instanceof EntityRayHit entityHit)) return true;
+                Entity entity = entityHit.entity();
+                return entity != source && !entity.isRemoved() && entity.isAlive()
+                        && entity.level() == level && (filter == null || filter.test(entity));
+            }).toList();
+        }
         nearestBySubPart = buildSubPartIndex(resolved);
         hits = resolved;
         return resolved;

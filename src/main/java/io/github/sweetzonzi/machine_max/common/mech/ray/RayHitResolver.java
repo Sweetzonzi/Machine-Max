@@ -5,6 +5,8 @@ import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsRayTestResult;
 import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
+import io.github.sweetzonzi.machine_max.common.entity.MMProjectileEntity;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
@@ -88,6 +90,8 @@ public final class RayHitResolver {
                     InteractBox interactBox = interactBoxes.findInteractBox(result.triangleIndex());
                     if (interactBox == null) continue;
                     hits.add(new InteractBoxRayHit(fraction, interactBox, point, normal));
+                } else if (owner instanceof MMPartEntity || owner instanceof MMProjectileEntity) {
+                    continue;
                 } else if (owner instanceof Entity entity) {
                     hits.add(new EntityRayHit(fraction, entity, point, normal));
                 } else {
