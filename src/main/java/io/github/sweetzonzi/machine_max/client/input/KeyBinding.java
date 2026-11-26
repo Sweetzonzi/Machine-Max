@@ -197,8 +197,7 @@ public class KeyBinding {
     );
     public static KeyMapping groundHandBrakeKey = new KeyMapping(GROUND_HAND_BRAKE_KEY,//键位名称
             KeyCategory.GROUND,//键位冲突类型
-            InputConstants.Type.KEYSYM,//默认为键盘
-            GLFW.GLFW_KEY_SPACE,//默认按键空格
+            InputConstants.UNKNOWN,//默认按键无
             KeyCategory.GROUND.getCategory()//键位类型
     );
     public static KeyMapping groundToggleHandBrakeKey = new KeyMapping(GROUND_TOGGLE_HAND_BRAKE_KEY,//键位名称
