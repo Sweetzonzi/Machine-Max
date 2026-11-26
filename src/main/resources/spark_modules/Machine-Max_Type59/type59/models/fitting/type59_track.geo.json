@@ -6,8 +6,8 @@
         "identifier": "geometry.type59_track",
         "texture_width": 512,
         "texture_height": 512,
-        "visible_bounds_width": 2,
-        "visible_bounds_height": 2,
+        "visible_bounds_width": 2.626506024,
+        "visible_bounds_height": 2.626506024,
         "visible_bounds_offset": [
           0,
           0,
@@ -25,14 +25,14 @@
           "cubes": [
             {
               "origin": [
-                -4.5,
+                -5.909638554,
                 0,
-                -1.3
+                -1.707228916
               ],
               "size": [
-                9,
-                1.05,
-                2.6
+                11.819277108,
+                1.378915663,
+                3.414457831
               ],
               "uv": {
                 "north": {
@@ -99,14 +99,14 @@
             },
             {
               "origin": [
-                -0.45,
-                1.05,
-                -0.35
+                -0.590963855,
+                1.378915663,
+                -0.459638554
               ],
               "size": [
-                0.9,
-                1.1500000000000001,
-                0.7
+                1.181927711,
+                1.510240964,
+                0.919277108
               ],
               "uv": {
                 "north": {

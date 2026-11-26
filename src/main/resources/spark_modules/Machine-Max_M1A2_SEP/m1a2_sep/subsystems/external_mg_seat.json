@@ -19,12 +19,12 @@
     "third_person_pitch_bias": 15,
     "first_person_offset": [
       0,
-      0.15,
+      0.160282703,
       0
     ],
     "third_person_offset": [
       0,
-      0.8,
+      0.854841085,
       0
     ],
     "first_hud_layout": "machine_max:morden_ground_basic",

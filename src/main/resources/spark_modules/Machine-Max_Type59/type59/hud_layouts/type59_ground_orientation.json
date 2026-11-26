@@ -18,24 +18,6 @@
     "selection_visibility": "always"
   },
   {
-    "style": "type59:type59_orientation",
-    "perspective": false,
-    "scope_behavior": "screen_fixed",
-    "ignore_zoom": true,
-    "anchor": "top_left",
-    "offset": [
-      14,
-      40,
-      0
-    ],
-    "scale": [
-      1,
-      1,
-      1
-    ],
-    "selection_visibility": "always"
-  },
-  {
     "style": "type59:type59_dashboard",
     "perspective": false,
     "scope_behavior": "screen_fixed",
@@ -57,7 +39,15 @@
     "style": "machine_max:vehicle_status_heading",
     "perspective": false,
     "anchor": "bottom_left",
-    "offset": [8, -22, 0],
-    "scale": [ 1, 1, 1 ]
+    "offset": [
+      8,
+      -22,
+      0
+    ],
+    "scale": [
+      1,
+      1,
+      1
+    ]
   }
 ]

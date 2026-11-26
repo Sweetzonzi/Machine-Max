@@ -34,7 +34,7 @@
             -1
           ],
           "block_collision": "ground",
-          "collision_height": 2.5,
+          "collision_height": 2.671378389,
           "hit_boxes": {
             "MM_HullCore": {
               "id": "part",
@@ -205,9 +205,9 @@
               "overwrite": {
                 "joint_attrs": {
                   "y": {
-                    "lower_limit": -0.16,
-                    "upper_limit": 0.16,
-                    "equilibrium": -0.1,
+                    "lower_limit": -0.170968217,
+                    "upper_limit": 0.170968217,
+                    "equilibrium": -0.106855136,
                     "stiffness": 75000,
                     "damping": 5000
                   },
@@ -225,9 +225,9 @@
               "overwrite": {
                 "joint_attrs": {
                   "y": {
-                    "lower_limit": -0.16,
-                    "upper_limit": 0.16,
-                    "equilibrium": -0.1,
+                    "lower_limit": -0.170968217,
+                    "upper_limit": 0.170968217,
+                    "equilibrium": -0.106855136,
                     "stiffness": 75000,
                     "damping": 5000
                   },
@@ -245,9 +245,9 @@
               "overwrite": {
                 "joint_attrs": {
                   "y": {
-                    "lower_limit": -0.16,
-                    "upper_limit": 0.16,
-                    "equilibrium": -0.1,
+                    "lower_limit": -0.170968217,
+                    "upper_limit": 0.170968217,
+                    "equilibrium": -0.106855136,
                     "stiffness": 75000,
                     "damping": 5000
                   },
@@ -265,9 +265,9 @@
               "overwrite": {
                 "joint_attrs": {
                   "y": {
-                    "lower_limit": -0.16,
-                    "upper_limit": 0.16,
-                    "equilibrium": -0.1,
+                    "lower_limit": -0.170968217,
+                    "upper_limit": 0.170968217,
+                    "equilibrium": -0.106855136,
                     "stiffness": 75000,
                     "damping": 5000
                   },
@@ -285,9 +285,9 @@
               "overwrite": {
                 "joint_attrs": {
                   "y": {
-                    "lower_limit": -0.16,
-                    "upper_limit": 0.16,
-                    "equilibrium": -0.1,
+                    "lower_limit": -0.170968217,
+                    "upper_limit": 0.170968217,
+                    "equilibrium": -0.106855136,
                     "stiffness": 75000,
                     "damping": 5000
                   },
@@ -305,9 +305,9 @@
               "overwrite": {
                 "joint_attrs": {
                   "y": {
-                    "lower_limit": -0.16,
-                    "upper_limit": 0.16,
-                    "equilibrium": -0.1,
+                    "lower_limit": -0.170968217,
+                    "upper_limit": 0.170968217,
+                    "equilibrium": -0.106855136,
                     "stiffness": 75000,
                     "damping": 5000
                   },
@@ -325,9 +325,9 @@
               "overwrite": {
                 "joint_attrs": {
                   "y": {
-                    "lower_limit": -0.16,
-                    "upper_limit": 0.16,
-                    "equilibrium": -0.1,
+                    "lower_limit": -0.170968217,
+                    "upper_limit": 0.170968217,
+                    "equilibrium": -0.106855136,
                     "stiffness": 75000,
                     "damping": 5000
                   },
@@ -357,9 +357,9 @@
               "overwrite": {
                 "joint_attrs": {
                   "y": {
-                    "lower_limit": -0.16,
-                    "upper_limit": 0.16,
-                    "equilibrium": -0.1,
+                    "lower_limit": -0.170968217,
+                    "upper_limit": 0.170968217,
+                    "equilibrium": -0.106855136,
                     "stiffness": 75000,
                     "damping": 5000
                   },
@@ -377,9 +377,9 @@
               "overwrite": {
                 "joint_attrs": {
                   "y": {
-                    "lower_limit": -0.16,
-                    "upper_limit": 0.16,
-                    "equilibrium": -0.1,
+                    "lower_limit": -0.170968217,
+                    "upper_limit": 0.170968217,
+                    "equilibrium": -0.106855136,
                     "stiffness": 75000,
                     "damping": 5000
                   },
@@ -397,9 +397,9 @@
               "overwrite": {
                 "joint_attrs": {
                   "y": {
-                    "lower_limit": -0.16,
-                    "upper_limit": 0.16,
-                    "equilibrium": -0.1,
+                    "lower_limit": -0.170968217,
+                    "upper_limit": 0.170968217,
+                    "equilibrium": -0.106855136,
                     "stiffness": 75000,
                     "damping": 5000
                   },
@@ -417,9 +417,9 @@
               "overwrite": {
                 "joint_attrs": {
                   "y": {
-                    "lower_limit": -0.16,
-                    "upper_limit": 0.16,
-                    "equilibrium": -0.1,
+                    "lower_limit": -0.170968217,
+                    "upper_limit": 0.170968217,
+                    "equilibrium": -0.106855136,
                     "stiffness": 75000,
                     "damping": 5000
                   },
@@ -437,9 +437,9 @@
               "overwrite": {
                 "joint_attrs": {
                   "y": {
-                    "lower_limit": -0.16,
-                    "upper_limit": 0.16,
-                    "equilibrium": -0.1,
+                    "lower_limit": -0.170968217,
+                    "upper_limit": 0.170968217,
+                    "equilibrium": -0.106855136,
                     "stiffness": 75000,
                     "damping": 5000
                   },
@@ -457,9 +457,9 @@
               "overwrite": {
                 "joint_attrs": {
                   "y": {
-                    "lower_limit": -0.16,
-                    "upper_limit": 0.16,
-                    "equilibrium": -0.1,
+                    "lower_limit": -0.170968217,
+                    "upper_limit": 0.170968217,
+                    "equilibrium": -0.106855136,
                     "stiffness": 75000,
                     "damping": 5000
                   },
@@ -477,9 +477,9 @@
               "overwrite": {
                 "joint_attrs": {
                   "y": {
-                    "lower_limit": -0.16,
-                    "upper_limit": 0.16,
-                    "equilibrium": -0.1,
+                    "lower_limit": -0.170968217,
+                    "upper_limit": 0.170968217,
+                    "equilibrium": -0.106855136,
                     "stiffness": 75000,
                     "damping": 5000
                   },
@@ -630,7 +630,7 @@
             -1
           ],
           "block_collision": "ground",
-          "collision_height": 2.5,
+          "collision_height": 2.671378389,
           "climb_assist": true,
           "hit_boxes": {
             "MM_Hit_left_idler": {
@@ -663,7 +663,7 @@
             -1
           ],
           "block_collision": "ground",
-          "collision_height": 2.5,
+          "collision_height": 2.671378389,
           "climb_assist": true,
           "hit_boxes": {
             "MM_Hit_left_road_1": {
@@ -696,7 +696,7 @@
             -1
           ],
           "block_collision": "ground",
-          "collision_height": 2.5,
+          "collision_height": 2.671378389,
           "climb_assist": true,
           "hit_boxes": {
             "MM_Hit_left_road_2": {
@@ -729,7 +729,7 @@
             -1
           ],
           "block_collision": "ground",
-          "collision_height": 2.5,
+          "collision_height": 2.671378389,
           "climb_assist": true,
           "hit_boxes": {
             "MM_Hit_left_road_3": {
@@ -762,7 +762,7 @@
             -1
           ],
           "block_collision": "ground",
-          "collision_height": 2.5,
+          "collision_height": 2.671378389,
           "climb_assist": true,
           "hit_boxes": {
             "MM_Hit_left_road_4": {
@@ -795,7 +795,7 @@
             -1
           ],
           "block_collision": "ground",
-          "collision_height": 2.5,
+          "collision_height": 2.671378389,
           "climb_assist": true,
           "hit_boxes": {
             "MM_Hit_left_road_5": {
@@ -828,7 +828,7 @@
             -1
           ],
           "block_collision": "ground",
-          "collision_height": 2.5,
+          "collision_height": 2.671378389,
           "climb_assist": true,
           "hit_boxes": {
             "MM_Hit_left_road_6": {
@@ -861,7 +861,7 @@
             -1
           ],
           "block_collision": "ground",
-          "collision_height": 2.5,
+          "collision_height": 2.671378389,
           "climb_assist": true,
           "hit_boxes": {
             "MM_Hit_left_road_7": {
@@ -894,7 +894,7 @@
             -1
           ],
           "block_collision": "ground",
-          "collision_height": 2.5,
+          "collision_height": 2.671378389,
           "climb_assist": true,
           "hit_boxes": {
             "MM_Hit_left_sprocket": {
@@ -927,7 +927,7 @@
             -1
           ],
           "block_collision": "ground",
-          "collision_height": 2.5,
+          "collision_height": 2.671378389,
           "climb_assist": true,
           "hit_boxes": {
             "MM_Hit_right_idler": {
@@ -960,7 +960,7 @@
             -1
           ],
           "block_collision": "ground",
-          "collision_height": 2.5,
+          "collision_height": 2.671378389,
           "climb_assist": true,
           "hit_boxes": {
             "MM_Hit_right_road_1": {
@@ -993,7 +993,7 @@
             -1
           ],
           "block_collision": "ground",
-          "collision_height": 2.5,
+          "collision_height": 2.671378389,
           "climb_assist": true,
           "hit_boxes": {
             "MM_Hit_right_road_2": {
@@ -1026,7 +1026,7 @@
             -1
           ],
           "block_collision": "ground",
-          "collision_height": 2.5,
+          "collision_height": 2.671378389,
           "climb_assist": true,
           "hit_boxes": {
             "MM_Hit_right_road_3": {
@@ -1059,7 +1059,7 @@
             -1
           ],
           "block_collision": "ground",
-          "collision_height": 2.5,
+          "collision_height": 2.671378389,
           "climb_assist": true,
           "hit_boxes": {
             "MM_Hit_right_road_4": {
@@ -1092,7 +1092,7 @@
             -1
           ],
           "block_collision": "ground",
-          "collision_height": 2.5,
+          "collision_height": 2.671378389,
           "climb_assist": true,
           "hit_boxes": {
             "MM_Hit_right_road_5": {
@@ -1125,7 +1125,7 @@
             -1
           ],
           "block_collision": "ground",
-          "collision_height": 2.5,
+          "collision_height": 2.671378389,
           "climb_assist": true,
           "hit_boxes": {
             "MM_Hit_right_road_6": {
@@ -1158,7 +1158,7 @@
             -1
           ],
           "block_collision": "ground",
-          "collision_height": 2.5,
+          "collision_height": 2.671378389,
           "climb_assist": true,
           "hit_boxes": {
             "MM_Hit_right_road_7": {
@@ -1191,7 +1191,7 @@
             -1
           ],
           "block_collision": "ground",
-          "collision_height": 2.5,
+          "collision_height": 2.671378389,
           "climb_assist": true,
           "hit_boxes": {
             "MM_Hit_right_sprocket": {

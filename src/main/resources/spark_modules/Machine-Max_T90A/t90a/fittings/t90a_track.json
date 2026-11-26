@@ -3,15 +3,15 @@
   "type": "track",
   "tags": ["machine_max:series/t90a"],
   "material": "machine_max:track_steel",
-  "thickness_mm": 65.625,
+  "thickness_mm": 71.181335998,
   "durability_per_link": 12,
-  "length_per_link": 0.1875,
+  "length_per_link": 0.203375246,
   "tension": {
     "enabled": true,
     "stiffness": 12000,
     "damping": 900,
     "preload": 0,
-    "slack": 0.015,
+    "slack": 0.01627002,
     "max_force": 800
   },
   "fmod": {

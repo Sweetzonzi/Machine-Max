@@ -19,7 +19,7 @@
     "third_person_pitch_bias": 15,
     "third_person_offset": [
       0,
-      2,
+      2.626506024,
       0
     ],
     "min_pitch": -90,
