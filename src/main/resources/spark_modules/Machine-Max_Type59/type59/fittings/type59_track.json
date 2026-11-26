@@ -2,15 +2,15 @@
   "$schema": "../docs/zh_cn/schemas/fitting.schema.json",
   "type": "track",
   "material": "machine_max:track_steel",
-  "thickness_mm": 65.625,
+  "thickness_mm": 86.182228916,
   "durability_per_link": 12,
-  "length_per_link": 0.165625,
+  "length_per_link": 0.21750753,
   "tension": {
     "enabled": true,
     "stiffness": 12000,
     "damping": 900,
     "preload": 0,
-    "slack": 0.015,
+    "slack": 0.019698795,
     "max_force": 800
   },
   "fmod": {
