@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle.data;
 
 import io.github.sweetzonzi.machine_max.common.mech.part.AbstractPartData;
+import io.github.sweetzonzi.machine_max.common.mech.part.PartStaleness;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
@@ -46,7 +47,8 @@ public class RegularPartData extends AbstractPartData {
             Codec.BOOL.optionalFieldOf("destroyed", false).forGetter(RegularPartData::isDestroyed),
             Codec.INT.optionalFieldOf("destroy_time", 0).forGetter(RegularPartData::getDestroyTime),
             Codec.STRING.optionalFieldOf("texture_name", "default").forGetter(RegularPartData::getTextureName),
-            SubPartData.MAP_CODEC.fieldOf("sub_parts").forGetter(RegularPartData::getSubParts)
+            SubPartData.MAP_CODEC.fieldOf("sub_parts").forGetter(RegularPartData::getSubParts),
+            Codec.floatRange(0f, 1f).optionalFieldOf("staleness", 0f).forGetter(RegularPartData::getStaleness)
     ).apply(instance, RegularPartData::new));
 
     /**
@@ -78,7 +80,9 @@ public class RegularPartData extends AbstractPartData {
             int destroyTime = buffer.readInt();
             String textureName = buffer.readUtf();
             var subParts = SubPartData.MAP_STREAM_CODEC.decode(buffer);
-            return new RegularPartData(registryKey, name, uuid, variant, assemblingProgress, sharedDurabilityRatio, materialAssemblingProgress, assembling, destroyed, destroyTime, textureName, subParts);
+            float staleness = buffer.readFloat();
+            return new RegularPartData(registryKey, name, uuid, variant, assemblingProgress, sharedDurabilityRatio,
+                    materialAssemblingProgress, assembling, destroyed, destroyTime, textureName, subParts, staleness);
         }
 
         /**
@@ -98,6 +102,7 @@ public class RegularPartData extends AbstractPartData {
             buffer.writeInt(value.destroyTime);
             buffer.writeUtf(value.textureName);
             SubPartData.MAP_STREAM_CODEC.encode(buffer, value.subParts);
+            buffer.writeFloat(value.staleness);
         }
     };
 
@@ -151,8 +156,10 @@ public class RegularPartData extends AbstractPartData {
             boolean destroyed,
             int destroyTime,
             String textureName,
-            Map<String, SubPartData> subParts) {
-        super(registryKey, name, uuid, variant, sharedDurabilityRatio, textureName, subParts);
+            Map<String, SubPartData> subParts,
+            float staleness) {
+        super(registryKey, name, uuid, variant, sharedDurabilityRatio, textureName, subParts,
+                PartStaleness.requireValid(staleness));
         this.assemblingProgress = assemblingProgress;
         this.materialAssemblingProgress = materialAssemblingProgress;
         this.assembling = assembling;

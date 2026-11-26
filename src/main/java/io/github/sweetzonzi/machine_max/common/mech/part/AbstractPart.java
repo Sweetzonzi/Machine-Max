@@ -1,6 +1,8 @@
 package io.github.sweetzonzi.machine_max.common.mech.part;
 
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.*;
+import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
+import io.github.sweetzonzi.machine_max.network.payload.assembly.PartStalenessSyncPayload;
 
 import cn.solarmoon.spark_core.animation.AnimResourceKey;
 import cn.solarmoon.spark_core.animation.IAnimatable;
@@ -60,6 +62,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
+import net.minecraft.server.level.ServerLevel;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -133,6 +137,9 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
     private MechMolangContext molangContext;
     /** 当前使用的纹理索引（用于切换纹理） */
     public String textureName;
+    /** 服务端权威的连续做旧进度；客户端只在显示档位变化时接收更新。 */
+    @Getter
+    private float staleness;
     /** 部件级信号存储，同时作为 Molang 变量表（{@link #getVariables()}） */
     public final ConcurrentMap<String, Object> signalStorage = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, SignalChannel> signalInputChannels = new ConcurrentHashMap<>();
@@ -274,6 +281,7 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
      * @param mode 显式恢复策略；调用者必须保证非空
      */
     protected final void restoreState(AbstractPartData data, PartRestoreMode mode) {
+        staleness = mode == PartRestoreMode.FULL_STATE ? PartStaleness.requireValid(data.staleness) : 0f;
         if (mode == PartRestoreMode.FULL_STATE && variant.getTextures().containsKey(data.textureName)) {
             textureName = data.textureName;
             modelController.setTextureLocation(variant.getTexture(textureName));
@@ -589,6 +597,9 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
      * <p>发布共享动画姿态（唯一发布者），并在客户端自动播放循环动画。</p>
      */
     public void onTick() {
+        if (!level.isClientSide() && staleness < 1f) {
+            setStaleness(PartStaleness.advance(staleness, MMServerConfig.getPartFullWeatheringTicks()));
+        }
         // 发布共享 pose（唯一 setChanged 调用点）
         animController.tick();
         if (level.isClientSide()) autoPlayLoopAnimations();
@@ -720,6 +731,25 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
         if (variant.getTextures().size() == 1) return;
         this.textureName = name;
         this.getModelController().setTextureLocation(variant.getTexture(name));
+    }
+
+    /** 更新连续做旧进度；服务端仅在 16 档显示值变化时向客户端同步。 */
+    public void setStaleness(float staleness) {
+        int previousStage = PartStaleness.stage(this.staleness);
+        this.staleness = PartStaleness.clamp(staleness);
+        if (!level.isClientSide() && previousStage != PartStaleness.stage(this.staleness)) {
+            syncStalenessToClient();
+        }
+    }
+
+    private void syncStalenessToClient() {
+        if (!(level instanceof ServerLevel serverLevel) || assembly == null || !assembly.isInLevel()) return;
+        for (SubPart child : subParts.values()) {
+            if (ObjectManager.getDestroyableObject(level, child.getId()) != child) continue;
+            PacketDistributor.sendToPlayersInDimension(serverLevel,
+                    new PartStalenessSyncPayload(child.getId(), staleness));
+            return;
+        }
     }
 
     /**

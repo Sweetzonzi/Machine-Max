@@ -188,7 +188,7 @@ public final class VehiclePlacementService {
             }
             parts.put(partEntry.getKey(), new RegularPartData(part.registryKey, part.name, part.uuid, part.variant,
                     part.assemblingProgress, part.sharedDurabilityRatio, part.materialAssemblingProgress,
-                    part.assembling, part.destroyed, part.destroyTime, part.textureName, subParts));
+                    part.assembling, part.destroyed, part.destroyTime, part.textureName, subParts, part.staleness));
         }
         Vec3 pos = SparkMathKt.toVec3(placePosition(PhysicsHelperKt.toBVector3f(source.pos), axes, rootPosition));
         return new VehicleData(source.name, UUID.randomUUID(), pos, bounds.getMinPosition().subtract(pos),

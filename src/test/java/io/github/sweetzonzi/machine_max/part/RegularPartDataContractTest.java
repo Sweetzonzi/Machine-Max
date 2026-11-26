@@ -26,7 +26,7 @@ class RegularPartDataContractTest {
                 new PosRotVelVel(new Vector3f(1, 2, 3), new Quaternionf(), new Vector3f(4, 5, 6), new Vector3f()),
                 Map.of("joint", connector), Map.of("battery", resources));
         return new RegularPartData(ResourceLocation.parse("test:old_regular"), "legacy", "00000000-0000-0000-0000-000000000001",
-                "alternate", 0.6f, 0.3f, 7, true, true, 1234, "paint", Map.of("main", subPart));
+                "alternate", 0.6f, 0.3f, 7, true, true, 1234, "paint", Map.of("main", subPart), 0.375f);
     }
 
     @Test void legacyMissingFieldsRetainHistoricalDefaults() {
@@ -42,6 +42,7 @@ class RegularPartDataContractTest {
         assertFalse(saved.destroyed);
         assertEquals(0, saved.destroyTime);
         assertEquals("default", saved.textureName);
+        assertEquals(0f, saved.staleness);
     }
 
     @Test void jsonAndBinaryPreserveAllStateWithUuidAsTwoLongs() {
@@ -65,6 +66,7 @@ class RegularPartDataContractTest {
             assertEquals(original.textureName, buffer.readUtf());
             assertEquals(original.subParts.get("main").subsystemData,
                     SubPartData.MAP_STREAM_CODEC.decode(buffer).get("main").subsystemData);
+            assertEquals(original.staleness, buffer.readFloat());
             assertEquals(0, buffer.readableBytes());
             buffer.readerIndex(0);
             var binary = RegularPartData.STREAM_CODEC.decode(buffer);
@@ -85,6 +87,7 @@ class RegularPartDataContractTest {
         assertEquals(saved.textureName, result.textureName);
         assertEquals(saved.destroyed, result.destroyed);
         assertEquals(saved.destroyTime, result.destroyTime);
+        assertEquals(saved.staleness, result.staleness);
         assertEquals(saved.subParts.get("main").subsystemData, result.subParts.get("main").subsystemData);
         assertEquals(originalJson, RegularPartData.CODEC.encodeStart(JsonOps.INSTANCE, saved).getOrThrow());
     }

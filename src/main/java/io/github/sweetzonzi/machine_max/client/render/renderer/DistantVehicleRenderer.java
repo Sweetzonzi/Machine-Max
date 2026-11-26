@@ -135,6 +135,8 @@ public class DistantVehicleRenderer extends VisualEffectRenderer {
                     false
             );
         }
+        PartWearRenderer.render(subPart.part, bones, modelInstance.getPose(), partialTick,
+                poseStack, bufferSource, light, overlay, color, false);
         poseStack.popPose();
     }
 }

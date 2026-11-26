@@ -410,6 +410,8 @@
   "machine_max.configuration.speed_turning_limit.tooltip": "Limit steering angle at high speed to prevent rollover. Default: true",
   "machine_max.configuration.steering_off_time": "Steering Return Time",
   "machine_max.configuration.steering_off_time.tooltip": "Seconds to return steering to center after releasing the key. Lower = wheels straighten faster. Default: 0.2. Range: 0.05 ~ 99999.0",
+  "machine_max.configuration.part_full_weathering_ticks": "Part Full Weathering Time (Ticks)",
+  "machine_max.configuration.part_full_weathering_ticks.tooltip": "Server ticks required for a part to reach full weathering from new. Default: 2000 (100 seconds). Range: 1 ~ 1000000",
   "machine_max.configuration.subpart_destroy_advance_floor_ticks": "SubPart Destroy Advance Floor Ticks",
   "machine_max.configuration.subpart_destroy_advance_floor_ticks.tooltip": "Lowest destroy timer value that additional damage may advance an already destroyed sub-part to. Default: 100 (5 seconds). Range: 0 ~ 100000; 0 disables the floor",
   "machine_max.configuration.subpart_destroy_advance_ticks_per_damage": "SubPart Destroy Advance Ticks Per Damage",

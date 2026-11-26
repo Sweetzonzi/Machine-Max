@@ -1955,6 +1955,14 @@ public enum MMLanguageRegistry {
             zh_cn, "是否在启动和重载时自动打包并覆盖 machine_max:official 官方内容包。默认值：true",
             en_us, "Whether to auto-pack and override machine_max:official content pack on startup/reload. Default: true"
     )),
+    CONFIGURATION_PART_FULL_WEATHERING_TICKS("machine_max.configuration.part_full_weathering_ticks", ImmutableMap.of(
+            zh_cn, "部件老化周期（Tick）",
+            en_us, "Part Full Weathering Time (Ticks)"
+    )),
+    CONFIGURATION_PART_FULL_WEATHERING_TICKS_TOOLTIP("machine_max.configuration.part_full_weathering_ticks.tooltip", ImmutableMap.of(
+            zh_cn, "部件从全新状态达到最大老化程度所需的服务端Tick数。默认值：2000（100秒）。范围：1 ~ 1000000",
+            en_us, "Server ticks required for a part to reach full weathering from new. Default: 2000 (100 seconds). Range: 1 ~ 1000000"
+    )),
     CONFIGURATION_SUBPART_DESTROY_TICKS_PER_DURABILITY("machine_max.configuration.subpart_destroy_ticks_per_durability", ImmutableMap.of(
             zh_cn, "零件销毁每耐久Tick",
             en_us, "SubPart Destroy Ticks Per Durability"

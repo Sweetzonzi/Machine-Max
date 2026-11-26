@@ -427,7 +427,8 @@ public class VehicleData {
                     part.destroyed,
                     part.destroyTime,
                     part.textureName,
-                    rebasedSubParts
+                    rebasedSubParts,
+                    part.staleness
             ));
         }
         return new VehicleData(name, uuid, Vec3.ZERO, min, max, hpRatio, rebasedParts, connections,

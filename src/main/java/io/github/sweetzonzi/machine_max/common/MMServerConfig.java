@@ -8,6 +8,7 @@ public class MMServerConfig {
     private static final ModConfigSpec.BooleanValue SHOULD_DESTROY_BLOCKS;
     private static final ModConfigSpec.BooleanValue PROJECTILE_DESTROY_BLOCKS;
     private static final ModConfigSpec.BooleanValue IGNORE_ASSEMBLY_TAG_REQUIREMENTS;
+    private static final ModConfigSpec.IntValue PART_FULL_WEATHERING_TICKS;
     private static final ModConfigSpec.IntValue SUBPART_DESTROY_TICKS_PER_DURABILITY;
     private static final ModConfigSpec.IntValue SUBPART_DESTROY_MIN_TICKS;
     private static final ModConfigSpec.IntValue SUBPART_DESTROY_ADVANCE_TICKS_PER_DAMAGE;
@@ -51,6 +52,10 @@ public class MMServerConfig {
         IGNORE_ASSEMBLY_TAG_REQUIREMENTS = builder
                 .comment("Whether to ignore connector and part tag requirements when assembling vehicles.")
                 .define("ignore_assembly_tag_requirements", false);
+
+        PART_FULL_WEATHERING_TICKS = builder
+                .comment("每个部件从全新状态达到最大老化程度所需的服务端 tick 数。默认值：2000（100 秒）。")
+                .defineInRange("part_full_weathering_ticks", 2000, 1, 1_000_000);
 
         SUBPART_DESTROY_TICKS_PER_DURABILITY = builder
                 .comment("Destroy timer ticks per 1 max durability point for destroyed sub-parts.")
@@ -168,6 +173,11 @@ public class MMServerConfig {
 
     public static boolean ignoreAssemblyTagRequirements() {
         return IGNORE_ASSEMBLY_TAG_REQUIREMENTS.get();
+    }
+
+    /** 返回部件从全新状态达到最大老化程度所需的服务端 tick 数。 */
+    public static int getPartFullWeatheringTicks() {
+        return PART_FULL_WEATHERING_TICKS.get();
     }
 
     public static int getSubPartDestroyTicksPerDurability() {

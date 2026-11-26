@@ -36,6 +36,8 @@ public abstract class AbstractPartData {
      * 共享耐久比例；共享耐久模式下用于在新上限上恢复耐久，通常位于 [0, 1]。
      */
     public final float sharedDurabilityRatio;
+    /** 连续做旧进度，取值范围为 [0, 1]。 */
+    public final float staleness;
     /**
      * 保存的涂装名称；骨架恢复忽略它并使用新建时的默认涂装。
      */
@@ -52,12 +54,14 @@ public abstract class AbstractPartData {
      * {@link PartFactory#validateRestore(AbstractPartData, boolean)}。调用者不得在恢复期间修改传入映射。</p>
      */
     protected AbstractPartData(ResourceLocation registryKey, String name, String uuid, String variant,
-                               float sharedDurabilityRatio, String textureName, Map<String, SubPartData> subParts) {
+                               float sharedDurabilityRatio, String textureName,
+                               Map<String, SubPartData> subParts, float staleness) {
         this.registryKey = registryKey;
         this.name = name;
         this.uuid = uuid;
         this.variant = variant;
         this.sharedDurabilityRatio = sharedDurabilityRatio;
+        this.staleness = PartStaleness.requireValid(staleness);
         this.textureName = textureName;
         this.subParts = subParts;
     }
@@ -76,6 +80,7 @@ public abstract class AbstractPartData {
         float max = part.getSharedMaxDurability();
         this.sharedDurabilityRatio = part.type.shareDurability && max > 0f
                 ? Math.clamp(part.getSharedDurability() / max, 0f, 1f) : 1f;
+        this.staleness = part.getStaleness();
         this.textureName = part.textureName;
         this.subParts = new HashMap<>();
         part.subParts.forEach((key, subPart) -> subParts.put(key, new SubPartData(subPart)));

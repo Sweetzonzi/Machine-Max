@@ -92,10 +92,12 @@ public class MMPayloadRegistry {
         // 21.0.0 对应命中表现包的条目增加投射物身份：SubPartHitEffectPayload 的标志位多一位「后随 varint 投射物 id」，
         // 击穿装甲的条目因此带上打出这一击的那一发（客户端按 id 查弹种，再取 sounds.fmod.hit_armour）。
         // 地面命中不新增字段：ProjectilesHitPayload 的条目本来就带 objId，客户端按同一个 id 查弹种。
-        final PayloadRegistrar sync = event.registrar("sync:21.0.0");
+        // 22.0.0 新增 PartStalenessSyncPayload：按 SubPart ID 下发所属 Part 的连续陈旧度。
+        final PayloadRegistrar sync = event.registrar("sync:22.0.0");
         final PayloadRegistrar research = event.registrar("research:2.0.0");
         // 4.0.0 与 sync 同因：蓝图取出 / 收纳的载具数据里也带 TrackLinkData。
-        final PayloadRegistrar misc = event.registrar("misc:4.0.0");
+        // RegularPartData 新增持久化陈旧度，misc 与 sync 协议组必须同步升级。
+        final PayloadRegistrar misc = event.registrar("misc:5.0.0");
         final PayloadRegistrar pda = event.registrar("pda:1.0.0");
         //注册网络包及其处理
         input.playToServer(//玩家配置
@@ -239,6 +241,11 @@ public class MMPayloadRegistry {
                 PartAssemblyProgressSyncPayload.TYPE,
                 PartAssemblyProgressSyncPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(PartAssemblyProgressSyncPayload::handle)
+        );
+        sync.playToClient(
+                PartStalenessSyncPayload.TYPE,
+                PartStalenessSyncPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(PartStalenessSyncPayload::handle)
         );
         sync.commonToServer(//客户端请求维度载具数据
                 ClientRequestVehicleDataPayload.TYPE,

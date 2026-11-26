@@ -48,7 +48,7 @@ class PartOrderContractTest {
                 new PosRotVelVel(new Vector3f(), new Quaternionf(), new Vector3f(), new Vector3f()),
                 Map.of(), Map.of());
         return new RegularPartData(ResourceLocation.parse("test:part"), "part", uuid, "default",
-                1f, 1f, 99999, false, false, 0, "default", Map.of("main", subPart));
+                1f, 1f, 99999, false, false, 0, "default", Map.of("main", subPart), 0f);
     }
 
     private static VehicleData vehicle(List<String> order) {

@@ -399,6 +399,8 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("machine_max.configuration.ignore_assembly_tag_requirements.tooltip", "使用零件组装载具时是否忽视连接点的Tag要求。默认值：false");
         this.add("machine_max.configuration.auto_override_official_pack", "自动覆盖官方内容包");
         this.add("machine_max.configuration.auto_override_official_pack.tooltip", "是否在启动和重载时自动打包并覆盖 machine_max:official 官方内容包。默认值：true");
+        this.add("machine_max.configuration.part_full_weathering_ticks", "部件老化周期（Tick）");
+        this.add("machine_max.configuration.part_full_weathering_ticks.tooltip", "部件从全新状态达到最大老化程度所需的服务端Tick数。默认值：2000（100秒）。范围：1 ~ 1000000");
         this.add("machine_max.configuration.subpart_destroy_ticks_per_durability", "零件销毁每耐久Tick");
         this.add("machine_max.configuration.subpart_destroy_ticks_per_durability.tooltip", "零件损毁后，每1点最大耐久对应的销毁倒计时Tick数。默认值：10。范围：0 ~ 100000");
         this.add("machine_max.configuration.subpart_destroy_min_ticks", "零件销毁最小Tick");

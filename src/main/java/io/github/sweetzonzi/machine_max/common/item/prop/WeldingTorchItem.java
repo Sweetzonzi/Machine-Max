@@ -12,6 +12,7 @@ import io.github.sweetzonzi.machine_max.common.attachment.BlueprintAttachment;
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machine_max.common.mech.control.view.ViewMath;
+import io.github.sweetzonzi.machine_max.common.mech.part.PartStaleness;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.RegularPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
@@ -49,6 +50,7 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
     public static final float SUBSYSTEM_REPAIR_PER_TICK = 1f;
     public static final float CONNECTOR_REPAIR_PER_TICK = 1f;
     public static final float VEHICLE_REPAIR_PER_TICK = 1f;
+    public static final int WELDING_REPAIR_PULSE_TICKS = 5;
     private static final SoundEvent WELDING_START_SOUND = SoundEvent.createFixedRangeEvent(
             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.welding_torch.start"), 32f);
     private static final SoundEvent WELDING_LOOP_SOUND = SoundEvent.createFixedRangeEvent(
@@ -94,12 +96,20 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                 if (!(subPart.part instanceof RegularPart part)) return;
                 if (!level.isClientSide()) { // 服务端负责实际数值的更新
                     stack.hurtAndBreak(1, livingEntity, EquipmentSlot.MAINHAND);
-                    if (getUseDuration(stack, livingEntity) - remainingUseDuration < 15 || remainingUseDuration % 5 != 0)
+                    if (getUseDuration(stack, livingEntity) - remainingUseDuration < 15
+                            || remainingUseDuration % WELDING_REPAIR_PULSE_TICKS != 0)
                         return;
                     if (!livingEntity.isCrouching() && !subPart.isDestroyed()) { // 一般状态下按「装配 → 轮子 → 履带 → 车体」串行焊接
-                        float repairStep = 5;
+                        float repairStep = WELDING_REPAIR_PULSE_TICKS;
                         float assembleStep = 5;
                         boolean progressed = false;
+                        float partMaxDurability = part.getTotalMaxDurability();
+                        if (part.getStaleness() > 0f && partMaxDurability > 0f) {
+                            // 陈旧度按普通耐久维修速率回退，完整修复时长随 Part 最大耐久变化。
+                            float repairedDurability = repairStep * SUBPART_REPAIR_PER_TICK;
+                            part.setStaleness(PartStaleness.repair(
+                                    part.getStaleness(), repairedDurability, partMaxDurability));
+                        }
                         // 1. 零件装配：进度先走，耐久按增量跟着补，后面的维修才有更高的上限可修
                         boolean assembled = false;
                         BlueprintAttachment blueprint = player.getData(MMAttachments.getBLUEPRINT());
@@ -175,7 +185,9 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                         }
                     }
                 } else { // 客户端仅负责音效与粒子效果
-                    boolean shouldPlayEffect = shouldPlayEffect(subPart);
+                    boolean shouldPlayEffect = shouldPlayEffect(subPart)
+                            || (!player.isCrouching() && !subPart.isDestroyed()
+                            && PartStaleness.stage(subPart.part.getStaleness()) > 0);
                     if (shouldPlayEffect) {
                         if (player.tickCount % WELD_EFFECT_INTERVAL == 0) {
                             var ray = eyesight.getTargetBodyCache().get(subPart.body);

@@ -384,6 +384,8 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("machine_max.configuration.ignore_assembly_tag_requirements.tooltip", "Whether to ignore connector tag requirements when assembling vehicles. Default: false");
         this.add("machine_max.configuration.auto_override_official_pack", "Auto Override Official Pack");
         this.add("machine_max.configuration.auto_override_official_pack.tooltip", "Whether to auto-pack and override machine_max:official content pack on startup/reload. Default: true");
+        this.add("machine_max.configuration.part_full_weathering_ticks", "Part Full Weathering Time (Ticks)");
+        this.add("machine_max.configuration.part_full_weathering_ticks.tooltip", "Server ticks required for a part to reach full weathering from new. Default: 2000 (100 seconds). Range: 1 ~ 1000000");
         this.add("machine_max.configuration.subpart_destroy_ticks_per_durability", "SubPart Destroy Ticks Per Durability");
         this.add("machine_max.configuration.subpart_destroy_ticks_per_durability.tooltip", "Destroy timer ticks per 1 max durability point for destroyed sub-parts. Default: 10. Range: 0 ~ 100000");
         this.add("machine_max.configuration.subpart_destroy_min_ticks", "SubPart Destroy Minimum Ticks");

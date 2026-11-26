@@ -137,8 +137,9 @@ public class PartEntityRenderer extends EntityRenderer<MMPartEntity> {
             }
         }
 
-        // 内构查看模式：透明度渲染
-        if (VehicleInspectorRenderer.inspecting && isPlayerRidingSubPart(entity.subPart)) {
+        // 内构查看模式保留半透明；普通模型统一使用 cutout。
+        boolean inspecting = VehicleInspectorRenderer.inspecting && isPlayerRidingSubPart(entity.subPart);
+        if (inspecting) {
             color = new Color(255, 255, 255, 64).getRGB();
         }
 
@@ -146,8 +147,10 @@ public class PartEntityRenderer extends EntityRenderer<MMPartEntity> {
         var bones = entity.subPart.getBones();
 
         if (!useWireframe) {
-            renderTextured(bones, modelInstance, false, light, overlay, color,
+            renderTextured(bones, modelInstance, inspecting, light, overlay, color,
                     poseStack, bufferSource, partialTick, getTextureLocation(entity));
+            PartWearRenderer.render(entity.subPart.part, bones, modelInstance.getPose(), partialTick,
+                    poseStack, bufferSource, light, overlay, color, inspecting);
         } else {
             renderWireframe(bones, modelInstance, assemblingProgress, false, light, overlay, color,
                     poseStack, bufferSource, partialTick, getTextureLocation(entity));
@@ -172,7 +175,7 @@ public class PartEntityRenderer extends EntityRenderer<MMPartEntity> {
                             ? bufferSource.getBuffer(RenderType.entityTranslucent(texture))
                             : glow
                             ? bufferSource.getBuffer(RenderType.eyes(texture))
-                            : bufferSource.getBuffer(RenderType.entityTranslucent(texture)),
+                            : bufferSource.getBuffer(RenderType.entityCutout(texture)),
                     glow && !inspecting
                             ? Brightness.FULL_BRIGHT.pack()
                             : light,

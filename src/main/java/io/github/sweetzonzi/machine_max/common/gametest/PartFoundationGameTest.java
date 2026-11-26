@@ -244,6 +244,11 @@ public final class PartFoundationGameTest {
             player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, torch);
             torch.getItem().onUseTick(helper.getLevel(), player, torch, 20);
             helper.assertTrue(torch.getDamageValue() == 0 && body.assembly == host, "Material tool rejects body before side effects");
+            equipment.setStaleness(0.5f);
+            eyesight.getSortedTargetBodyCache().clear();
+            eyesight.getSortedTargetBodyCache().add(equipment.rootSubPart.body);
+            torch.getItem().onUseTick(helper.getLevel(), player, torch, 20);
+            helper.assertTrue(equipment.getStaleness() < 0.5f, "Welding torch reduces regular part weathering");
             eyesight.getSortedTargetBodyCache().clear();
             helper.succeed();
         } finally {
@@ -268,11 +273,13 @@ public final class PartFoundationGameTest {
                 Codec.FLOAT.fieldOf("shared_durability_ratio").forGetter(data -> data.sharedDurabilityRatio),
                 Codec.STRING.fieldOf("texture_name").forGetter(data -> data.textureName),
                 SubPartData.MAP_CODEC.fieldOf("sub_parts").forGetter(data -> data.subParts),
+                Codec.floatRange(0f, 1f).optionalFieldOf("staleness", 0f).forGetter(data -> data.staleness),
                 Codec.INT.fieldOf("reserve").forGetter(data -> data.reserve)
         ).apply(instance, ProbeData::new));
         final int reserve;
-        ProbeData(ResourceLocation id, String name, String uuid, String variant, float ratio, String texture, Map<String, SubPartData> subParts, int reserve) {
-            super(id, name, uuid, variant, ratio, texture, subParts);
+        ProbeData(ResourceLocation id, String name, String uuid, String variant, float ratio, String texture,
+                  Map<String, SubPartData> subParts, float staleness, int reserve) {
+            super(id, name, uuid, variant, ratio, texture, subParts, staleness);
             this.reserve = reserve;
         }
         ProbeData(ProbePart part) { super(part); reserve = part.reserve; }

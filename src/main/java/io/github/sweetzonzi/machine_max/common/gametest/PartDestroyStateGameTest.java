@@ -79,7 +79,7 @@ public final class PartDestroyStateGameTest {
                                            boolean destroyed, int destroyTime, float durabilityRatio) {
         return new RegularPartData(base.registryKey, base.name, base.uuid, base.variant,
                 progress, durabilityRatio, base.materialAssemblingProgress,
-                assembling, destroyed, destroyTime, base.textureName, base.subParts);
+                assembling, destroyed, destroyTime, base.textureName, base.subParts, base.staleness);
     }
 
     /** 单个子零件被摧毁不构成部件摧毁，也不启动倒计时。 */
