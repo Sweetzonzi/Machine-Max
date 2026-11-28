@@ -712,6 +712,47 @@ public enum MMLanguageRegistry {
             zh_cn, "放置部件失败: %1$s",
             en_us, "Failed to place part: %1$s"
     )),
+    // 命令：载具召唤（/mm vehicle summon）
+    COMMAND_VEHICLE_SUMMON_SUCCESS("command.machine_max.vehicle.summon.success", ImmutableMap.of(
+            zh_cn, "已召唤 %1$s（%2$s），%3$s 个部件，落点 %4$s",
+            en_us, "Summoned %1$s (%2$s), %3$s parts at %4$s"
+    )),
+    COMMAND_VEHICLE_SUMMON_UNKNOWN_TEMPLATE("command.machine_max.vehicle.summon.unknown_template", ImmutableMap.of(
+            zh_cn, "未知载具模板: %1$s；模板 id 需写成 命名空间:路径，完整列表见 /mm vehicle list_templates",
+            en_us, "Unknown vehicle template: %1$s; ids are namespace:path, see /mm vehicle list_templates"
+    )),
+    COMMAND_VEHICLE_SUMMON_REJECTED("command.machine_max.vehicle.summon.rejected", ImmutableMap.of(
+            zh_cn, "落点校验未通过，无法在 %2$s 召唤: %1$s",
+            en_us, "Placement check failed, cannot summon at %2$s: %1$s"
+    )),
+    COMMAND_VEHICLE_SUMMON_FORCE_IGNORED("command.machine_max.vehicle.summon.force_ignored", ImmutableMap.of(
+            zh_cn, "已忽略落点校验: %1$s",
+            en_us, "Placement checks ignored: %1$s"
+    )),
+    COMMAND_VEHICLE_SUMMON_REASON_OUT_OF_BOUNDS("command.machine_max.vehicle.summon.reason.out_of_bounds", ImmutableMap.of(
+            zh_cn, "落点超出世界边界或建造高度",
+            en_us, "outside the world border or build height"
+    )),
+    COMMAND_VEHICLE_SUMMON_REASON_CHUNKS_UNLOADED("command.machine_max.vehicle.summon.reason.chunks_unloaded", ImmutableMap.of(
+            zh_cn, "目标区块未加载",
+            en_us, "target chunks are not loaded"
+    )),
+    COMMAND_VEHICLE_SUMMON_REASON_BLOCK_COLLISION("command.machine_max.vehicle.summon.reason.block_collision", ImmutableMap.of(
+            zh_cn, "落点与方块重叠",
+            en_us, "overlaps solid blocks"
+    )),
+    COMMAND_VEHICLE_SUMMON_REASON_OCCUPIED("command.machine_max.vehicle.summon.reason.occupied", ImmutableMap.of(
+            zh_cn, "落点被玩家或在场的载具占用",
+            en_us, "occupied by a player or an existing vehicle"
+    )),
+    COMMAND_VEHICLE_SUMMON_REASON_UNKNOWN("command.machine_max.vehicle.summon.reason.unknown", ImmutableMap.of(
+            zh_cn, "落点不合适",
+            en_us, "the spot is not usable"
+    )),
+    COMMAND_VEHICLE_SUMMON_FAILED("command.machine_max.vehicle.summon.failed", ImmutableMap.of(
+            zh_cn, "召唤失败: %1$s",
+            en_us, "Summon failed: %1$s"
+    )),
     // 履带：铺设、建造、维修与拆除
     MESSAGE_TRACK_NO_WHEEL("message.machine_max.track.no_wheel", ImmutableMap.of(
             zh_cn, "履带：准星没有指向可用的轮子",

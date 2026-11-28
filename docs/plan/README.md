@@ -68,6 +68,7 @@
 | [武器系统-AmmoBelt与发射器装填第一阶段重构计划](已实现/武器系统-AmmoBelt与发射器装填第一阶段重构计划.md) | 第一阶段 P1–P5 已实施并经持续实际使用验证；§10 列的是后续扩展，不属于该阶段缺口 |
 | [物理-运动学刚体接约束入世后步进崩溃](已实现/物理-运动学刚体接约束入世后步进崩溃.md) | 项目侧规避方案已落地，上游 issue 已提交；归档复现描述、根因分析与验证记录 |
 | [物理系统-WorldSnapshot纳入PAWN查询计划](已实现/物理系统-WorldSnapshot纳入PAWN查询计划.md) | PAWN 快照查询与实体移除 GameTest 通过；客户端确认玩家阻挡放置、爆炸伤害实体正常。Bullet 与业务层排序、代理过滤及爆炸聚合去重经代码核验；卸载清理链经代码审查，无需专项测试 |
+| [命令-载具召唤命令设计](已实现/命令-载具召唤命令设计.md) | `VehicleCommand#summon` 按模板 id 在接地锚点召唤载具：`ResourceLocationArgument.id()` + `suggestResource` 补全、`Vec3Argument.vec3(false)` 字面坐标、`AngleArgument.angle()` 朝向、`force` 字面量跳过落点校验；几何与入世走 `VehiclePlacementService`，落点判定拆成 `PlacementRejection` 枚举（边界／建造高度／区块／方块／占位）由 `findRejection` 返回、`canPlace` 退化为判空；九条消息键经 `MMLanguageRegistry` 生成。`compileJava`／`compileKotlin`／`test`／`runData` 通过，十五条人工验收待完成 |
 
 ## 进行中
 

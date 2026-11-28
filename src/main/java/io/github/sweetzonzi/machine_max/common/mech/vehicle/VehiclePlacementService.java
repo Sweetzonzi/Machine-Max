@@ -108,24 +108,43 @@ public final class VehiclePlacementService {
     }
 
     /**
-     * 检查世界边界、已加载区块、方块碰撞和玩家／载具占位（主线程）。
+     * 落点被拒绝的成因，按 {@link #findRejection(AABB)} 的判定顺序排列。
+     *
+     * <p>前两项是「落点在图上的位置不对」，后三项是「落点上有东西」。调用方可以据此给出
+     * 可操作的提示，也可以按业务决定忽略其中某一项。</p>
+     */
+    public enum PlacementRejection {
+        /** 整车碰撞范围越过世界边界 */
+        OUT_OF_BORDER,
+        /** 整车碰撞范围越过建造高度下限或上限 */
+        OUTSIDE_BUILD_HEIGHT,
+        /** 碰撞范围覆盖的区块没有全部加载 */
+        CHUNKS_UNLOADED,
+        /** 碰撞范围与方块碰撞形状重叠 */
+        BLOCK_COLLISION,
+        /** 碰撞范围接触到玩家或其他载具的物理体 */
+        OCCUPIED
+    }
+
+    /**
+     * 按顺序判定落点，返回第一个不满足的条件（主线程）。
      *
      * @param bounds 指定落点及朝向下的整车世界碰撞 AABB
-     * @return 候选范围完整加载且没有占位冲突时为 {@code true}
+     * @return 拒绝原因；落点可用时为 {@code null}
      */
-    public boolean canPlace(AABB bounds) {
+    public @Nullable PlacementRejection findRejection(AABB bounds) {
         var border = level.getWorldBorder();
         if (bounds.minX < border.getMinX() || bounds.maxX > border.getMaxX()
-                || bounds.minZ < border.getMinZ() || bounds.maxZ > border.getMaxZ()
-                || bounds.minY < level.getMinBuildHeight() || bounds.maxY > level.getMaxBuildHeight()) return false;
+                || bounds.minZ < border.getMinZ() || bounds.maxZ > border.getMaxZ()) {
+            return PlacementRejection.OUT_OF_BORDER;
+        }
+        if (bounds.minY < level.getMinBuildHeight() || bounds.maxY > level.getMaxBuildHeight()) {
+            return PlacementRejection.OUTSIDE_BUILD_HEIGHT;
+        }
 
-        // 各轴只收缩极薄一层，以区分相贴与穿透，同时避免把恰好贴着的区块算进去。
-        AABB interior = bounds.deflate(Math.min(CONTACT_EPSILON, bounds.getXsize() * 0.25),
-                Math.min(CONTACT_EPSILON, bounds.getYsize() * 0.25),
-                Math.min(CONTACT_EPSILON, bounds.getZsize() * 0.25));
-        if (!level.hasChunksAt(Mth.floor(interior.minX), Mth.floor(interior.minY), Mth.floor(interior.minZ),
-                Mth.floor(interior.maxX), Mth.floor(interior.maxY), Mth.floor(interior.maxZ))
-                || !level.noBlockCollision(null, interior)) return false;
+        AABB interior = interiorOf(bounds);
+        if (!chunksLoaded(interior)) return PlacementRejection.CHUNKS_UNLOADED;
+        if (!level.noBlockCollision(null, interior)) return PlacementRejection.BLOCK_COLLISION;
 
         var query = new PhysicsGhostObject(new BoxCollisionShape(new Vector3f((float) interior.getXsize() * 0.5f,
                 (float) interior.getYsize() * 0.5f, (float) interior.getZsize() * 0.5f)));
@@ -133,7 +152,30 @@ public final class VehiclePlacementService {
         query.setPhysicsLocationDp(new Vec3d(center.x, center.y, center.z));
         query.setCollisionGroup(CollisionGroups.PAWN);
         query.setCollideWithGroups(CollisionGroups.PAWN | CollisionGroups.PHYSICS_BODY);
-        return SparkLevel.getPhysicsLevel(level).getWorld().getWorldSnapshot().contactTest(query, null) == 0;
+        return SparkLevel.getPhysicsLevel(level).getWorld().getWorldSnapshot().contactTest(query, null) == 0
+                ? null : PlacementRejection.OCCUPIED;
+    }
+
+    /**
+     * 检查世界边界、已加载区块、方块碰撞和玩家／载具占位（主线程）。
+     *
+     * @param bounds 指定落点及朝向下的整车世界碰撞 AABB
+     * @return 候选范围完整加载且没有占位冲突时为 {@code true}
+     */
+    public boolean canPlace(AABB bounds) {
+        return findRejection(bounds) == null;
+    }
+
+    /** 各轴只收缩极薄一层，以区分相贴与穿透，同时避免把恰好贴着的区块算进去。 */
+    private static AABB interiorOf(AABB bounds) {
+        return bounds.deflate(Math.min(CONTACT_EPSILON, bounds.getXsize() * 0.25),
+                Math.min(CONTACT_EPSILON, bounds.getYsize() * 0.25),
+                Math.min(CONTACT_EPSILON, bounds.getZsize() * 0.25));
+    }
+
+    private boolean chunksLoaded(AABB interior) {
+        return level.hasChunksAt(Mth.floor(interior.minX), Mth.floor(interior.minY), Mth.floor(interior.minZ),
+                Mth.floor(interior.maxX), Mth.floor(interior.maxY), Mth.floor(interior.maxZ));
     }
 
     /**
@@ -148,9 +190,29 @@ public final class VehiclePlacementService {
      */
     public @Nullable VehicleCore instantiateAndAdd(PartRestoreMode restoreMode, Vec3 groundAnchor,
                                                      Quaternion rootRotation) {
+        return instantiateAndAdd(restoreMode, groundAnchor, rootRotation, false);
+    }
+
+    /**
+     * 检查占位并构造载具，经 {@link ObjectManager#addVehicle} 正式入世（服务端主线程）。
+     *
+     * <p>{@code force} 为 {@code true} 时跳过 {@link #findRejection(AABB)} 的全部落点校验，直接构造并入世。
+     * 调用方承担随之而来的后果：与方块或实体重叠时物理体会把载具挤开，落点在未加载区块内时载具先被
+     * 钉住等地形就绪（{@code VehicleCore#onAddToLevel} 会自行申请区块保活），落点在建造高度之外时
+     * 地形与地面都不存在。</p>
+     *
+     * @param restoreMode 部件恢复模式；初始状态可预先写入传给构造器的载具数据副本
+     * @param groundAnchor 目标世界接地锚点；XZ 对齐参考根局部 AABB 的底心投影，Y 指定接地高度
+     * @param rootRotation 参考根子零件的目标世界朝向，须为单位四元数
+     * @param force 为 {@code true} 时忽略落点校验
+     * @return 已登记的载具；未忽略校验且校验失败时为 {@code null}
+     * @throws IllegalArgumentException 如果在客户端世界调用
+     */
+    public @Nullable VehicleCore instantiateAndAdd(PartRestoreMode restoreMode, Vec3 groundAnchor,
+                                                     Quaternion rootRotation, boolean force) {
         if (level.isClientSide()) throw new IllegalArgumentException("载具只能在服务端创建");
         AABB bounds = boundsAtOrigin(rootRotation).move(groundAnchor);
-        if (!canPlace(bounds)) return null;
+        if (!force && !canPlace(bounds)) return null;
         VehicleCore vehicle = new VehicleCore(level, createInstanceData(groundAnchor, rootRotation, bounds), restoreMode);
         ObjectManager.addVehicle(vehicle);
         return vehicle;
