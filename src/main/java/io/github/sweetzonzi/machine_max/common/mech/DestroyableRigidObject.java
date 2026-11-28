@@ -38,25 +38,26 @@ abstract public class DestroyableRigidObject extends DestroyableObject implement
     @Override
     public void postTick() {
         if (!level.isClientSide() && body.isInWorld()) {
+            updateLock = true;//锁定刚体数据，仅利用服务端刚体数据更新同步用数据
             if ((body.isActive() || body.isKinematic())) {
                 //从刚体同步数据
                 oldTransform = transform.clone();
                 transform = PhysicsBodyExtensionKt.stateOf(body).getTransform();
-                updateLock = true;//锁定刚体数据，仅利用服务端刚体数据更新同步用数据
                 setPosition(transform.getTranslation());
                 setRotation(transform.getRotation());
                 setLinearVelocity(body.getLinearVelocity(null));
                 setAngularVelocity(body.getAngularVelocity(null));
                 getSyncedData().set(IS_ACTIVE_ID, true);
-                updateLock = false;//解锁刚体数据，允许set时应用位姿数据到刚体
             } else if (!body.isActive()) { // 更新休眠状态
                 // 休眠后刚体不再步进，同步值会停在最后一次活跃时的读数上。速度必须显式清零：
                 // 客户端把这份残值当成本帧速度写给运动学刚体，履带相位、轮面接触音与控制器
                 // 的车速反馈都读它，于是停车后轮子看着停了、履带还在转、摩擦声还在响。
+                // 只清同步值；刚体 setter 即使写零也会唤醒 Bullet。
                 setLinearVelocity(Vector3f.ZERO);
                 setAngularVelocity(Vector3f.ZERO);
                 getSyncedData().set(IS_ACTIVE_ID, false);
             }
+            updateLock = false;//解锁刚体数据，允许set时应用位姿数据到刚体
         }
         super.postTick();//发送所有变化的数据
     }
