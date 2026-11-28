@@ -36,7 +36,11 @@
               "bone": "interact_left_door", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
               "condition": "local.has_connector('connector.machine_max.axis')", // 未装上车体（铰链没有对端）的件不提示
               "signal_targets": {
-                "interact_left_front_door": ["connector.machine_max.axis", "global"] //解扣走连接点, global 交给装配体广播给车体上的开合状态机
+                // 开合事件沿门轴到车体状态机；解扣请求沿锁扣到车体锁扣子系统
+                "interact": [
+                  "connector.machine_max.axis",
+                  "connector.machine_max.lock"
+                ]
               },
               "interact_mode": "accurate"//瞄准交互区按下交互键才触发; 门板贴身触发会与上车的座位抢同一次按键, 所以不用 fast
             }
@@ -96,7 +100,11 @@
               "bone": "interact_right_door", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
               "condition": "local.has_connector('connector.machine_max.axis')", // 未装上车体（铰链没有对端）的件不提示
               "signal_targets": {
-                "interact_right_front_door": ["connector.machine_max.axis", "global"] //解扣走连接点, global 交给装配体广播给车体上的开合状态机
+                // 开合事件沿门轴到车体状态机；解扣请求沿锁扣到车体锁扣子系统
+                "interact": [
+                  "connector.machine_max.axis",
+                  "connector.machine_max.lock"
+                ]
               },
               "interact_mode": "accurate"//瞄准交互区按下交互键才触发; 门板贴身触发会与上车的座位抢同一次按键, 所以不用 fast
             }

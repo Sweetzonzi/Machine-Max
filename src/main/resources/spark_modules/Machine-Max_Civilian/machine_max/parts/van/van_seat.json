@@ -48,18 +48,7 @@
           "connectors": {//子部件用于与其他零件连接的连接点列表
             "connector.machine_max.left_front_seat": {//连接点名称
               "locator": "left_front_seat_locator",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
-              "definition": "machine_max:fixed_down",
-              "signal_translations": {//将各个类型的频道的信号转换至interact频道，统一信号频道
-                "interact_left_door": "interact",
-                "interact_right_door": "interact",
-                "interact_left_front_door": "interact",
-                "interact_right_front_door": "interact",
-                "interact_left_back_door": "interact",
-                "interact_right_back_door": "interact"
-              },
-              "signal_targets": { //向各个座椅传输来自车门的互动信号
-                "interact": ["subsystem.machine_max.seat"]
-              }
+              "definition": "machine_max:fixed_down"
             }
           }
         }
@@ -107,18 +96,7 @@
           "connectors": {//子部件用于与其他零件连接的连接点列表
             "connector.machine_max.left_back_seat": {//连接点名称
               "locator": "left_back_seat_locator",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
-              "definition": "machine_max:fixed_down",
-              "signal_translations": {//将各个类型的频道的信号转换至interact频道，统一信号频道
-                "interact_left_door": "interact",
-                "interact_right_door": "interact",
-                "interact_left_front_door": "interact",
-                "interact_right_front_door": "interact",
-                "interact_left_back_door": "interact",
-                "interact_right_back_door": "interact"
-              },
-              "signal_targets": { //向各个座椅传输来自车门的互动信号
-                "interact": ["subsystem.machine_max.seat"]
-              }
+              "definition": "machine_max:fixed_down"
             }
           }
         }
@@ -166,18 +144,7 @@
           "connectors": {//子部件用于与其他零件连接的连接点列表
             "connector.machine_max.right_front_seat": {//连接点名称
               "locator": "right_front_seat_locator",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
-              "definition": "machine_max:fixed_down",
-              "signal_translations": {//将各个类型的频道的信号转换至interact频道，统一信号频道
-                "interact_left_door": "interact",
-                "interact_right_door": "interact",
-                "interact_left_front_door": "interact",
-                "interact_right_front_door": "interact",
-                "interact_left_back_door": "interact",
-                "interact_right_back_door": "interact"
-              },
-              "signal_targets": { //向各个座椅传输来自车门的互动信号
-                "interact": ["subsystem.machine_max.seat"]
-              }
+              "definition": "machine_max:fixed_down"
             }
           }
         }
@@ -225,18 +192,7 @@
           "connectors": {//子部件用于与其他零件连接的连接点列表
             "connector.machine_max.right_back_seat": {//连接点名称
               "locator": "right_back_seat_locator",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
-              "definition": "machine_max:fixed_down",
-              "signal_translations": {//将各个类型的频道的信号转换至interact频道，统一信号频道
-                "interact_left_door": "interact",
-                "interact_right_door": "interact",
-                "interact_left_front_door": "interact",
-                "interact_right_front_door": "interact",
-                "interact_left_back_door": "interact",
-                "interact_right_back_door": "interact"
-              },
-              "signal_targets": { //向各个座椅传输来自车门的互动信号
-                "interact": ["subsystem.machine_max.seat"]
-              }
+              "definition": "machine_max:fixed_down"
             }
           }
         }

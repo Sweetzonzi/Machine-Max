@@ -31,11 +31,24 @@
             },
             "connector.machine_max.left_door_axis": {
               "locator": "hull_left_door_axis",
-              "definition": "machine_max:senna_gtr_left_door_axis"
+              "definition": "machine_max:senna_gtr_left_door_axis",
+              "signal_translations": {
+                // 交互区统一发 interact；这条门轴把它转译成与车体控制器事件同名的到达频道
+                "interact": "interact_left_front_door"
+              },
+              "signal_targets": {
+                "interact_left_front_door": ["local"]
+              }
             },
             "connector.machine_max.right_door_axis": {
               "locator": "hull_right_door_axis",
-              "definition": "machine_max:senna_gtr_right_door_axis"
+              "definition": "machine_max:senna_gtr_right_door_axis",
+              "signal_translations": {
+                "interact": "interact_right_front_door"
+              },
+              "signal_targets": {
+                "interact_right_front_door": ["local"]
+              }
             }
           },
           "subsystems": {
@@ -90,12 +103,10 @@
               "locator": "hull_left_door_lock",
               "definition": "machine_max:fixed_rigid",
               "signal_targets": {
+                // 解扣请求到达这里时频道就是 interact，交给这台锁扣
                 "interact": [
                   "subsystem.machine_max.left_front_door_coupler"
                 ]
-              },
-              "signal_translations": {
-                "interact_left_front_door": "interact"
               },
               "overwrite": {
                 // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
@@ -114,12 +125,10 @@
               "locator": "hull_right_door_lock",
               "definition": "machine_max:fixed_rigid",
               "signal_targets": {
+                // 解扣请求到达这里时频道就是 interact，交给这台锁扣
                 "interact": [
                   "subsystem.machine_max.right_front_door_coupler"
                 ]
-              },
-              "signal_translations": {
-                "interact_right_front_door": "interact"
               },
               "overwrite": {
                 // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）

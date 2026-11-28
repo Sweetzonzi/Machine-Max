@@ -1409,6 +1409,19 @@ public abstract class AbstractPart<T extends AbstractPartType> implements IAnima
     }
 
     /**
+     * 本部件作为 {@code local} 目标收到事件时，把到达频道作为一次性动画事件交给本件的状态机。
+     * <p>事件名就是频道名，内容里的控制器按 {@code event.<频道>} 声明转移；没有对应转移的控制器
+     * 忽略未知事件。不写输入槽、不写存储表，因此不影响 {@code local.get}。总线分发给订阅者由
+     * {@link #broadcastEvent(String, ISignalSender, Object)} 完成，这里只负责本件自身的动作。</p>
+     * <p><b>调用线程：</b>发送方线程。按名投递在主线程（交互点击、机构通知），物理步只按实例投递给
+     * 不触碰状态机的接收者。</p>
+     */
+    @Override
+    public void onSignalEvent(String channelName, ISignalSender sender, Object payload) {
+        triggerInteractionEvent(channelName);
+    }
+
+    /**
      * 允许经过连接器的频道进入本部件：{@code local} 作为端口目标时按到达频道交给本部件，
      * 再由各订阅者自己的接收声明筛选。
      */

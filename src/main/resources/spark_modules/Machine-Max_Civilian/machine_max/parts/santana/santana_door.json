@@ -38,9 +38,10 @@
               "bone": "LeftFrontDoorInteract",
               "interact_mode": "accurate",
               "signal_targets": {
-                "interact_left_front_door": [
+                // 开合事件沿门轴到车体状态机；解扣请求沿锁扣到车体锁扣子系统
+                "interact": [
                   "connector.machine_max.axis",
-                  "global"
+                  "connector.machine_max.lock"
                 ]
               }
             }
@@ -129,9 +130,10 @@
               "bone": "RightFrontDoorInteract",
               "interact_mode": "accurate",
               "signal_targets": {
-                "interact_right_front_door": [
+                // 开合事件沿门轴到车体状态机；解扣请求沿锁扣到车体锁扣子系统
+                "interact": [
                   "connector.machine_max.axis",
-                  "global"
+                  "connector.machine_max.lock"
                 ]
               }
             }
@@ -220,9 +222,10 @@
               "bone": "LeftBackDoorInteract",
               "interact_mode": "accurate",
               "signal_targets": {
-                "interact_left_back_door": [
+                // 开合事件沿门轴到车体状态机；解扣请求沿锁扣到车体锁扣子系统
+                "interact": [
                   "connector.machine_max.axis",
-                  "global"
+                  "connector.machine_max.lock"
                 ]
               }
             }
@@ -311,9 +314,10 @@
               "bone": "RightBackDoorInteract",
               "interact_mode": "accurate",
               "signal_targets": {
-                "interact_right_back_door": [
+                // 开合事件沿门轴到车体状态机；解扣请求沿锁扣到车体锁扣子系统
+                "interact": [
                   "connector.machine_max.axis",
-                  "global"
+                  "connector.machine_max.lock"
                 ]
               }
             }

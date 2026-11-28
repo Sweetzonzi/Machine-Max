@@ -25,15 +25,16 @@ import java.util.Map;
 /**
  * 交互区的目标解析与激活判据。
  *
- * <p>交互区在结构变化与载具入世时把 {@code signal_targets} 解析成终端子系统表（{@link InteractBox#getInteractTargets()}），
- * 点击时按这张表的顺序逐个尝试；激活要求「门控成立 ∧ 有动画事件目标（local / global）或至少一个终端可交互」。
- * 这组用例覆盖座椅目标解析、声明顺序与接线缺失时的门控：</p>
+ * <p>交互区在结构变化与载具入世时把 {@code signal_targets} 解析成两档（{@link InteractBox#getInteractTargets()}、
+ * {@link InteractBox#getEventChannels()}）：到达总线的频道算事件线，到达子系统的终端算交互目标。点击时先投递
+ * 事件、再按终端表顺序逐个尝试；激活要求「门控成立 ∧ 有事件线或至少一个终端可交互」。这组用例覆盖座椅目标
+ * 解析、声明顺序、事件线与接线缺失时的门控：</p>
  *
  * <ul>
  *   <li>K17 车体的后舱盖一扇门通往车长位与炮手位，终端顺序必须与内容里写的顺序一致，
  *       且一个座位失效不让整扇门失效——全部不可交互时才是空操作。</li>
- *   <li>单独摆在地上的车门（{@code van_door}）解析不到任何座位：终端表为空，交互区因此完全不激活
- *       ——提示不亮、射线也选不中、点击是空操作。</li>
+ *   <li>单独摆在地上的车门（{@code van_door}）沿连接点解析不到座位，也解析不到事件线；它的两个目标
+ *       都是自己零件上的连接点，没有对端就没有投递点，门控（{@code local.has_connector}）也随之不成立。</li>
  *   <li>挂在车壳上的门框要沿连接点跨零件解析到座位（AE86）。接线发生在载具入世之前，
  *       那一次补建不能漏：漏掉时跨零件的交互区停在空表上，同零件的交互区却看不出问题。</li>
  * </ul>
@@ -68,8 +69,9 @@ public final class InteractBoxGameTest {
     }
 
     /**
-     * 单独摆放的车门解析不到座位：它的目标是一侧连接点，没接上车体时那条线没有终端。
-     * 终端表为空时交互区不激活，点击是空操作。
+     * 单独摆放的车门解析不到座位：它的目标是连接点，没接上车体时那条线没有终端。
+     * 两条线都走自己的连接点（门轴与锁扣），连接点没对上时既没有事件线也没有交互目标，
+     * 门控 {@code local.has_connector} 同样不成立——提示不亮、射线也选不中。
      */
     @GameTest(template = "part_foundation", batch = BATCH, timeoutTicks = 100)
     public static void detachedDoorHasNoTargetsAndStaysInactive(GameTestHelper helper) {
@@ -83,7 +85,9 @@ public final class InteractBoxGameTest {
             InteractBox box = findBox(helper, part, "interact.machine_max.left_front_door");
             helper.assertTrue(box.getInteractTargets().isEmpty(),
                     "未接上车体的车门不应解析出交互目标，实际 " + names(box.getInteractTargets()));
-            helper.assertFalse(box.canInteract(), "没有接收者的交互区必须完全不激活");
+            helper.assertTrue(box.getEventChannels().isEmpty(),
+                    "没接上车体的车门没有可投递的事件线，实际 " + box.getEventChannels());
+            helper.assertFalse(box.canInteract(), "门控不成立时交互区必须完全不激活");
             box.interact(null);// 空操作：既不能抛异常，也不能落到非子系统的目标上
             helper.succeed();
         } finally {
@@ -150,6 +154,8 @@ public final class InteractBoxGameTest {
                     "跨零件的左前门应解析出一个座位，实际 " + names(box.getInteractTargets()));
             helper.assertTrue(box.getInteractTargets().get(0) instanceof SeatSubsystem,
                     "解析出的终端应是座位子系统，实际 " + names(box.getInteractTargets()));
+            helper.assertTrue(box.getEventChannels().isEmpty(),
+                    "这条频道只到达座位，不该被当成事件线，实际 " + box.getEventChannels());
             helper.assertTrue(box.canInteract(), "空车的左前门应可用");
             helper.succeed();
         } finally {
@@ -163,6 +169,8 @@ public final class InteractBoxGameTest {
                 HATCH + " 应解析出两个座位，实际 " + names(targets));
         helper.assertTrue(COMMANDER.equals(targets.get(0).getName()) && GUNNER.equals(targets.get(1).getName()),
                 HATCH + " 的尝试顺序应与 signal_targets 的声明序一致，实际 " + names(targets));
+        helper.assertTrue(box.getEventChannels().isEmpty(),
+                HATCH + " 只指向座位，没有事件线，实际 " + box.getEventChannels());
         helper.assertTrue(box.canInteract(), "空车的后舱盖应可用");
 
         SeatSubsystem commander = seat(helper, targets.get(0), COMMANDER);

@@ -122,16 +122,21 @@
           "connector.machine_max.right_front_door_axis": {
             "locator": "right_front_door_axis_hull",
             "definition": "machine_max:van_right_front_door_axis_hull",
-            "signal_targets": { // 点击右前门把手：解扣，并由状态机播放开合动画
-              "interact": ["subsystem.machine_max.right_front_door_coupler"]
-            },
             "signal_translations": {
-              "interact_right_front_door": "interact"
+              "interact": "interact_right_front_door"
+            },
+            "signal_targets": {
+              // 到达频道与车体控制器的事件同名：这条门轴把它交给车体自己的动画状态机
+              "interact_right_front_door": ["local"]
             }
           },
           "connector.machine_max.right_front_door_lock": {
             "locator": "right_front_door_lock_hull",
             "definition": "machine_max:fixed_rigid",
+            "signal_targets": {
+              // 解扣请求到达这里时频道就是 interact，交给这台锁扣
+              "interact": ["subsystem.machine_max.right_front_door_coupler"]
+            },
             "overwrite": {
               // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
               "integrity": 3.5,
@@ -144,16 +149,21 @@
           "connector.machine_max.left_front_door_axis": {
             "locator": "left_front_door_axis_hull",
             "definition": "machine_max:van_left_front_door_axis_hull",
-            "signal_targets": { // 点击左前门把手：解扣，并由状态机播放开合动画
-              "interact": ["subsystem.machine_max.left_front_door_coupler"]
-            },
             "signal_translations": {
-              "interact_left_front_door": "interact"
+              "interact": "interact_left_front_door"
+            },
+            "signal_targets": {
+              // 到达频道与车体控制器的事件同名：这条门轴把它交给车体自己的动画状态机
+              "interact_left_front_door": ["local"]
             }
           },
           "connector.machine_max.left_front_door_lock": {
             "locator": "left_front_door_lock_hull",
             "definition": "machine_max:fixed_rigid",
+            "signal_targets": {
+              // 解扣请求到达这里时频道就是 interact，交给这台锁扣
+              "interact": ["subsystem.machine_max.left_front_door_coupler"]
+            },
             "overwrite": {
               // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
               "integrity": 3.5,
@@ -166,16 +176,21 @@
           "connector.machine_max.right_back_door_axis": {
             "locator": "right_back_door_axis_hull",
             "definition": "machine_max:van_right_back_door_axis_hull",
-            "signal_targets": { // 点击右滑门把手：解扣，并由状态机播放开合动画
-              "interact": ["subsystem.machine_max.right_back_door_coupler"]
-            },
             "signal_translations": {
-              "interact_right_back_door": "interact"
+              "interact": "interact_right_back_door"
+            },
+            "signal_targets": {
+              // 到达频道与车体控制器的事件同名：这条门轴把它交给车体自己的动画状态机
+              "interact_right_back_door": ["local"]
             }
           },
           "connector.machine_max.right_back_door_lock": {
             "locator": "right_back_door_lock_hull",
             "definition": "machine_max:fixed_rigid",
+            "signal_targets": {
+              // 解扣请求到达这里时频道就是 interact，交给这台锁扣
+              "interact": ["subsystem.machine_max.right_back_door_coupler"]
+            },
             "overwrite": {
               // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
               "integrity": 3.5,
@@ -188,16 +203,21 @@
           "connector.machine_max.left_back_door_axis": {
             "locator": "left_back_door_axis_hull",
             "definition": "machine_max:van_left_back_door_axis_hull",
-            "signal_targets": { // 点击左滑门把手：解扣，并由状态机播放开合动画
-              "interact": ["subsystem.machine_max.left_back_door_coupler"]
-            },
             "signal_translations": {
-              "interact_left_back_door": "interact"
+              "interact": "interact_left_back_door"
+            },
+            "signal_targets": {
+              // 到达频道与车体控制器的事件同名：这条门轴把它交给车体自己的动画状态机
+              "interact_left_back_door": ["local"]
             }
           },
           "connector.machine_max.left_back_door_lock": {
             "locator": "left_back_door_lock_hull",
             "definition": "machine_max:fixed_rigid",
+            "signal_targets": {
+              // 解扣请求到达这里时频道就是 interact，交给这台锁扣
+              "interact": ["subsystem.machine_max.left_back_door_coupler"]
+            },
             "overwrite": {
               // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
               "integrity": 3.5,
@@ -210,16 +230,21 @@
           "connector.machine_max.trunk_door_axis": {
             "locator": "back_door_axis_hull",
             "definition": "machine_max:van_back_door_axis_hull",
-            "signal_targets": { // 点击后备箱盖把手：解扣，并由状态机播放开合动画
-              "interact": ["subsystem.machine_max.trunk_door_coupler"]
-            },
             "signal_translations": {
-              "interact_trunk_door": "interact"
+              "interact": "interact_trunk_door"
+            },
+            "signal_targets": {
+              // 到达频道与车体控制器的事件同名：这条门轴把它交给车体自己的动画状态机
+              "interact_trunk_door": ["local"]
             }
           },
           "connector.machine_max.trunk_door_lock": {
             "locator": "back_door_lock_hull",
             "definition": "machine_max:fixed_rigid",
+            "signal_targets": {
+              // 解扣请求到达这里时频道就是 interact，交给这台锁扣
+              "interact": ["subsystem.machine_max.trunk_door_coupler"]
+            },
             "overwrite": {
               // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
               "integrity": 3.5,

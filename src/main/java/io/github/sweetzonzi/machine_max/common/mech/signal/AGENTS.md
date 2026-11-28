@@ -2,24 +2,26 @@
 
 **范围**: 信号类型定义、信号通道、信号端口、发送/接收接口、信号总线。
 
-**文件数**: 15 个 | **总行数**: ~890 行
+**文件数**: 16 个 | **总行数**: ~1230 行
 
 ## 结构
 
 ```
 signal/
 ├── Signal.java                  # 信号抽象基类（携带泛型值 T）
-├── EmptySignal.java             # 空信号（仅触发，无数据）
+├── EmptySignal.java             # 值车道的无值标记：来源仍在、当前没有值
 ├── SignalResult.java            # 信号处理结果
 │
-├── ISignalSender.java           # 信号发送接口（352行）
-├── ISignalReceiver.java         # 信号接收接口：getSignalAddress() 路由名 + getSignalStorage() 存储
-├── ISignalBus.java              # 信号总线接口
+├── ISignalSender.java           # 信号发送接口（412行）：值车道发送 + 事件车道 emitSignal + 投递点解析
+├── ISignalReceiver.java         # 信号接收接口：getSignalAddress() 路由名 + 值/事件两种回调
+├── ISignalBus.java              # 信号总线接口：broadcast（写槽）+ broadcastEvent（不写槽）
 │
 ├── SignalChannel.java           # 信号通道（extends ConcurrentHashMap，线程安全）
-├── SignalPort.java              # 信号端口（185行），信号路由 + 频道转译
+├── SignalPort.java              # 信号端口（193行），值/事件两条车道的路由 + 频道转译
+├── EventDispatch.java           # 事件投递会话：重访判定、线程内深度计数（83行）
 │
 ├── MoveInputSignal.java         # 移动输入信号（前进/后退/左/右/跳跃/潜行）
+├── TrackControlSignal.java      # 履带控制信号
 ├── RegularInputSignal.java      # 常规交互信号
 ├── ViewInputSignal.java         # 视角输入信号（偏航/俯仰）
 ├── RotationSignal.java          # 旋转/角度信号
@@ -32,11 +34,13 @@ signal/
 | 任务 | 文件 | 说明 |
 |------|------|------|
 | 新增信号类型 | `Signal.java` | 继承 Signal\<T\>，定义值类型和语义 |
-| 修改信号路由 | `SignalPort.java` | 输入→输出映射、频道转译、多跳传播 |
+| 修改信号路由 | `SignalPort.java` | 输入→输出映射、频道转译、多跳传播；值与事件两条车道共用同一套表 |
 | 修改信号通道 | `SignalChannel.java` | 线程安全的通道映射 |
 | 实现信号发送 | `ISignalSender.java` | 实现 `getTargetNames()` / `getTargets()` 与信号写入逻辑 |
-| 实现信号接收 | `ISignalReceiver.java` | 实现 `getSignalAddress()`（路由名）与 `onSignalUpdated()`；需要 Molang `get/get_str` 时覆写 `getSignalStorage()` |
+| 实现信号接收 | `ISignalReceiver.java` | 实现 `getSignalAddress()`（路由名）与 `onSignalUpdated()`；需要 Molang `get/get_str` 时覆写 `getSignalStorage()`；关心一次性事件时覆写 `onSignalEvent()` |
 | 添加总线方法 | `ISignalBus.java` | `AbstractPart`（local）与 `SubsystemController`（global）各持一份订阅集合 |
+| 发一次性事件 | `ISignalSender#emitSignal` | 不写槽的投递；环路与去重语义在 `EventDispatch` |
+| 查投递点（含总线） | `ISignalSender#resolveTargets(channel, true)` | 事件线与交互区的激活判据都读它；只取叶子的一档是缺省 |
 
 ## 信号流
 
@@ -58,6 +62,21 @@ ISignalBus（local = AbstractPart，global = SubsystemController）
         ▼
   反馈信号（可选，多跳传播）
 ```
+
+事件车道共用同一张线网，只是不写槽：
+
+```
+任意的 ISignalSender（交互区、机构、物理步反馈）
+  │  emitSignal(channel, payload)
+  ▼
+首跳表（与值车道同一张）
+  ├── SignalPort → 对侧转译后的到达频道（与值车道同表同规则，不做值比较、不写槽）
+  └── ISignalBus#broadcastEvent
+        ├── 总线自身 onSignalEvent()（Part = 一次性动画事件；Controller = 交给装配体广播全零件）
+        └── 按接受条件分发订阅者 → ISignalReceiver#onSignalEvent()
+```
+
+重访判定按「接收者 × 到达频道」在投递会话里做，环路与菱形接线都只投一次。
 
 ## 信号通道约定
 
@@ -94,7 +113,7 @@ ISignalBus（local = AbstractPart，global = SubsystemController）
 | `diff_lock_control` | 座位 → 变速箱 | 差速锁 |
 | `ammo_switch` | 座位 → 武器控制器 | 弹种切换指令（一次性按下：`RegularInputSignal` 的 `NEXT_AMMO_TYPE`／`PREV_AMMO_TYPE`，控制器消费一次后把槽位清空） |
 
-玩家交互不写信号槽：`InteractBox` 只发不收；点击直接调目标子系统的 `onInteract`，并可将 `signal_targets` 中指向 `local` 的频道作为所属 Part 的一次性动画事件、指向 `global` 的频道交给装配体广播给全载具部件（见下面「交互区只发不收」）。
+玩家交互不写信号槽：`InteractBox` 只发不收；结构解析时它用 `resolveTargets(channel, true)` 把 `signal_targets` 分成两档——**到达总线的频道是事件线**，点击时经 `emitSignal(频道)` 沿实际接线投递（`local` 到所属 Part、`global` 到装配体总线、连接点名到对侧）；**到达子系统的终端是交互目标**，点击时按声明序直接调 `onInteract`（见下面「交互区只发不收」）。
 
 ## 约定
 
@@ -102,26 +121,27 @@ ISignalBus（local = AbstractPart，global = SubsystemController）
 - **信号直送模式**：发送方把值写入接收方的 Channel 并按发送者身份分槽，随后同步调用 `onSignalUpdated`；没有独立的回传通道。
 - **多跳传播**：一个子系统的输出信号可作为另一个子系统的输入，形成信号链。
 - **越级量**：`Signal#priority`（默认 0）随信号本体走，由发送方在出口处写入；接收者读取时按"越级量 → 档位 → 稳定身份"三键排序。`SignalPort` 没有优先级字段，转发按目标表迭代顺序进行。
-- **两级 ISignalBus 都由订阅集合驱动**：`AbstractPart` 提供 `local`，订阅范围是本部件全部 SubPart 当前持有的子系统；`SubsystemController` 提供 `global`，订阅范围是整车全部子系统。两者共用 `ISignalBus#broadcast`：按原始发送者分槽写入接收者输入频道后再通知，广播不递归到端口或其他总线。Part 的 `acceptAllRoutingInput` 为 true，允许经连接器到达 `local` 的频道；`acceptAllBroadcastInput` 保持 false，订阅者仍按自己声明的频道筛选。
-- **空信号触发**：`EmptySignal` 仅用于触发性通知（如"开火"），无数据负载。
+- **两级 ISignalBus 都由订阅集合驱动**：`AbstractPart` 提供 `local`，订阅范围是本部件全部 SubPart 当前持有的子系统；`SubsystemController` 提供 `global`，订阅范围是整车全部子系统。两者共用 `ISignalBus#broadcast`：按原始发送者分槽写入接收者输入频道后再通知，广播不递归到端口或其他总线。两者的 `acceptAllRoutingInput` 都为 true：总线本身接受经连接器到达的任意频道，收谁由订阅者自己的声明决定（`broadcast` 与 `broadcastEvent` 都做这层筛选）；`acceptAllBroadcastInput` 保持 false。
+- **无值标记**：`EmptySignal` 表示"该来源仍在、当前没有值"：座椅无人、按键松开、执行器被释放时，发送方把它写进该来源的槽，接收方据此回到"未按下"。单例与按类型相等的判断适用于这一语义——同一条释放不该反复通知。
+- **事件车道**：`ISignalSender#emitSignal` 沿首跳表投递一次事件，不写输入槽与存储表、不进 Molang、不去重、不持久化；`ISignalBus#broadcastEvent` 是总线的分发入口，总线先收一次再按订阅者的接受条件分发，与 `broadcast` 的筛选完全一致。到达频道名就是事件名：`AbstractPart` 收到后作为一次性动画事件交给本件状态机，`SubsystemController` 收到后交给所属装配体广播给全部零件。`SignalPort` 的事件转发与值转发同表同规则，两边共享同一套转译与目标声明。环路靠 `(接收者, 到达频道)` 重访判定终止，会话按线程常驻、顶层 emit 清表（`EventDispatch`）。线程：按名 emit 只在主线程（首跳表由主线程整体替换）；物理步只按实例发给不触碰动画状态机的接收者。
 - **寻址名与身份名分离**：路由使用 `ISignalReceiver.getSignalAddress()`；`getName()` 仅用于日志/身份，不参与路由。保留地址 `"local"` = Part、`"global"` = 装配体（`SubsystemController`）。
 - **存储写入自述**：发送端只调用 `getSignalStorage()`，由 Part / SubsystemController 自行提供存储表，不按具体类型 `instanceof` 分派。
 - **Part 订阅随结构自动订退**：结构构造期 `AbstractPart` 按声明序为每个子零件调用 `SubPart#installSubsystem`，子系统在这一步进入容器并订阅所属 Part，`SubPart#destroy`（含构造失败回收）退出。显式退订不改变物理归属与 global 订阅；结构变化只清 `signalInputChannels` 与 `signalStorage`，不退订。
-- **只读终端查询**：`resolveTargets(outputChannel)` 从首跳表沿端口与总线解析全部终端，返回不可变的「到达频道 → 终端列表」；不写信号槽、不建频道、不触发 `onSignalUpdated`。镜头、车控、火控的执行器发现与交互区的目标解析都用它，发现过程不发空信号。同名频道的两个控制组可以各查各的：`resolveTargets(outputChannel, firstHopNames)` 只用列出的那几条首跳，名字按给定顺序保留、表里没有的直接跳过，空列表即「这条频道在本组不到达任何终端」。首跳的键就是配置里的目标名（子系统名、`"local"`、`"global"`、连接点名；交互区名只可能出现在交互区自己的表里），所以第二个重载是对首跳表做过滤，不重新按名解析。
+- **只读终端查询**：`resolveTargets(outputChannel)` 从首跳表沿端口与总线解析全部终端，返回不可变的「到达频道 → 终端列表」；不写信号槽、不建频道、不触发 `onSignalUpdated`。镜头、车控、火控的执行器发现都用它，发现过程不发空信号。`includeBuses = true` 的一档（`resolveTargets(outputChannel, true)`）返回**投递点**：叶子 + 途经的总线实例本身，端口永远不出现；两者的差集恰好是总线实例。事件线与交互区的激活判据读这一档——一条频道只到达 `local` / `global` 时，事件在总线上就会产生动作，总线本身就是终点；值车道的执行器发现仍用缺省的叶子一档。同名频道的两个控制组可以各查各的：`resolveTargets(outputChannel, firstHopNames)` 只用列出的那几条首跳，名字按给定顺序保留、表里没有的直接跳过，空列表即「这条频道在本组不到达任何终端」；白名单与布尔轴是两个正交参数，可组合使用。首跳的键就是配置里的目标名（子系统名、`"local"`、`"global"`、连接点名；交互区名只可能出现在交互区自己的表里），所以带白名单的重载是对首跳表做过滤，不重新按名解析。
 - **执行器读输入槽**：火控把 `RotationSignal` / `LauncherSubsystem.FireCommand` 作为信号值，经实例重载写入炮塔/发射器的到达频道；执行器按自己的 `control_inputs` 顺序读取当前槽，`EmptySignal` 表示该来源已释放。结构变化清空输入槽后不需要逐个目标调用释放 setter。
 - **视点发现频道**：座位与武器控制器的 `camera_discovery_targets` 用频道名表达“这台视点归谁”，视点在自己的 `discovery_inputs` 里声明同名频道。`camera_sight` 是视点未声明时的默认接受频道，写进发现表等于全车所有视点，因此禁止。同 Part 写子系统名时频道不参与过滤（直连终端直接收下），跨 Part 的连接点名与 `global` 两条线路按接收侧声明筛选——频道写错时发现结果为空且没有日志，`checkContent` 因此要求广播频道至少被一台 camera / sight 声明。
 - **控制组按自己的声明投递**：控制组的类目出口（`setMoveInputSignal`、`setViewInputSignal`、主／副武器与常规输入）遍历 base 与活动子组合并后的「频道 → 目标名」，逐个 `sendSignalToTarget(channel, name, value)`；首跳表本身是 base 与全部子组的并集，所以缺省行为与「发给该频道全部首跳」一致，而两组把同一频道指向不同接收者时各发各的。清空有两档：`clearInputSignals`（离座、切组、失活、摧毁、装机变化、视点设备失效）按并集把可能发过的全部频道置空；`clearViewSignals` 只置空视点频道与记录中的视点身份，换视点、换主武器控制器时用它——那两种时刻扳机和油门多半还按着，一并清掉会让"按住"只在本端消失，而服务端的频道里那条开火指令还在，它会按那个值一路打到下一次按键边沿。
 - **目标名解析作用域是 Part**：`setTargetFromNames` 在建首跳表时聚合发送者所属**整个 Part** 的子系统 / 交互区 / 连接点（一趟 `subParts` 现场遍历，不设常驻索引），三类名字共用一套命名空间、在 Part 内唯一（解码期 `VariantAttr#validateUniqueNames` 强制）。三类里交互区只当节点名（命名唯一性与 `SubsystemInteractPayload` 的寻址），不是信号目标——`getReceiversFromNames` 碰到它会记一条错误日志，因为交互区只发不收。跨子零件的具名目标因此可达；`getReceiversFromNames` 的形参签名保持不变（JS Hook 契约），改造只更换传入的表内容。名字通路只保证"两个对象同属一个 Part"，不保证线路连通；需要"线断了信号就断"时写连接点名走 `SignalPort`。`global`（`SubsystemController` 总线按每个订阅者声明的接受列表广播）与 `SignalPort`（`signal_targets` 加频道转译）是另外两条通路。首跳表在 `onAttach`、换组、结构变化与载具入世时整体重建，配置里删掉的频道不会留在表中。按名读取子零件的口是 `SubPart#findOwnSubsystem`（存档恢复、MoLang、能源端口按 `(子零件, 名字)` 定位），跨 Part 全域解析走 `AbstractPart#findSubsystem` / `#findConnector` / `#findInteractBox`。网络载荷对子系统与连接点不走名字：它们按 `(子零件 ID, 声明序序号)` 寻址（`SubPart#subsystemIndex` / `#subsystemAt` 等），理由与约束见 `docs/plan/已实现/信号系统-Part级名字解析与子系统封装.md` §3.6；交互区活表是并发容器且没有声明序（物理线程读、主线程销毁时清空），`SubsystemInteractPayload` 保持交互区名。
 - **同 Part 内一律具名直连**：既然名字在 Part 内全域可达，同一 Part 里的连线（含跨子零件，如炮塔里的火控与并列机枪）就写子系统名，不经连接点。内部连接点（`"internal": true`）由 `AbstractPart#autoAttachInternalConnectors` 按「高级 + 简单、不同子零件、几何对齐」自动配对，两端必然同 Part，`AbstractConnector#attach` 拒绝 internal 与非 internal 混合配对；在它上面配 `signal_targets` / `signal_translations` 只会多一条几何配对依赖，配不上时整条线静默断开；`checkContent` 把这种写法判为失败。连接点只用于跨 Part。
-- **端口的表在接收侧**：`SignalPort#onSignalUpdated` 用 `owner.attachedConnector.signalPort` 的 `signal_translations` 与 `signal_targets` 投递，即信号到达哪一侧端口，就用**对侧**（接收方零件）连接点的两张表。因此在端口表里读到的键是"跨过关节之后本零件要收的到达频道"，投递前还要过接收者的 `getAcceptedChannels()`（`acceptAllRoutingInput()` 为真时跳过）。`resolveTargets` 走同一套（`ISignalSender#resolveSignalLine` 同样先 `other.translateChannel` 再查 `other.getTargets()`），所以发现与投递不会给出两套答案。
-- **交互区只发不收**：`InteractBox` 不实现 `ISignalReceiver`，点击路径不写任何人的输入槽，也不会在槽里留下一个持有实体的交互值。结构变化与载具入世时它用 `resolveTargets` 把 `signal_targets` 解析成**终端子系统表**（按频道与声明序展平、去重，跨零件经连接点到达对侧座位），点击按表序逐个调 `onInteract`：`CONSUME` 结束，`FAIL`/`PASS` 继续试下一个。动画事件目标另有一档：直接目标 `local` 把频道名投递给所属 Part，直接目标 `global` 交给装配体广播给全载具部件；两者都在子系统交互前投递，不受 `CONSUME` 影响，不写入输入槽，也不经常规 `broadcast`。激活条件为 MoLang 门控成立，且存在动画事件目标（`local` 或 `global`）或至少一个可交互终端；门控由主线程每 tick 求值。物理线程只做几何筛选，提示与服务端点击复核均在主线程。交互区名仍只是节点名，不能写作信号目标。
+- **端口的表在接收侧**：`SignalPort#onSignalUpdated` 用 `owner.attachedConnector.signalPort` 的 `signal_translations` 与 `signal_targets` 投递，即信号到达哪一侧端口，就用**对侧**（接收方零件）连接点的两张表。因此在端口表里读到的键是"跨过关节之后本零件要收的到达频道"，投递前还要过接收者的 `getAcceptedChannels()`（`acceptAllRoutingInput()` 为真时跳过）。`resolveTargets` 走同一套（`ISignalSender#resolveSignalLine` 同样先 `other.translateChannel` 再查 `other.getTargets()`），所以发现与投递不会给出两套答案。事件车道是同一套规则的第二个入口：`SignalPort#onSignalEvent` 做同样的转译、查表与接受过滤，区别只是不做值比较、不写输入槽，然后交给 `EventDispatch` 继续（总线先收再分发、另一条端口继续转发、叶子直接回调）。
+- **交互区只发不收**：`InteractBox` 不实现 `ISignalReceiver`，点击路径不写任何人的输入槽，也不会在槽里留下一个持有实体的交互值。结构变化与载具入世时它用 `resolveTargets(channel, true)` 把 `signal_targets` 分成两档：**事件线**（结果里出现总线实例——`local` / `global`，或经连接点到达的对侧总线）与**交互目标**（终端子系统，按频道与声明序展平、去重）。点击先逐条 `emitSignal(频道, null)` 投事件线——事件名就是频道名，沿实际接线走，不受 `CONSUME` 影响，不写输入槽；再按交互目标表序逐个调 `onInteract`：`CONSUME` 结束，`FAIL`/`PASS` 继续试下一个。激活条件是 MoLang 门控成立，且至少有一条频道到达总线或至少一个终端 `isInteractable()`——判据读解析结果而不是配置字面量，跨零件的事件线没接上就不亮提示。门控由主线程每 tick 求值。物理线程只做几何筛选，提示与服务端点击复核均在主线程。交互区名仍只是节点名，不能写作信号目标。门/盖一类内容统一发 `interact` 一个频道：到达对侧连接点后由那两张表决定含义（门轴把 `interact` 转译成控制器事件名、目标 `local` 或 `global`；锁扣不转译、直接指向锁扣子系统）；多个交互区共用一对连接点、对侧按名分发时（AE86 车壳→车架→座位），发送侧必须保留各自的具名频道，`checkContent` 因此禁止同一变体内多个交互区往同一连接点送同名频道。
 
 ## 反模式
 
 - **严禁在信号处理中阻塞**：`handleSignal()` 应在主线程执行，避免长时间操作。
 - **严禁信号循环**：多跳传播可能形成环路。接收方处理信号时不应将同一信号发回发送方。
 - **严禁忽略信号优先级**：高优先级控制信号（如玩家输入）必须优先于低优先级信号（如自动驾驶脚本）。
-- **严禁在物理线程走按名发送**：物理步只允许向已绑定的执行器实例发送命令；普通配置线路、状态复位与发现都在主线程完成。物理步算出的反馈先 `publishFeedback` 发布，由本端主线程 `onTick` 经普通发送入口投递。
+- **严禁在物理线程走按名发送**：物理步只允许向已绑定的执行器实例发送命令；普通配置线路、状态复位与发现都在主线程完成。事件车道同理——物理步只用 `emitSignal(channel, 实例, payload)`，按名重载要读首跳表。物理步算出的反馈先 `publishFeedback` 发布，由本端主线程 `onTick` 经普通发送入口投递。
 
 ## 参考文件
 

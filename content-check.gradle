@@ -38,7 +38,15 @@
 // 11. 交互区的目标只能是 local / global 动画事件、变体内子系统，或变体内连接点（跨零件用）。交互区只发不收：
 //     local 按频道名直接向所属 Part 投递一次动画事件，global 交给装配体广播给全载具部件；其他目标按声明序
 //     直接询问解析到的子系统，不经过信号槽。目标写错名字或写成另一个交互区时，解析结果为空，
-//     这个交互区会静默地完全不激活——提示不亮、射线选不中，进游戏只表现为“这扇门没反应”。
+//     这个交互区会静默地完全不激活——提示不亮、射线选不中、进游戏只表现为“这扇门没反应”。
+//     同一条频道不能兼指 local 与 global（一次点击会把同一个事件投两遍）。目标写成连接点名的频道要跨零件，
+//     事件由对侧连接点的两张表决定去向：本节按模板的 connections 核对对侧有没有把到达频道写进
+//     signal_targets，并反查「写进连接点、却没有任何模板配对」的线——两种都表现为点击无反应、日志全无。
+//     事件落在总线（local / global）上时，到达频道必须对得上某份动画控制器里的 event.<名>：零件状态机按
+//     到达频道切动画，名字对不上时这条线静默无效。同一个连接点上，多个交互区送来的频道必须互不相同：
+//     一个连接点的信号表是「到达频道 → 目标」的一张映射，两条线共用一个名字时对侧合流、分不出是谁点的。
+//     多个交互区共用一个连接点（多个交互区 → 一个中间件 → 对侧按名分发，如 AE86 车壳→车架）因此要给每个
+//     交互区各自的频道名；这条只拦重名，不拦共用连接点。
 // 12. 五类名字键（子零件 / 子系统 / 连接点 / 交互区 / 控制组）的构形与译文。名字就是完整翻译键，缺一条界面上就原样显示 connector.machine_max.axis；语言表按命名空间合并，所以 machine_max 命名空间的名字必须写进 builtin 那一份，车包私有命名空间的写自己那份。名字还要恰好三段：带点的名字（interact.machine_max.golden.seat）能翻得出来，但对不上「类别.命名空间.名字」这套规则，拼写检查与词表都会漏掉它。
 // 13. 动画与模板里的名字引用。动画的 MoLang 用完整名字键查本部件，模板用完整名字键把两个零件的
 //     连接点配成一条线；名字改过而引用没跟随时查不到东西，表现是悬架不跟动、爆反挡板不缩、装配体
@@ -433,6 +441,40 @@ tasks.register('checkContent') {
                     } else if (segments.size() >= 4 && segments[0] == 'controllers') {
                         controllerSets << pack.namespace + ':' + segments[1] + '/' + segments[2]
                     }
+                }
+            }
+        }
+
+        // 动画事件索引：控制器集里写成 `event.<名>` 的字符串就是零件状态机能接的一次性事件名。
+        // 交互区的事件线经总线到达零件后，零件状态机按「到达频道 = 事件名」切开合动画；名字对不上时
+        // 这一条线静默无效（点击没反应、日志里没有痕迹），所以两处事件线落点都要拿它核对：
+        // 交互区直接写 local / global 的一档，以及跨零件时对侧连接点把频道落在 local / global 的一档。
+        Set<String> animationEvents = new LinkedHashSet<>()
+        def collectAnimationEvents = { Object root ->
+            Deque<Object> stack = new ArrayDeque<>()
+            stack.push(root)
+            while (!stack.isEmpty()) {
+                Object node = stack.pop()
+                if (node instanceof Map) {
+                    ((Map) node).values().each { if (it != null) stack.push(it) }
+                } else if (node instanceof List) {
+                    ((List) node).each { if (it != null) stack.push(it) }
+                } else if (node instanceof CharSequence) {
+                    String text = node.toString()
+                    if (text.startsWith('event.') && text.length() > 'event.'.length()) {
+                        animationEvents << text.substring('event.'.length())
+                    }
+                }
+            }
+        }
+        packs.each { pack ->
+            File controllersDir = new File(pack.dir, 'controllers')
+            if (!controllersDir.isDirectory()) {
+                return
+            }
+            controllersDir.eachFileRecurse(FileType.FILES) { File file ->
+                if (file.name.toLowerCase(Locale.ROOT).endsWith('.json')) {
+                    collectAnimationEvents(readJsonc(file))
                 }
             }
         }
@@ -1247,6 +1289,7 @@ tasks.register('checkContent') {
 
         int portWireCount = 0
         int interactTargetCount = 0
+        int eventWireRefCount = 0
         int viewpointDiscoveryTargetCount = 0
         // 第 14 节用：连接点的关节属性（含 overwrite 覆盖），按型号 JSON 缓存。
         Map<String, Object> connectorDefinitionCache = [:]
@@ -1345,6 +1388,20 @@ tasks.register('checkContent') {
         List<Map> variantScopes = []
         // 第 16 节反查用：每个「零件 id|变体」的发现频道、具名目标与视点，供按模板装配体核对。
         Map<String, Map> viewpointScopes = [:]
+        // 第 11 节跨零件事件线用：每个「零件 id|变体」的连接点信号表与交互区写出去的跨零件频道。
+        Map<String, Map> interactScopes = [:]
+        // 按「零件 id|变体|连接点」记录它在模板里被配对过的连接点，供反查「这条线在所有模板里都没配对」。
+        Set<String> templatedConnectorPairs = new LinkedHashSet<>()
+        Set<String> templatedParts = new LinkedHashSet<>()
+        def interactScopeOf = { Object partId, Object variantName ->
+            if (partId == null) return null
+            Map scope = (Map) interactScopes[partId.toString() + '|' + variantName.toString()]
+            if (scope == null) {
+                // 单变体零件在文件里没有变体名，模板可能写成任意名字：按零件 id 取唯一那一份
+                scope = (Map) interactScopes.find { it.key.toString().startsWith(partId.toString() + '|') }?.value
+            }
+            scope
+        }
         packs.each { pack ->
             File partsDir = new File(pack.dir, 'parts')
             if (!partsDir.isDirectory()) {
@@ -1457,6 +1514,60 @@ tasks.register('checkContent') {
                         }
                     }
                     String declarationLabel = relative + '：变体 ' + variantName
+                    // 第 11 节跨零件事件线用：本变体每个连接点的两张信号表（对侧端口读的就是这两张），
+                    // 以及交互区有多少条频道把目标写成连接点（= 事件要跨零件）。
+                    String partId = pack.namespace + ':' + file.name.substring(0, file.name.length() - '.json'.length())
+                    Map<String, Map> connectorSignalTables = [:]
+                    connectors.each { Object connectorName, Map connector ->
+                        connectorSignalTables[connectorName.toString()] = [
+                                targets     : connector.get('signal_targets'),
+                                translations: connector.get('signal_translations')]
+                    }
+                    List<Map> eventWires = []
+                    // 固定源：同一个连接点上的频道名是唯一标识（对侧按「到达频道」查表，表是每个连接点一张）。
+                    // 两个交互区往同一个连接点送同一个频道时，对侧只看到一种到达频道，分不出是谁点的。
+                    // 透传形状（多个交互区共用一个连接点，由中间件按名分发，如 AE86 车壳→车架）靠的就是
+                    // 各交互区各自的频道名，因此这条只拦"重名"，不拦"共用连接点"。
+                    Map<String, Map<String, String>> connectorChannelOwners = [:]
+                    interactBoxes.each { Object boxName, Map box ->
+                        Object boxTargetsRaw = box.get('signal_targets')
+                        if (!(boxTargetsRaw instanceof Map)) {
+                            return
+                        }
+                        ((Map) boxTargetsRaw).each { Object channelRaw, Object namesRaw ->
+                            if (!(namesRaw instanceof List)) {
+                                return
+                            }
+                            String channel = channelRaw.toString()
+                            ((List) namesRaw).each { Object targetRaw ->
+                                String target = targetRaw.toString()
+                                if (!connectors.containsKey(target)) {
+                                    // 直接落在总线上的目标就是事件线：到达频道必须能对上某个控制器的事件表，
+                                    // 否则零件状态机按 event.<频道> 查不到，点击静默无事发生。
+                                    if ((target == 'local' || target == 'global') && !animationEvents.contains(channel)) {
+                                        problems << relative + '：变体 ' + variantName + ' 的交互区 ' + boxName +
+                                                ' 把频道 ' + channel + ' 送到 ' + target +
+                                                '，但没有任何动画控制器声明 event.' + channel +
+                                                '——事件在总线上没有接收者，点击只表现为没反应'
+                                    }
+                                    return
+                                }
+                                Map<String, String> owners = connectorChannelOwners.computeIfAbsent(target) { [:] }
+                                String previous = owners.put(channel, boxName.toString())
+                                if (previous != null && previous != boxName.toString()) {
+                                    problems << relative + '：变体 ' + variantName + ' 的交互区 ' + boxName +
+                                            ' 与 ' + previous + ' 都往连接点 ' + target + ' 送频道 ' + channel +
+                                            '——同一个连接点上的到达频道是唯一标识，两条线会在对侧合流、分不出是谁点的；' +
+                                            '多个交互区共用连接点时（透传形状）要给每个交互区各自的频道名'
+                                }
+                                eventWires << [box: boxName.toString(), channel: channel, connector: target]
+                            }
+                        }
+                    }
+                    interactScopes[partId + '|' + variantName] = [
+                            label     : relative,
+                            connectors: connectorSignalTables,
+                            wires     : eventWires]
                     subPartEntries.keySet().each { Object name ->
                         nameDeclarations.putIfAbsent(name.toString(), declarationLabel)
                     }
@@ -1521,6 +1632,7 @@ tasks.register('checkContent') {
                     // local / global 是交互事件专用目标：点击时把频道名作为动画事件投给所属 Part（local）
                     // 或交给装配体广播给全载具部件（global），两者都不参与终端解析。
                     // 其余目标只能是本变体内存在的子系统，或跨零件用的本变体连接点。
+                    // 两个事件目标不能写在同一条频道上：同一次点击会经两条通路把同一个事件投两遍。
                     interactBoxes.each { Object boxName, Map box ->
                         Object boxTargetsRaw = box.get('signal_targets')
                         if (!(boxTargetsRaw instanceof Map)) {
@@ -1529,6 +1641,13 @@ tasks.register('checkContent') {
                         ((Map) boxTargetsRaw).each { Object channelRaw, Object namesRaw ->
                             if (!(namesRaw instanceof List)) {
                                 return
+                            }
+                            List names = (List) namesRaw
+                            if (names.any { it.toString() == 'local' } && names.any { it.toString() == 'global' }) {
+                                problems << relative + '：变体 ' + variantName + ' 的交互区 ' + boxName +
+                                        ' 的频道 ' + channelRaw + ' 同时指向 local 与 global——同一次点击会经' +
+                                        '「线网到 local 总线」与「装配体广播全零件」两条通路把同一个事件投两遍；' +
+                                        '只写会真正响应它的那一个'
                             }
                             ((List) namesRaw).each { Object targetRaw ->
                                 String target = targetRaw.toString()
@@ -1864,6 +1983,115 @@ tasks.register('checkContent') {
                 details.append('    缺声明者  模板 ').append(templateId).append(' → ')
                         .append(sight.label).append(' / ').append(sight.name).append('\n')
             }
+
+            // 11b. 交互区跨零件事件线在模板里的落点
+            //
+            // 交互区把目标写成连接点名时，事件经自己的端口送到对侧：对侧先用它自己的
+            // signal_translations 转译，再按它自己的 signal_targets 取目标；两张表都没有这条频道时
+            // 端口静默丢弃（与值车道走同一段代码）。症状是「点得动、动画有，锁扣不解」或
+            // 「提示亮着，按下什么都没发生」，日志里什么都没有。
+            //
+            // 判据读模板自己的 connections：两端的连接点名都由模板写下，所以能确定对侧是谁。
+            // 两个方向都查——连接点两端都有 SignalPort，信号可以朝任一方向走。
+            Object connectionsRaw = ((Map) templateData).get('connections')
+            if (connectionsRaw instanceof List) {
+                def templatePartOf = { Object uuid ->
+                    if (uuid == null) return null
+                    Object rawPart = ((Map) templatePartsRaw).get(uuid.toString())
+                    if (!(rawPart instanceof Map)) return null
+                    Object registry = ((Map) rawPart).get('registry_key')
+                    if (registry == null) return null
+                    Object variantRaw = ((Map) rawPart).get('variant')
+                    [partId: registry.toString(), variant: variantRaw == null ? 'default' : variantRaw.toString()]
+                }
+                ((List) connectionsRaw).each { Object rawConnection ->
+                    if (!(rawConnection instanceof Map)) return
+                    Map connection = (Map) rawConnection
+                    [[sender          : connection.get('partUuidS'),
+                      senderConnector : connection.get('simplePointConnectorName'),
+                      receiver        : connection.get('partUuidA'),
+                      receiverConnector: connection.get('advConnectorName')],
+                     [sender          : connection.get('partUuidA'),
+                      senderConnector : connection.get('advConnectorName'),
+                      receiver        : connection.get('partUuidS'),
+                      receiverConnector: connection.get('simplePointConnectorName')]]
+                            .each { Map flow ->
+                        Map senderRef = (Map) templatePartOf(flow.sender)
+                        Map receiverRef = (Map) templatePartOf(flow.receiver)
+                        if (senderRef == null || receiverRef == null) return
+                        String senderConnector = flow.senderConnector == null ? null : flow.senderConnector.toString()
+                        String receiverConnector = flow.receiverConnector == null ? null : flow.receiverConnector.toString()
+                        if (senderConnector == null || receiverConnector == null) return
+                        String senderKey = senderRef.partId + '|' + senderRef.variant
+                        String receiverKey = receiverRef.partId + '|' + receiverRef.variant
+                        templatedParts << senderKey
+                        templatedParts << receiverKey
+                        templatedConnectorPairs << senderKey + '|' + senderConnector
+                        templatedConnectorPairs << receiverKey + '|' + receiverConnector
+                        Map senderScope = (Map) interactScopeOf(senderRef.partId, senderRef.variant)
+                        if (senderScope == null) return
+                        Map receiverScope = (Map) interactScopeOf(receiverRef.partId, receiverRef.variant)
+                        if (receiverScope == null) return
+                        ((List) senderScope.wires).each { Map wire ->
+                            if (wire.connector != senderConnector) return
+                            eventWireRefCount++
+                            Map tables = (Map) ((Map) receiverScope.connectors).get(receiverConnector)
+                            if (tables == null) {
+                                problems << '模板 ' + templateId + '：交互区 ' + wire.box + '（' + senderScope.label +
+                                        '）的事件线经 ' + senderConnector + ' 送到 ' + receiverRef.partId +
+                                        ' 的 ' + receiverConnector + '，但那个零件没有这个连接点'
+                                return
+                            }
+                            Object translations = tables.translations
+                            String arrival = translations instanceof Map && ((Map) translations).get(wire.channel) != null
+                                    ? ((Map) translations).get(wire.channel).toString() : wire.channel.toString()
+                            Object targetList = tables.targets instanceof Map
+                                    ? ((Map) tables.targets).get(arrival) : null
+                            if (targetList instanceof List && !((List) targetList).isEmpty()) {
+                                // 落在总线上的那条线是事件线：到达频道必须能对上某个控制器的事件表，
+                                // 否则零件状态机按 event.<到达频道> 查不到，点击静默无事发生。
+                                boolean landsOnBus = ((List) targetList).any {
+                                    it != null && (it.toString() == 'local' || it.toString() == 'global')
+                                }
+                                if (landsOnBus && !animationEvents.contains(arrival)) {
+                                    problems << '模板 ' + templateId + '：交互区 ' + wire.box + '（' + senderScope.label +
+                                            '）的事件线经 ' + senderConnector + ' 到达 ' + receiverRef.partId +
+                                            ' 的 ' + receiverConnector + '，到达频道是 ' + arrival +
+                                            '，但没有任何动画控制器声明 event.' + arrival +
+                                            '——事件在总线上没有接收者，点击只表现为没反应'
+                                }
+                                return
+                            }
+                            problems << '模板 ' + templateId + '：交互区 ' + wire.box + '（' + senderScope.label +
+                                    '）的频道 ' + wire.channel + ' 经 ' + senderConnector + ' 到达 ' +
+                                    receiverRef.partId + ' 的 ' + receiverConnector + ' 后没有落点——对侧没有把' +
+                                    (arrival == wire.channel ? ' ' + wire.channel
+                                            : ' ' + wire.channel + ' 转译成 ' + arrival) +
+                                    ' 写进 signal_targets；端口按转译后的名字查表，查不到就丢弃，' +
+                                    '点击时这条线上什么都不会发生（解扣 / 开合事件静默丢失）'
+                        }
+                    }
+                }
+            }
+        }
+
+        // 11b 反查：零件出现在模板里、它的跨零件事件线却一条都没被任何模板配对过。
+        // 这类线在点击时发到自己的端口就断了——模板漏写那条边，装配体照常成型。
+        interactScopes.each { String scopeKey, Map scope ->
+            if (!templatedParts.contains(scopeKey)) {
+                return
+            }
+            List<Map> wires = (List<Map>) scope.wires
+            if (wires.isEmpty()) {
+                return
+            }
+            if (wires.any { Map wire -> templatedConnectorPairs.contains(scopeKey + '|' + wire.connector) }) {
+                return
+            }
+            String connectors = wires.collect { it.connector }.unique().join('、')
+            problems << scope.label + '：交互区把频道送到连接点 ' + connectors +
+                    '，但没有任何模板把这几个连接点配对——点击时事件发到自己的端口就断了；' +
+                    '模板的 advConnectorName / simplePointConnectorName 要写出这条边'
         }
 
         // 12. 五类名字键的构形与译文
@@ -2188,7 +2416,8 @@ tasks.register('checkContent') {
         logger.quiet('内容包引用检查通过（' + templates.size() + ' 份模板 / ' + assemblies.size() +
                 ' 份装配体 / ' + blueprints.size() + ' 份蓝图，' + partDefinitionCount + ' 份部件定义 / ' +
                 partVariantCount + ' 份变体（三类名字无重名、无保留地址），' + portWireCount + ' 条跨连接点信号线（到达频道都在目标声明内，且没有一条挂在内部连接点上），' +
-                interactTargetCount + ' 条交互区目标（都是本变体内的子系统或连接点），' +
+                interactTargetCount + ' 条交互区目标（都是本变体内的子系统或连接点，同一条频道不兼指 local 与 global），' +
+                eventWireRefCount + ' 条交互区跨零件事件线（模板配对的对侧都能投出去，且到达频道都对得上控制器事件），' +
                 viewpointDiscoveryTargetCount + ' 条视点发现目标（取值域在本变体内，广播频道都有视点声明），' +
                 referenceCount + ' 处资源引用，' +
                 documentReferenceCount + ' 处样式表引用，' +

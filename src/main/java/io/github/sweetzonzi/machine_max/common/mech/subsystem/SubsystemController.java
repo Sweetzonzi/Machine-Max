@@ -11,6 +11,7 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.IPartAssembly;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.network.payload.SubsystemSyncPayload;
@@ -20,6 +21,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,6 +47,13 @@ public class SubsystemController implements ISignalBus {
     // 总线订阅者集合（广播时遍历此集合，运行时检查接受条件）
     private final Set<ISignalReceiver> busSubscribers = ConcurrentHashMap.newKeySet();
 
+    /**
+     * 所属装配体，用于把 {@code global} 事件付给宿主的零件扇出。
+     * <p>独立构造的控制器（只有世界、没有宿主）为 {@code null}，此时事件只分发给订阅者。
+     */
+    @Nullable
+    private final IPartAssembly assembly;
+
     /** 是否已经跑过首次订阅；此前加入的子系统由 {@link #initAllSubsystems()} 统一 attach。 */
     private boolean initialized;
 
@@ -53,10 +62,12 @@ public class SubsystemController implements ISignalBus {
 
     public SubsystemController(Level level) {
         this.level = level;
+        this.assembly = null;
     }
 
     public SubsystemController(VehicleCore vehicle) {
         this.level = vehicle.getLevel();
+        this.assembly = vehicle;
     }
 
     /**
@@ -383,6 +394,32 @@ public class SubsystemController implements ISignalBus {
             }
         }
         return SignalResult.PASS;
+    }
+
+    /**
+     * 事件到达装配体总线（{@code global}）：交给所属装配体把事件广播给全部零件，各零件按自己的
+     * 控制器决定是否响应。订阅者的分发由 {@link ISignalBus#broadcastEvent} 在调用本方法之后完成。
+     * <p>装配体的零件扇出不经过线网，也不计入投递会话的重访判定；没有装配体的独立控制器只向
+     * 订阅者分发，不产生零件扇出。</p>
+     * <p><b>调用线程：</b>发送方线程；交互点击与机构通知都在主线程，动画状态机因此不会被物理步推进。</p>
+     */
+    @Override
+    public void onSignalEvent(String channelName, ISignalSender sender, Object payload) {
+        IPartAssembly assembly = this.assembly;
+        if (assembly != null) assembly.broadcastInteractionEvent(channelName);
+    }
+
+    /**
+     * {@code global} 与 {@code local} 取值一致：总线本身一律接受经连接器路由的输入，频道筛选交给订阅者。
+     * <p>
+     * 端口转发要求 {@code acceptAllRoutingInput() || getAcceptedChannels().contains(到达频道)}。总线没有排他性的
+     * 接受列表，它的职责是把频道交给订阅者、由订阅者各自的声明决定收不收（{@link #broadcast} 与
+     * {@link ISignalBus#broadcastEvent} 都做这层筛选）。返回 {@code false} 会让经连接点指向 {@code global} 的
+     * 频道在端口处被静默丢掉，只读发现也随之表现为不可达——变的是线路能力，不是接受语义。
+     */
+    @Override
+    public boolean acceptAllRoutingInput() {
+        return true;
     }
 
     // ===== ISignalBus 实现 =====

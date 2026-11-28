@@ -51,9 +51,10 @@
             "bone": "TrunkInteract",
             "interact_mode": "accurate",
             "signal_targets": {
-              "interact_trunk_door": [
+              // 开合事件沿门轴到车体状态机；解扣请求沿锁扣到车体锁扣子系统
+              "interact": [
                 "connector.machine_max.axis",
-                "global"
+                "connector.machine_max.lock"
               ]
             }
           }

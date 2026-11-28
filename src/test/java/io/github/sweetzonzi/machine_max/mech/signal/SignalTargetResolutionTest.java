@@ -21,11 +21,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * 只读终端查询 {@code ISignalSender#resolveTargets(String)} 的接线展开规则。
+ * 只读终端查询 {@code ISignalSender#resolveTargets(...)} 的接线展开规则。
  *
  * <p>直连以配置的接收者为终端；{@code global} 按订阅者声明的接受条件展开，且不改变到达频道；
- * 查询不写信号槽、不建频道、不触发 {@code onSignalUpdated}。执行器与端口的真实接线由 GameTest
- * 覆盖，这里固定查询本身的容器与顺序契约。</p>
+ * 查询不写信号槽、不建频道、不触发 {@code onSignalUpdated}。{@code includeBuses = true} 的一档把途经的
+ * 总线实例本身也记为投递点，与只取叶子的一档共用同一趟遍历，差集恰好是总线实例。执行器与端口的真实接线
+ * 由 GameTest 覆盖，这里固定查询本身的容器与顺序契约。</p>
  */
 class SignalTargetResolutionTest {
 
@@ -269,5 +270,78 @@ class SignalTargetResolutionTest {
 
         assertTrue(sender.resolveTargets("loader_reload").isEmpty(),
                 "没有订阅者的 local 总线不产生终端，也不回退为 Part 自身");
+    }
+
+    // ===== 投递点一档：总线实例本身算不算终端 =====
+
+    @Test
+    void leafOnlyIsTheDefaultAndAlsoTheExplicitFalse() {
+        TestSender sender = new TestSender();
+        TestBus bus = new TestBus();
+        TestReceiver sight = new TestReceiver("sight", List.of("gunner_sight"));
+        sender.target("gunner_sight", bus);
+        bus.subscribe(sight);
+
+        assertEquals(sender.resolveTargets("gunner_sight"), sender.resolveTargets("gunner_sight", false),
+                "缺省等价于 includeBuses = false，现有调用点不受影响");
+        assertEquals(List.of(sight), sender.resolveTargets("gunner_sight").get("gunner_sight"));
+    }
+
+    @Test
+    void includeBusesAddsTheBusBeforeItsSubscribers() {
+        TestSender sender = new TestSender();
+        TestBus bus = new TestBus("local");
+        TestReceiver seat = new TestReceiver("turret_seat", List.of("loader_reload"));
+        sender.target("loader_reload", bus);
+        bus.subscribe(seat);
+
+        List<ISignalReceiver> deliveryPoints = sender.resolveTargets("loader_reload", true).get("loader_reload");
+
+        assertEquals(List.of(bus, seat), deliveryPoints, "总线先记自己，再按固定顺序展开订阅者");
+        assertEquals(List.of(seat), sender.resolveTargets("loader_reload").get("loader_reload"),
+                "只取叶子的一档不把总线算进去");
+    }
+
+    @Test
+    void includeBusesKeepsABusWithoutSubscribers() {
+        TestSender sender = new TestSender();
+        TestBus idleBus = new TestBus("global");
+        sender.target("door_open", idleBus);
+
+        assertEquals(List.of(idleBus), sender.resolveTargets("door_open", true).get("door_open"),
+                "事件在空总线上也会产生动作，所以它本身就是投递点");
+        assertTrue(sender.resolveTargets("door_open").isEmpty(), "只取叶子的那一档仍然没有终端");
+    }
+
+    @Test
+    void firstHopWhitelistComposesWithTheBusAxis() {
+        TestSender sender = new TestSender();
+        TestBus partBus = new TestBus("local");
+        TestReceiver leaf = new TestReceiver("hull", List.of("door_open"));
+        sender.target("door_open", partBus, leaf);
+
+        assertEquals(List.of(partBus),
+                sender.resolveTargets("door_open", List.of("local"), true).get("door_open"),
+                "白名单只留下首跳 local，投递点一档把它记成总线实例");
+        assertEquals(List.of(leaf),
+                sender.resolveTargets("door_open", List.of("hull")).get("door_open"),
+                "白名单缺省只取叶子");
+        assertTrue(sender.resolveTargets("door_open", List.of(), true).isEmpty(),
+                "空白名单表示这条频道在本组不到达任何投递点");
+    }
+
+    @Test
+    void includeBusesQueryStaysReadOnly() {
+        TestSender sender = new TestSender();
+        TestBus bus = new TestBus("local");
+        TestReceiver seat = new TestReceiver("seat", List.of("loader_reload"));
+        sender.target("loader_reload", bus);
+        bus.subscribe(seat);
+
+        sender.resolveTargets("loader_reload", true);
+
+        assertEquals(0, seat.updates, "查询不触发接收者处理");
+        assertTrue(bus.getSignalInputChannels().isEmpty(), "查询不写总线输入槽");
+        assertTrue(seat.getSignalInputChannels().isEmpty(), "查询不写接收者输入槽");
     }
 }

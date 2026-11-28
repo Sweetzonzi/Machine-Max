@@ -354,10 +354,13 @@ public final class CouplerGameTest {
     }
 
     /**
-     * 交互恒可用：门边交互区不因锁扣未连接而变暗；一次点击先切换动画，再请求解扣。
+     * 交互恒可用：门边交互区不因锁扣未连接而变暗；一次点击两条线各走各的，最后请求解扣。
      *
-     * <p>完整链路是「门上交互区 → 门轴端口 → 车体门轴端口 → 车体锁扣」；解扣成功后返回
-     * {@code CONSUME}，双端引用、关节与锁扣图边一起消失，门轴边保留。</p>
+     * <p>门上交互区统一发 {@code interact} 这一个频道，沿两条连接点推出去：门轴那一条到达车体后由车体
+     * 门轴连接点转译成控制器事件名并以 {@code local} 进车体总线，车体状态机据此切动画；锁扣那一条
+     * 到达车体锁扣连接点时频道仍是 {@code interact}，直接交给车体锁扣子系统。解扣成功后返回
+     * {@code CONSUME}，双端引用、关节与锁扣图边一起消失，门轴边保留——开合事件线因此在解扣之后仍在，
+     * 关门那一次点击还能切动画；锁扣已经不在线上，因此不在点击目标表里。</p>
      */
     @GameTest(template = "part_foundation", batch = BATCH, timeoutTicks = 120)
     public static void interactionUnlocksAndConsumes(GameTestHelper helper) {
@@ -387,8 +390,14 @@ public final class CouplerGameTest {
                     helper.assertTrue(box != null, "左前门必须有拉手交互区");
                     helper.assertTrue(box.canInteract(), "门边交互区不随锁扣状态变暗");
                     helper.assertTrue(box.getInteractTargets().contains(coupler),
-                            "门边交互区应沿门轴端口解析到车体锁扣，实际 "
+                            "门边交互区应沿锁扣端口解析到车体锁扣，实际 "
                                     + box.getInteractTargets().stream().map(AbstractSubsystem::getName).toList());
+                    helper.assertTrue(box.getEventChannels().contains("interact"),
+                            "门轴端口到达车体本地总线后应让这条线成为事件线，实际 " + box.getEventChannels());
+                    helper.assertTrue("interact_left_front_door"
+                                    .equals(fixture.hullHinge().signalPort.translateChannel("interact")),
+                            "车体门轴连接点应把交互区的 interact 转译成控制器事件名，实际 "
+                                    + fixture.hullHinge().signalPort.translateChannel("interact"));
 
                     int edgesBefore = vehicle.getPartNet().edgesConnecting(fixture.hull(), fixture.door()).size();
                     box.interact(null);
@@ -398,6 +407,12 @@ public final class CouplerGameTest {
                     int edgesAfter = vehicle.getPartNet().edgesConnecting(fixture.hull(), fixture.door()).size();
                     helper.assertTrue(edgesAfter == edgesBefore - 1,
                             "只应删除锁扣边，门轴边保留；之前 " + edgesBefore + "，之后 " + edgesAfter);
+                    helper.assertTrue(box.getEventChannels().contains("interact"),
+                            "门轴边还在，开合事件线不该随解扣消失，实际 " + box.getEventChannels());
+                    helper.assertFalse(box.getInteractTargets().contains(coupler),
+                            "锁扣边断开后锁扣不在点击目标表里，实际 "
+                                    + box.getInteractTargets().stream().map(AbstractSubsystem::getName).toList());
+                    helper.assertTrue(box.canInteract(), "门还挂在门轴上，关门提示应可用");
                 })
                 .thenExecute(vehicle::onRemoveFromLevel)
                 .thenSucceed();

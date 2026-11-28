@@ -28,7 +28,11 @@
             "condition": "local.has_connector('connector.machine_max.axis')", // 未装上车体（铰链没有对端）的件不提示
             "interact_mode": "accurate",//(可选, 默认fast)交互模式, accurate 按射线判定, 交互区比命中框外扩一圈
             "signal_targets": {
-              "interact_trunk_door": ["connector.machine_max.axis", "global"] //解扣走连接点, global 交给装配体广播给车体上的开合状态机
+              // 开合事件沿门轴到车体状态机；解扣请求沿锁扣到车体锁扣子系统
+              "interact": [
+                "connector.machine_max.axis",
+                "connector.machine_max.lock"
+              ]
             }
           }
         },

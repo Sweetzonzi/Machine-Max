@@ -44,6 +44,37 @@ public interface ISignalBus extends ISignalReceiver, ISignalSender {
     /** 获取所有已注册的订阅者 */
     Set<ISignalReceiver> getAllSubscribers();
 
+    /**
+     * 把一次事件分发给总线自己与接受该频道的订阅者。与 {@link #broadcast} 并列：那条写输入槽，
+     * 这条什么都不写。
+     * <p>
+     * 总线自身先收一次（{@link ISignalReceiver#onSignalEvent}），再按
+     * {@link ISignalReceiver#acceptAllBroadcastInput()} 与 {@link ISignalReceiver#getAcceptedChannels()}
+     * 筛选订阅者——与值车道的接受条件完全相同，声明一次即可。事件没有消费语义，因此没有返回值，
+     * 也不因为某个接收者先收到而停止分发。
+     * <p>
+     * 订阅者本身是总线时递归分发，是端口时按对侧表继续转发；重访判定由投递会话负责，环路与
+     * 菱形接线不会重复投递。本方法自成一个顶层入口，没有外层 emit 时也会从空会话开始。
+     *
+     * @param channel 到达频道
+     * @param sender  原始发送者
+     * @param payload 事件负载，可为 {@code null}
+     */
+    default void broadcastEvent(String channel, ISignalSender sender, Object payload) {
+        EventDispatch session = EventDispatch.current();
+        session.begin();
+        try {
+            onSignalEvent(channel, sender, payload);
+            for (ISignalReceiver sub : getAllSubscribers()) {
+                if (sub.acceptAllBroadcastInput() || sub.getAcceptedChannels().contains(channel)) {
+                    EventDispatch.dispatch(sub, channel, sender, payload);
+                }
+            }
+        } finally {
+            session.end();
+        }
+    }
+
     /** 注册接收者为订阅者 */
     void subscribe(ISignalReceiver subscriber);
 

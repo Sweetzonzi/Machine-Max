@@ -27,6 +27,23 @@ public interface ISignalReceiver {
         return SignalResult.PASS;
     }
 
+    /**
+     * 事件到达。与 {@link #onSignalUpdated} 并列：一个说"这个来源的值变了"，一个说"刚刚发生了一次"。
+     * <p>
+     * 不写输入槽、不写存储表、没有返回值——事件没有消费语义，也没有排序与释放。同一条频道重复
+     * 投递相同负载时每次都到达，去重只发生在投递会话的重访判定（{@code (接收者, 到达频道)}）上，
+     * 与值无关。
+     * <p>
+     * <b>调用线程：</b>发送方的线程。本方法不做线程切换，需要主线程的实现由调用方保证；
+     * 按名投递限主线程，物理步只按实例投递给不触碰动画状态机的接收者。
+     *
+     * @param channelName 到达频道，同时也是动画状态机的事件名（总线实现按此转交给控制器）
+     * @param sender      原始发送者
+     * @param payload     负载；纯触发传 {@code null}
+     */
+    default void onSignalEvent(String channelName, ISignalSender sender, Object payload) {
+    }
+
     default SignalChannel getSignalChannel(String channelName) {
         return getSignalInputChannels().computeIfAbsent(channelName, k -> new SignalChannel());
     }

@@ -1792,7 +1792,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly, Target {
     }
 
     /**
-     * 交互区的一次性动画事件广播给本载具的每个部件。
+     * 一次性动画事件广播给本载具的每个部件，是 {@code global} 事件地址的宿主实现。
      *
      * <p>点击与拓扑变化都在主线程，遍历 {@link #partMap} 的同时不会有别的线程拆装部件；
      * 没有对应动画控制器的部件会忽略未知事件，因此不需要按型号筛选。</p>

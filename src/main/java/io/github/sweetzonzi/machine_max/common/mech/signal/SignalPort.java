@@ -120,6 +120,38 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
         return result;
     }
 
+    /**
+     * 事件到达端口：与值车道同表同规则地转发，但不比较值、不写输入槽。
+     * <p>
+     * 先用<b>对侧</b>端口的 {@link #translateChannel(String)} 得到到达频道，再按对侧 {@code signal_targets}
+     * 取目标；目标仍要过接收者的接受条件（{@link ISignalReceiver#acceptAllRoutingInput()} 或
+     * {@link ISignalReceiver#getAcceptedChannels()}），对侧表里没有该频道时静默丢弃——与值车道一致。
+     * 过滤不能省：省掉会把事件送到没有声明该频道的叶子，发现与投递随即变成两套答案。
+     * <p>
+     * 继续推进交给 {@link EventDispatch#dispatch}：总线先收再分发、另一条端口继续转发、叶子直接回调，
+     * 重访判定（{@code (接收者, 到达频道)}）因此跨零件也成立。
+     * <p>
+     * <b>调用线程：</b>发送方线程；端口自身不做线程切换。
+     *
+     * @param channelName 原始信号频道名
+     * @param sender      原始发送者
+     * @param payload     事件负载，可为 {@code null}
+     */
+    @Override
+    public void onSignalEvent(String channelName, ISignalSender sender, Object payload) {
+        SignalPort other = getAttachedPort();
+        if (other == null) return;
+        String targetChannelName = other.translateChannel(channelName);
+        Map<String, ISignalReceiver> targetReceivers = other.getTargets().get(targetChannelName);
+        if (targetReceivers == null) return;
+        for (ISignalReceiver signalReceiver : targetReceivers.values()) {
+            boolean accepts = signalReceiver.acceptAllRoutingInput()
+                    || signalReceiver.getAcceptedChannels().contains(targetChannelName);
+            if (!accepts) continue;
+            EventDispatch.dispatch(signalReceiver, targetChannelName, sender, payload);
+        }
+    }
+
     @Override
     public SubPart getSubPart() {
         return owner.getSubPart();

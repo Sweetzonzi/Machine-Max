@@ -46,7 +46,11 @@
               "condition": "local.has_connector('connector.machine_max.axis')", // 未装上车体（铰链没有对端）的件不提示
               "interact_mode": "accurate",//(可选, 默认fast)精确交互: 玩家瞄准交互区按下交互键才触发
               "signal_targets": {//交互频道及目标: 门轴端口把同一次点击送去解扣, global 让车体状态机切动画
-                "interact_left_front_door": ["connector.machine_max.axis", "global"]
+                // 开合事件沿门轴到车体状态机；解扣请求沿锁扣到车体锁扣子系统
+                "interact": [
+                  "connector.machine_max.axis",
+                  "connector.machine_max.lock"
+                ]
               }
             }
           },
@@ -127,7 +131,11 @@
               "condition": "local.has_connector('connector.machine_max.axis')", // 未装上车体（铰链没有对端）的件不提示
               "interact_mode": "accurate",//(可选, 默认fast)精确交互: 玩家瞄准交互区按下交互键才触发
               "signal_targets": {//交互频道及目标: 门轴端口把同一次点击送去解扣, global 让车体状态机切动画
-                "interact_right_front_door": ["connector.machine_max.axis", "global"]
+                // 开合事件沿门轴到车体状态机；解扣请求沿锁扣到车体锁扣子系统
+                "interact": [
+                  "connector.machine_max.axis",
+                  "connector.machine_max.lock"
+                ]
               }
             }
           },

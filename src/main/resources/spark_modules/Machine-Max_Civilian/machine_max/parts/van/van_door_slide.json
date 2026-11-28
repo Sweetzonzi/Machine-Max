@@ -30,7 +30,11 @@
               "bone": "interact_left_door_slide", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
               "condition": "local.has_connector('connector.machine_max.axis')", // 未装上车体（铰链没有对端）的件不提示
               "signal_targets": {
-                "interact_left_back_door": ["connector.machine_max.axis", "global"] //解扣走连接点, global 交给装配体广播给车体上的开合状态机
+                // 开合事件沿门轴到车体状态机；解扣请求沿锁扣到车体锁扣子系统
+                "interact": [
+                  "connector.machine_max.axis",
+                  "connector.machine_max.lock"
+                ]
               },
               "interact_mode": "accurate"//(可选, 默认fast)交互模式, fast为玩家碰撞箱与交互区碰撞时按下交互键触发, accurate为玩家瞄准交互区按下交互键触发
             }
@@ -78,7 +82,11 @@
               "bone": "interact_right_door_slide", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
               "condition": "local.has_connector('connector.machine_max.axis')", // 未装上车体（铰链没有对端）的件不提示
               "signal_targets": {
-                "interact_right_back_door": ["connector.machine_max.axis", "global"] //解扣走连接点, global 交给装配体广播给车体上的开合状态机
+                // 开合事件沿门轴到车体状态机；解扣请求沿锁扣到车体锁扣子系统
+                "interact": [
+                  "connector.machine_max.axis",
+                  "connector.machine_max.lock"
+                ]
               },
               "interact_mode": "accurate"//(可选, 默认fast)交互模式, fast为玩家碰撞箱与交互区碰撞时按下交互键触发, accurate为玩家瞄准交互区按下交互键触发
             }

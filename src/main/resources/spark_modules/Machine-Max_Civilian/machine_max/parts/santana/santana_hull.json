@@ -113,13 +113,14 @@
           "connector.machine_max.hood_axis": {
             "locator": "hull_hinge_hood",
             "definition": "machine_max:hinge_x",
-            "signal_targets": {
-              "interact": [
-                "subsystem.machine_max.hood_coupler"
-              ]
-            },
             "signal_translations": {
-              "interact_hood": "interact"
+              // 交互区统一发 interact；这条门轴把它转译成与车体控制器事件同名的到达频道
+              "interact": "interact_hood"
+            },
+            "signal_targets": {
+              "interact_hood": [
+                "local"
+              ]
             },
             "overwrite": {
               "required_tags": [
@@ -140,6 +141,12 @@
           "connector.machine_max.hood_lock": {
             "locator": "hull_hood_latch",
             "definition": "machine_max:fixed_rigid",
+            "signal_targets": {
+              // 解扣请求到达这里时频道就是 interact，交给这台锁扣
+              "interact": [
+                "subsystem.machine_max.hood_coupler"
+              ]
+            },
             "overwrite": {
               // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
               "integrity": 3.5,
@@ -155,13 +162,14 @@
           "connector.machine_max.trunk_door_axis": {
             "locator": "hull_hinge_trunk",
             "definition": "machine_max:hinge_x",
-            "signal_targets": {
-              "interact": [
-                "subsystem.machine_max.trunk_door_coupler"
-              ]
-            },
             "signal_translations": {
-              "interact_trunk_door": "interact"
+              // 交互区统一发 interact；这条门轴把它转译成与车体控制器事件同名的到达频道
+              "interact": "interact_trunk_door"
+            },
+            "signal_targets": {
+              "interact_trunk_door": [
+                "local"
+              ]
             },
             "overwrite": {
               "required_tags": [
@@ -182,6 +190,12 @@
           "connector.machine_max.trunk_door_lock": {
             "locator": "hull_trunk_latch",
             "definition": "machine_max:fixed_rigid",
+            "signal_targets": {
+              // 解扣请求到达这里时频道就是 interact，交给这台锁扣
+              "interact": [
+                "subsystem.machine_max.trunk_door_coupler"
+              ]
+            },
             "overwrite": {
               // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
               "integrity": 3.5,
@@ -226,13 +240,14 @@
           "connector.machine_max.left_front_door_axis": {
             "locator": "hull_hinge_door_lf",
             "definition": "machine_max:hinge_y",
-            "signal_targets": {
-              "interact": [
-                "subsystem.machine_max.left_front_door_coupler"
-              ]
-            },
             "signal_translations": {
-              "interact_left_front_door": "interact"
+              // 交互区统一发 interact；这条门轴把它转译成与车体控制器事件同名的到达频道
+              "interact": "interact_left_front_door"
+            },
+            "signal_targets": {
+              "interact_left_front_door": [
+                "local"
+              ]
             },
             "overwrite": {
               "required_tags": [
@@ -252,6 +267,12 @@
           "connector.machine_max.left_front_door_lock": {
             "locator": "hull_door_lf_latch",
             "definition": "machine_max:fixed_rigid",
+            "signal_targets": {
+              // 解扣请求到达这里时频道就是 interact，交给这台锁扣
+              "interact": [
+                "subsystem.machine_max.left_front_door_coupler"
+              ]
+            },
             "overwrite": {
               // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
               "integrity": 3.5,
@@ -297,13 +318,14 @@
           "connector.machine_max.right_front_door_axis": {
             "locator": "hull_hinge_door_rf",
             "definition": "machine_max:hinge_y",
-            "signal_targets": {
-              "interact": [
-                "subsystem.machine_max.right_front_door_coupler"
-              ]
-            },
             "signal_translations": {
-              "interact_right_front_door": "interact"
+              // 交互区统一发 interact；这条门轴把它转译成与车体控制器事件同名的到达频道
+              "interact": "interact_right_front_door"
+            },
+            "signal_targets": {
+              "interact_right_front_door": [
+                "local"
+              ]
             },
             "overwrite": {
               "required_tags": [
@@ -323,6 +345,12 @@
           "connector.machine_max.right_front_door_lock": {
             "locator": "hull_door_rf_latch",
             "definition": "machine_max:fixed_rigid",
+            "signal_targets": {
+              // 解扣请求到达这里时频道就是 interact，交给这台锁扣
+              "interact": [
+                "subsystem.machine_max.right_front_door_coupler"
+              ]
+            },
             "overwrite": {
               // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
               "integrity": 3.5,
@@ -363,13 +391,14 @@
           "connector.machine_max.left_back_door_axis": {
             "locator": "hull_hinge_door_lb",
             "definition": "machine_max:hinge_y",
-            "signal_targets": {
-              "interact": [
-                "subsystem.machine_max.left_back_door_coupler"
-              ]
-            },
             "signal_translations": {
-              "interact_left_back_door": "interact"
+              // 交互区统一发 interact；这条门轴把它转译成与车体控制器事件同名的到达频道
+              "interact": "interact_left_back_door"
+            },
+            "signal_targets": {
+              "interact_left_back_door": [
+                "local"
+              ]
             },
             "overwrite": {
               "required_tags": [
@@ -389,6 +418,12 @@
           "connector.machine_max.left_back_door_lock": {
             "locator": "hull_door_lb_latch",
             "definition": "machine_max:fixed_rigid",
+            "signal_targets": {
+              // 解扣请求到达这里时频道就是 interact，交给这台锁扣
+              "interact": [
+                "subsystem.machine_max.left_back_door_coupler"
+              ]
+            },
             "overwrite": {
               // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
               "integrity": 3.5,
@@ -428,13 +463,14 @@
           "connector.machine_max.right_back_door_axis": {
             "locator": "hull_hinge_door_rb",
             "definition": "machine_max:hinge_y",
-            "signal_targets": {
-              "interact": [
-                "subsystem.machine_max.right_back_door_coupler"
-              ]
-            },
             "signal_translations": {
-              "interact_right_back_door": "interact"
+              // 交互区统一发 interact；这条门轴把它转译成与车体控制器事件同名的到达频道
+              "interact": "interact_right_back_door"
+            },
+            "signal_targets": {
+              "interact_right_back_door": [
+                "local"
+              ]
             },
             "overwrite": {
               "required_tags": [
@@ -454,6 +490,12 @@
           "connector.machine_max.right_back_door_lock": {
             "locator": "hull_door_rb_latch",
             "definition": "machine_max:fixed_rigid",
+            "signal_targets": {
+              // 解扣请求到达这里时频道就是 interact，交给这台锁扣
+              "interact": [
+                "subsystem.machine_max.right_back_door_coupler"
+              ]
+            },
             "overwrite": {
               // 锁扣：几发小口径即脱锁。铰链不带这组值，仍按 15 / 2.0 / 0.30 结算（见 5.14）
               "integrity": 3.5,

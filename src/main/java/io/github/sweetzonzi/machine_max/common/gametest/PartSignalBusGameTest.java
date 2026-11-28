@@ -29,7 +29,8 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * Part 信号总线契约：订阅随构造/销毁自动订退，{@code local} 广播与只读发现只命中所属部件，
- * 结构变化只清临时信号，到达处理保留原始发送者，同一来源经 {@code local} 与 {@code global} 共用一个槽。
+ * 结构变化只清临时信号，到达处理保留原始发送者，同一来源经 {@code local} 与 {@code global} 共用一个槽；
+ * 连接点把事件按对侧转译表与接受条件转发，环路在投递会话里终止。
  */
 @GameTestHolder(MachineMax.MOD_ID)
 @PrefixGameTestTemplate(false)
@@ -252,6 +253,54 @@ public final class PartSignalBusGameTest {
                 "端口转译后到达 local 并更新 Part 键值存储");
         helper.assertTrue(numberOf(subscriber.getSignalInputChannels().get(CHANNEL).get(sender)) == 3f,
                 "端口送达的广播保留原始发送者");
+
+        sender.getTargets().put(CHANNEL, Map.of("near", source));
+        List<ISignalReceiver> deliveryPoints = sender.resolveTargets(CHANNEL, true).getOrDefault(CHANNEL, List.of());
+        helper.assertTrue(deliveryPoints.contains(part),
+                "投递点一档经端口把 local 总线本身记成终端，实际 " + deliveryPoints);
+        helper.assertTrue(deliveryPoints.stream().noneMatch(receiver -> receiver instanceof SignalPort),
+                "端口永远不出现在投递点结果里");
+        part.discardUnattached();
+        helper.succeed();
+    }
+
+    /**
+     * 端口的事件转发：按对侧转译表得到到达频道、按对侧目标表与接收者接受条件过滤，再交给投递会话。
+     *
+     * <p>夹具把对侧目标表的一次投递指回来源端口，构成一条环路：事件因此必须靠
+     * {@code (接收者, 到达频道)} 重访判定在顶层 emit 的会话里终止，否则这条用例会跑到超时。
+     * 同时钉住两件事：负载原样到达；未声明到达频道的订阅者收不到。</p>
+     */
+    @GameTest(template = "part_foundation", batch = "mmSignal", timeoutTicks = 100)
+    public static void portForwardsEventsWithTranslationAndAcceptFilter(GameTestHelper helper) {
+        RegularPart part = turret(helper);
+        String arrival = CHANNEL + "_arrival";
+        ProbeEndpoint accepted = new ProbeEndpoint("probe_event_accepted", List.of(arrival), null);
+        ProbeEndpoint ignored = new ProbeEndpoint("probe_event_ignored", List.of("other_channel"), null);
+        part.subscribe(accepted);
+        part.subscribe(ignored);
+
+        var near = part.allConnectors.values().stream()
+                .filter(connector -> connector.attachedConnector != null)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("夹具部件没有已对接的连接点"));
+        SignalPort source = near.signalPort;
+        SignalPort far = near.attachedConnector.signalPort;
+        far.addTranslation(CHANNEL, arrival);
+        far.getTargets().put(arrival, Map.of("local", part, "back", source));
+
+        ProbeEndpoint sender = new ProbeEndpoint("probe_event_sender", List.of(), null);
+        sender.getTargets().put(CHANNEL, Map.of("near", source));
+        Object payload = new Object();
+
+        sender.emitSignal(CHANNEL, payload);
+
+        helper.assertTrue(accepted.eventChannels.equals(List.of(arrival)),
+                "事件按对侧转译表到达 " + arrival + "，实际 " + accepted.eventChannels);
+        helper.assertTrue(accepted.lastEventPayload == payload, "负载原样交给接收者");
+        helper.assertTrue(ignored.eventChannels.isEmpty(), "未声明到达频道的订阅者不收到");
+        helper.assertTrue(accepted.getSignalInputChannels().isEmpty(), "事件不写接收者输入槽");
+        helper.assertTrue(part.getSignalStorage().isEmpty(), "事件不写 Part 键值存储");
         part.discardUnattached();
         helper.succeed();
     }
@@ -349,7 +398,7 @@ public final class PartSignalBusGameTest {
         }
     }
 
-    /** 可配置首跳表的探针端点：既作为订阅者接收广播，也作为发送者查询/投递。 */
+    /** 可配置首跳表的探针端点：既作为订阅者接收广播/事件，也作为发送者查询/投递。 */
     private static final class ProbeEndpoint implements ISignalReceiver, ISignalSender {
         private final String address;
         private final List<String> accepted;
@@ -357,7 +406,9 @@ public final class PartSignalBusGameTest {
         private final ConcurrentMap<String, SignalChannel> channels = new ConcurrentHashMap<>();
         private final Map<String, List<String>> targetNames = new HashMap<>();
         private final Map<String, Map<String, ISignalReceiver>> targets = new HashMap<>();
+        private final List<String> eventChannels = new ArrayList<>();
         private ISignalSender lastSender;
+        private Object lastEventPayload;
         private int updates;
 
         private ProbeEndpoint(String address, List<String> accepted, SubPart subPart) {
@@ -401,6 +452,12 @@ public final class PartSignalBusGameTest {
             updates++;
             lastSender = sender;
             return SignalResult.PASS;
+        }
+
+        @Override
+        public void onSignalEvent(String channelName, ISignalSender sender, Object payload) {
+            eventChannels.add(channelName);
+            lastEventPayload = payload;
         }
     }
 }
