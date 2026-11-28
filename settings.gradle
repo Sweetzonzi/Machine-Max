@@ -15,7 +15,15 @@ plugins {
 
 rootProject.name = 'Machine-Max'
 
+if (providers.gradleProperty('mmUseUpstreamSources').map { it.toBoolean() }.getOrElse(false)) {
+    println('[Machine-Max] Using upstream source builds (mmUseUpstreamSources=true)')
+} else {
+    println('[Machine-Max] Using published/local upstream binaries (set -PmmUseUpstreamSources=true to include source builds)')
+    return
+}
+
 def sparkCoreDir = file("${spark_core_dir}") // 此处修改为Spark-Core源码所在目录
+if (!sparkCoreDir.isDirectory()) throw new GradleException('mmUseUpstreamSources=true but Spark-Core source is missing')
 if (sparkCoreDir.exists()) { // 首选同目录下Spark-Core源码作为依赖
     includeBuild(sparkCoreDir) {
         dependencySubstitution {
@@ -28,6 +36,7 @@ if (sparkCoreDir.exists()) { // 首选同目录下Spark-Core源码作为依赖
 }
 
 def ballisticsFrameworkDir = file("${ballistics_framework_dir}") // 弹道框架源码目录
+if (!ballisticsFrameworkDir.isDirectory()) throw new GradleException('mmUseUpstreamSources=true but BallisticsFramework source is missing')
 if (ballisticsFrameworkDir.exists()) { // 首选同目录下弹道框架源码作为依赖
     includeBuild(ballisticsFrameworkDir) {
         dependencySubstitution {

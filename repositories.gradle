@@ -1,20 +1,26 @@
+def upstreamRepo = providers.gradleProperty('mmUpstreamRepo').orNull
+def useUpstreamSources = providers.gradleProperty('mmUseUpstreamSources').map { it.toBoolean() }.getOrElse(false)
+def sparkGroup = 'io.github.solarmoonqaq'
+def sparkArtifact = "spark-core-${mod_loader}"
+def ballisticsGroup = 'io.github.sweetzonzi'
+def ballisticsArtifact = "ballistics_framework-${minecraft_version}-${mod_loader}"
+
 dependencies {
     // 物理库
-    try {
-        // workspace加载模块时
-        implementation(project(':Spark-Core')) //模块化加载
-    } catch (Exception ignore) { // 失败，说明是单独作为项目时运行
-        implementation("io.github.solarmoonqaq:spark-core-${mod_loader}:${spark_core_version}") //默认加载
-    }
+    def sparkDependency = useUpstreamSources && project.findProject(':Spark-Core') != null
+            ? project(':Spark-Core') : "${sparkGroup}:${sparkArtifact}:${spark_core_version}"
+    implementation(sparkDependency)
     // 弹道框架
-    try {
-        // workspace加载模块时
-        implementation(project(':BallisticsFramework'))
-        jarJar(project(':BallisticsFramework'))
-    } catch (Exception ignore) { // 失败，说明是单独作为项目时运行
-        // artifactId 规则：ballistics_framework-<mc版本>-<加载器>
-        implementation("io.github.sweetzonzi:ballistics_framework-${minecraft_version}-${mod_loader}:${ballistics_framework_version}")
-        jarJar("io.github.sweetzonzi:ballistics_framework-${minecraft_version}-${mod_loader}:${ballistics_framework_version}")
+    def ballisticsDependency = useUpstreamSources && project.findProject(':BallisticsFramework') != null
+            ? project(':BallisticsFramework') : "${ballisticsGroup}:${ballisticsArtifact}:${ballistics_framework_version}"
+    implementation(ballisticsDependency)
+    jarJar(ballisticsDependency)
+
+    if (!useUpstreamSources) {
+        // Spark-Core 的发布 POM 不传递兼容模组；在默认二进制模式保留其开发运行依赖。
+        localRuntime "software.bernie.geckolib:geckolib-neoforge-${minecraft_version}:4.7.7"
+        localRuntime "mod.azure.azurelib:azurelib-neo-${minecraft_version}:${azurelib_version}"
+        localRuntime 'dev.kosmx.player-anim:player-animation-lib-forge:2.0.0-alpha1+1.21'
     }
     // jei
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
@@ -53,6 +59,23 @@ dependencies {
 }
 
 repositories {
+    if (upstreamRepo != null) {
+        if (upstreamRepo.isBlank() || !file(upstreamRepo).isDirectory()) {
+            throw new GradleException("mmUpstreamRepo must point to an existing local Maven repository: '${upstreamRepo}'")
+        }
+        exclusiveContent {
+            forRepository {
+                maven {
+                    name = 'MachineMaxUpstreamBinaries'
+                    url = uri(file(upstreamRepo))
+                }
+            }
+            filter {
+                includeModule(sparkGroup, sparkArtifact)
+                includeModule(ballisticsGroup, ballisticsArtifact)
+            }
+        }
+    }
     mavenLocal()
     mavenCentral()
 

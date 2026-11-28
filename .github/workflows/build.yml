@@ -11,6 +11,7 @@ jobs:
       # 这样 CI 编译的是兄弟仓库源码，而不是 gradle.properties 里钉住的发布版。
       ORG_GRADLE_PROJECT_spark_core_dir: ${{ github.workspace }}/_deps/Spark-Core
       ORG_GRADLE_PROJECT_ballistics_framework_dir: ${{ github.workspace }}/_deps/BallisticsFramework
+      ORG_GRADLE_PROJECT_mmUseUpstreamSources: true
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

@@ -180,6 +180,36 @@ io.github.sweetzonzi.machine_max/
 
 ### 构建与运行中的客户端并发
 
+多个 Machine-Max 工作树只改本项目时，可以各用自己的 `build/` 和 `run/`，共同读取 Maven Local 中固定版本的 Spark-Core、BallisticsFramework JAR。日常构建默认解析 `gradle.properties` 锁定的二进制版本，不需要额外参数；只有要和上游源码联调时才传 `-PmmUseUpstreamSources=true`。AUI 在两种模式下都通过 Maven 解析。
+
+首次准备本地固定版时，可从上游源码构建并发布到 Maven Local，供所有 MM 工作树共享：
+
+```powershell
+.\gradlew --offline -PmmUseUpstreamSources=true :Spark-Core:publishToMavenLocal :BallisticsFramework:publishToMavenLocal
+# 发布一次即可；版本升级时再重新发布，并同步更新 gradle.properties。
+```
+
+发布任务按当前 MM 的 `gradle.properties` 使用固定坐标，将制品放入 Maven Local；不要在多个工作树中同时发布同一版本。需要上游更新时再联调源码并更新版本号，既有版本不要被并行构建覆盖。
+
+Maven Local 发布完成后，日常命令从任一工作树直接运行，不需要额外参数：
+
+```powershell
+.\gradlew --offline build
+.\gradlew --offline runGameTestServer
+.\gradlew --offline runClient
+```
+
+只有需要临时隔离到自定义 Maven 仓库时，才使用以下可选覆盖；IDEA 的 Gradle 运行配置同样无需为默认模式添加参数：
+
+```powershell
+$upstream = 'D:/Files/Project_MinecraftMods/Machine-Max/repo/mm-upstream-01'
+.\gradlew --offline "-PmmUpstreamRepo=$upstream" build
+.\gradlew --offline "-PmmUpstreamRepo=$upstream" runGameTestServer
+.\gradlew --offline "-PmmUpstreamRepo=$upstream" runClient
+```
+
+默认二进制模式的任务列表不应出现 `:Spark-Core:` 或 `:BallisticsFramework:`。自定义仓库覆盖仅用于临时隔离，不是日常构建要求。它不会改变其它项目的配置；例如 ARMS-Core 若仍直接引用某棵 MM 源码树，仍可能占用那一棵的 MM 产物。联调上游代码请用源码模式，以下文件锁排查适用于该模式：
+
 `:Spark-Core:jar` 或 `:BallisticsFramework:jar` 报下面这种错时**不是代码问题**，是并发：
 
 ```
@@ -209,7 +239,7 @@ io.github.sweetzonzi.machine_max/
 - **仅客户端模组只能挂 run 任务**：`runServer`、`runData`、`runGameTestServer` 与 `runClient` 共用 main 的 `runtimeClasspath`，所以 `mods-client/` 加在 `runClient` 的 `classpathProvider` 上。这条挂法只覆盖 Gradle 发起的 run：从 IDE 发起时类路径由 IDE 模块给出（四个 run 共用一份），`gradlew createClientLaunchScript` 生成的启动脚本也取 source set 的 `runtimeClasspath`，两者都只带 `mods/`。
 - **GeckoLib 与 Spark 不放 `mods/`**：两者的 jar 与其它来源的同名模块同时在类路径上时，ModLauncher 在模块解析阶段中止，服务端起不来——
   `java.lang.module.ResolutionException: Modules geckolib and geckolib.neoforge export package … to module mixinextras.neoforge`。
-  GeckoLib 已由 Spark-Core 的 Maven 依赖 `software.bernie.geckolib:geckolib-neoforge-<mc>:<version>` 提供（版本见 Spark-Core 的 `gradle.properties`），经复合构建出现在本项目的运行期类路径上，不需要 jar。Spark 的模块来自 Spark-Core：那份构建脚本用 `implementation(files(fileTree("mods")))` 声明 `mods/spark-1.10.124-neoforge.jar`，它作为 root component 进入 Spark-Core 的 `runtimeElements`，于是出现在每个消费方的 `runtimeClasspath` 上（本项目 `gradlew runClient` 的 Mod List 里就有 `spark 1.10.124`）；本地再放一份同名模块就会撞包。两份 jar 都放在 `mods-disabled/`（`mods-disabled/` 不参与任何 run）。
+  GeckoLib 在源码模式下由 Spark-Core 的 Maven 依赖提供，默认二进制模式下由 MM 的 `repositories.gradle` 提供。Spark 性能分析器是可选模组：源码模式会传递 Spark-Core `mods/` 里的 profiler JAR（如果有）；默认二进制模式不会传递这个本地文件。需要 profiler 时先看 Mod List，避免重复加载；`mods-disabled/` 不参与任何 run。
 - 顺序要求：两个私有配置必须在 `build.gradle` 里先声明（`repositories.gradle` 由 `apply from` 在本文件之后执行，那里只填内容）。
 - 核对办法：`run/logs/latest.log` 里 `ModDiscoverer` 打出的 Mod List 是最终生效的 mod 集合；`build/moddev/{client,server,data,gameTestServer}LegacyClasspath.txt` 只是 MC-BOOTSTRAP 模块层的清单（由 `gradlew write<Run>LegacyClasspath` 刷新），其中出现某个 jar 不代表它会被当成 mod 载入。
 
@@ -492,7 +522,7 @@ rg -n '不再|不再需要|不再依赖|仍然|依旧|仍旧|照旧|还是|取�
 
 ## 补充说明
 
-- **复合构建**：`settings.gradle` 条件性 include `../Spark-Core`、`../BallisticsFramework`，本地缺失时回退 Maven jar。CI 里没有这两个兄弟目录，workflow 会把两个仓库检出到 `_deps/` 并用 `ORG_GRADLE_PROJECT_spark_core_dir` / `ORG_GRADLE_PROJECT_ballistics_framework_dir` 指过去，所以 CI 编的也是源码而不是钉住的发布版；分支名写死在 workflow 里，改分支需同步。AUI 走 `maven.sighs.cc` 的 `com.sighs:ApricityUI-neoforge-1.21.1` 并以 `jarJar` 内嵌进发布 jar，`metadata.json` 声明 `[1.3.0,)`；玩家另装独立 AUI 时 FML 直接采用已装那份（只按 mod id 判断、不比较版本），低于 1.3.0 会让内嵌版失效。
+- **复合构建**：默认不 include 上游源码，直接解析 `gradle.properties` 锁定版本的 Maven 制品（优先 Maven Local）；只有显式设置 `-PmmUseUpstreamSources=true` 才 include `../Spark-Core`、`../BallisticsFramework`，且源码目录缺失会报错。CI 显式设置该开关，并将两个仓库检出到 `_deps/`，通过 `ORG_GRADLE_PROJECT_spark_core_dir` / `ORG_GRADLE_PROJECT_ballistics_framework_dir` 指定路径，因此 CI 编的是上游源码；分支名写死在 workflow 里，改分支需同步。AUI 走 `maven.sighs.cc` 的 `com.sighs:ApricityUI-neoforge-1.21.1` 并以 `jarJar` 内嵌进发布 jar，`metadata.json` 声明 `[1.3.0,)`；玩家另装独立 AUI 时 FML 直接采用已装那份（只按 mod id 判断、不比较版本），低于 1.3.0 会让内嵌版失效。
 - **自动化测试**：`.\gradlew --offline test` 跑 JUnit；`.\gradlew --offline probeTest` 跑 `src/test/.../probe/` 下的手工探针（引擎行为标定、一次性实验、依赖本机重建 native 的测量，不参与 `test`）；`.\gradlew --offline runGameTestServer` 跑 `common/gametest/` 下的服务端 GameTest（部件构造与恢复、类型边界、信号发现与投递、结构序号、弹药路由、损坏状态、座位顺序），全部为必需用例，失败即非零退出。GameTest 写在 `src/main` 是硬要求：GameTestServer 从 mod 的 classes 扫描 `@GameTestHolder`，`src/test` 不在任何 run 的类路径上；反过来纯逻辑检查留在 `src/test`。客户端画面走 runClient 验收；公共 API 与覆盖边界见 `docs/部件公共基础接入.md`。
 - **`runServer` 只加载 `mods/`**：客户端专属 jar 放在 `mods-client/`，只有 `runClient` 加载（分工见「命令」一节）。专用服务器仍会连带载入不分端的 `implementation` 声明依赖（JEI、AUI、加速渲染、KubeJS 等），这些是编译期就需要的东西，不影响启动。
 - **CI 使用 JDK 17**，构建目标 Java 21 字节码。
